@@ -1,0 +1,147 @@
+<div id="data-groups-view-template" style="display: none;">
+  <div class="row mb-4 align-items-center">
+    <div class="col-md-8 d-flex align-items-center">
+      <button class="btn btn-outline-secondary me-3" onclick="showPage('clients')">
+        <i class="fas fa-arrow-right"></i> عودة
+      </button>
+      <h4 class="m-0 text-dark" id="currentClientTitle">مجموعات البيانات</h4>
+    </div>
+    <div class="col-md-4 text-end">
+      <button class="btn btn-info text-white shadow-sm" data-bs-toggle="modal" data-bs-target="#addDataGroupModal">
+        <i class="fas fa-plus me-1"></i> إضافة مجموعة بيانات
+      </button>
+    </div>
+  </div>
+
+  <div class="card shadow-sm border-0">
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle" id="dataGroupsTable">
+          <thead class="table-light">
+            <tr>
+              <th>اسم المجموعة</th>
+              <th>تاريخ الإنشاء</th>
+              <th>بواسطة</th>
+              <th>إجراءات</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="addDataGroupModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">إضافة مجموعة بيانات جديدة</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="currentClientIdInput">
+          <div class="mb-3">
+            <label for="newDataGroupName" class="form-label fw-bold">اسم المجموعة</label>
+            <input type="text" class="form-control" id="newDataGroupName" placeholder="مثال: البيانات الضريبية، العقود...">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+          <button type="button" class="btn btn-info text-white" onclick="submitNewDataGroup()">حفظ</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function openDataGroups(clientId, clientName) {
+    const mainContent = document.getElementById('main-content');
+    mainContent.innerHTML = document.getElementById('data-groups-view-template').innerHTML;
+    document.querySelector('#main-content #currentClientTitle').textContent = `مجموعات البيانات للعميل: ${clientName}`;
+    document.querySelector('#main-content #currentClientIdInput').value = clientId;
+    
+    loadDataGroups(clientId, clientName);
+  }
+
+  function loadDataGroups(clientId, clientName) {
+    const tbody = document.querySelector('#main-content #dataGroupsTable tbody');
+    if(!tbody) return;
+    
+    tbody.innerHTML = '';
+    // ⚡ السحر هنا: فلترة لحظية من الميموري
+    const groups = (window.APP_STATE.groups || []).filter(g => g.Main_ID === clientId);
+    
+    if (groups.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-4"><i class="fas fa-folder-open fa-2x mb-2 d-block"></i>لا توجد مجموعات بيانات هنا.</td></tr>';
+      return;
+    }
+    
+    groups.forEach(function(group) {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td class="fw-bold text-info">${group.Name}</td>
+        <td><span class="badge bg-light text-dark border">${group.Created_At}</span></td>
+        <td>${group.Created_By.split('@')[0]}</td>
+        <td>
+          <button class="btn btn-sm btn-outline-primary me-1" onclick="openRecords('${group.Group_ID}', '${group.Name}', '${clientId}', '${clientName}')" title="فتح السجلات">
+            <i class="fas fa-folder-open"></i> السجلات
+          </button>
+          <button class="btn btn-sm btn-outline-danger" onclick="deleteDataGroupHandler('${group.Group_ID}', '${group.Name}', '${clientId}', '${clientName}')" title="حذف">
+            <i class="fas fa-trash"></i>
+          </button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  function submitNewDataGroup() {
+    const clientId = document.querySelector('#main-content #currentClientIdInput').value;
+    const clientName = document.querySelector('#main-content #currentClientTitle').textContent.replace('مجموعات البيانات للعميل: ', '');
+    const nameInput = document.querySelector('#main-content #newDataGroupName');
+    const groupName = nameInput.value.trim();
+    
+    if (!groupName) { showError('تنبيه', 'يرجى إدخال اسم مجموعة البيانات!'); return; }
+    showLoader(); 
+    
+    google.script.run
+      .withSuccessHandler(function(response) {
+        if (response && response.status === 'error') { hideLoader(); showError('خطأ', response.message); return; }
+        
+        // ⚡ تحديث الميموري بعد الإضافة
+        google.script.run.withSuccessHandler(function(data) {
+          hideLoader();
+          window.APP_STATE.groups = data.db.groups;
+          showSuccess('تم!', 'تم إضافة المجموعة بنجاح.');
+          
+          const modalInstance = bootstrap.Modal.getInstance(document.querySelector('#main-content #addDataGroupModal'));
+          if (modalInstance) modalInstance.hide();
+          nameInput.value = ''; 
+          loadDataGroups(clientId, clientName); 
+        }).getInitialAppData();
+      })
+      .withFailureHandler(function(error) { hideLoader(); showError('فشل الاتصال!', error.message); })
+      .addDataGroup(clientId, groupName); 
+  }
+
+  function deleteDataGroupHandler(groupId, groupName, clientId, clientName) {
+    confirmAction(`هل تريد نقل مجموعة البيانات "${groupName}" إلى سلة المهملات؟`, '<i class="fas fa-trash"></i> نعم، انقل للسلة', () => {
+      showLoader();
+      google.script.run
+        .withSuccessHandler(function(response) {
+          if (response.status === 'success') {
+            // ⚡ تحديث الميموري بعد الحذف
+            google.script.run.withSuccessHandler(function(data) {
+              hideLoader();
+              window.APP_STATE.groups = data.db.groups;
+              showSuccess('تم!', 'تم النقل لسلة المهملات بنجاح.');
+              loadDataGroups(clientId, clientName); 
+            }).getInitialAppData();
+          } else { hideLoader(); showError('خطأ!', response.message); }
+        })
+        .withFailureHandler(function(error) { hideLoader(); showError('فشل الاتصال!', error.message); })
+        .deleteDataGroup(groupId, groupName); 
+    });
+  }
+</script>

@@ -1,0 +1,101 @@
+<div id="global-records-view-template" style="display: none;">
+  <div class="row mb-4 align-items-center">
+    <div class="col-md-6">
+      <h3 class="m-0 text-dark"><i class="fas fa-search me-2"></i> البحث الشامل في السجلات</h3>
+    </div>
+    <div class="col-md-6">
+      <input type="text" id="globalSearchInput" class="form-control border-primary shadow-sm" placeholder="ابحث بعنوان السجل، الوصف، الوسوم، أو العميل..." onkeyup="filterGlobalRecords()">
+    </div>
+  </div>
+
+  <div class="card shadow-sm border-0">
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle" id="globalRecordsTable">
+          <thead class="table-light">
+            <tr>
+              <th>عنوان السجل</th>
+              <th>المسار (العميل / المجموعة)</th>
+              <th>الوسوم</th>
+              <th>تاريخ الإنشاء</th>
+              <th>إجراءات</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function loadGlobalRecords() {
+    // العرض لحظي من الميموري مباشرة
+    renderGlobalRecordsTable();
+  }
+
+  function renderGlobalRecordsTable(filteredData = null) {
+    const tbody = document.querySelector('#main-content #globalRecordsTable tbody');
+    if(!tbody) return;
+    tbody.innerHTML = '';
+
+    // نجيب السجلات اللي مش محذوفة بس من الذاكرة
+    let data = filteredData || (window.APP_STATE.records || []).filter(r => String(r.Is_Deleted).toUpperCase() !== "TRUE");
+
+    // عمل فهارس للعملاء والمجموعات عشان نجيب أسمائهم بسرعة
+    const clientsMap = {};
+    (window.APP_STATE.clients || []).forEach(c => clientsMap[c.Main_ID] = c.Name);
+
+    const groupsMap = {};
+    (window.APP_STATE.groups || []).forEach(g => {
+      groupsMap[g.Group_ID] = {
+        name: g.Name,
+        clientId: g.Main_ID,
+        clientName: clientsMap[g.Main_ID] || 'غير معروف'
+      };
+    });
+
+    if (data.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-5"><i class="fas fa-search fa-3x mb-3 d-block"></i>لا توجد نتائج مطابقة.</td></tr>';
+      return;
+    }
+
+    data.forEach(function(rec) {
+      const parent = groupsMap[rec.Sub_ID] || { name: 'غير معروف', clientId: '', clientName: 'غير معروف' };
+      const tr = document.createElement('tr');
+      const tagsHtml = rec.Tags ? rec.Tags.split(',').map(t => `<span class="badge bg-light text-dark border me-1">${t.trim()}</span>`).join('') : '<small class="text-muted">لا يوجد</small>';
+
+      tr.innerHTML = `
+        <td>
+          <div class="fw-bold text-success">${rec.Title}</div>
+          <small class="text-muted">${rec.Description || ''}</small>
+        </td>
+        <td>
+          <span class="d-block small fw-bold text-primary"><i class="fas fa-briefcase me-1"></i> ${parent.clientName}</span>
+          <span class="d-block small text-info"><i class="fas fa-folder me-1"></i> ${parent.name}</span>
+        </td>
+        <td>${tagsHtml}</td>
+        <td><span class="badge bg-light text-dark border">${rec.Created_At}</span></td>
+        <td>
+          <button class="btn btn-sm btn-primary shadow-sm" onclick="openAttachments('${rec.Record_ID}', '${rec.Title}', '${rec.Sub_ID}', '${parent.name}', '${parent.clientId}', '${parent.clientName}')">
+            <i class="fas fa-paperclip"></i> المرفقات
+          </button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  function filterGlobalRecords() {
+    const query = document.getElementById('globalSearchInput').value.toLowerCase();
+    const allActiveRecords = (window.APP_STATE.records || []).filter(r => String(r.Is_Deleted).toUpperCase() !== "TRUE");
+
+    // البحث الذكي في الميموري
+    const filtered = allActiveRecords.filter(rec =>
+      (rec.Title && rec.Title.toLowerCase().includes(query)) ||
+      (rec.Description && rec.Description.toLowerCase().includes(query)) ||
+      (rec.Tags && rec.Tags.toLowerCase().includes(query))
+    );
+    renderGlobalRecordsTable(filtered);
+  }
+</script>

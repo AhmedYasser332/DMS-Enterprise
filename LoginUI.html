@@ -1,0 +1,52 @@
+<div id="login-screen" style="display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: #2c3e50; z-index: 10000; display: flex; align-items: center; justify-content: center;">
+  <div class="card shadow-lg border-0" style="width: 400px; border-radius: 15px; overflow: hidden;">
+    <div class="card-header text-white text-center py-4" style="background: #3498db; border:none;">
+      <i class="fas fa-shield-alt fa-3x mb-3"></i>
+      <h4 class="m-0">نظام الأرشيف الرقمي</h4>
+      <small>يرجى تسجيل الدخول للمتابعة</small>
+    </div>
+    <div class="card-body p-4">
+      <div class="mb-3">
+        <label class="form-label fw-bold"><i class="fas fa-user me-1"></i> اسم المستخدم</label>
+        <input type="text" id="loginUsername" class="form-control form-control-lg" placeholder="Username">
+      </div>
+      <div class="mb-3">
+        <label class="form-label fw-bold"><i class="fas fa-lock me-1"></i> كلمة المرور</label>
+        <input type="password" id="loginPassword" class="form-control form-control-lg" placeholder="••••••••">
+      </div>
+      <button class="btn btn-primary btn-lg w-100 shadow-sm mt-3" onclick="processLogin()">
+        <i class="fas fa-sign-in-alt"></i> دخول للنظام
+      </button>
+    </div>
+    <div class="card-footer text-center bg-light border-0 py-3">
+      <small class="text-muted">جميع الحقوق محفوظة &copy; 2026</small>
+    </div>
+  </div>
+</div>
+
+<script>
+  function processLogin() {
+    const user = document.getElementById('loginUsername').value.trim();
+    const pass = document.getElementById('loginPassword').value.trim();
+    
+    if(!user || !pass) {
+      showError("تنبيه", "يرجى إدخال اسم المستخدم وكلمة المرور");
+      return;
+    }
+    
+    showLoader();
+    google.script.run
+      .withSuccessHandler(function(res) {
+        hideLoader();
+        if(res.status === 'success') {
+          // حفظ الجلسة في المتصفح
+          localStorage.setItem('dms_session', JSON.stringify(res.user));
+          // إخفاء شاشة الدخول وإظهار النظام
+          initAppAfterLogin(res.user);
+        } else {
+          showError("فشل الدخول", res.message);
+        }
+      })
+      .loginUser(user, pass);
+  }
+</script>

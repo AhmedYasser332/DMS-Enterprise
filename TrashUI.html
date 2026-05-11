@@ -1,0 +1,105 @@
+<div id="trash-view-template" style="display: none;">
+  <div class="row mb-4 align-items-center">
+    <div class="col-md-8">
+      <h3 class="m-0 text-danger"><i class="fas fa-trash-restore me-2"></i> سلة المهملات</h3>
+      <small class="text-muted">مساحة مخصصة لمدير النظام فقط لاستعادة أو حذف البيانات نهائياً.</small>
+    </div>
+    <div class="col-md-4 text-end">
+      <button class="btn btn-outline-secondary shadow-sm" onclick="loadTrashItems()">
+        <i class="fas fa-sync-alt me-1"></i> تحديث السلة
+      </button>
+    </div>
+  </div>
+
+  <div class="card shadow-sm border-0 border-danger border-top border-3">
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle" id="trashTable">
+          <thead class="table-light">
+            <tr>
+              <th>اسم العنصر المحذوف</th>
+              <th>النوع</th>
+              <th>الجدول (المصدر)</th>
+              <th>إجراءات المدير</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<script>
+  function loadTrashItems() {
+    const tbody = document.querySelector('#main-content #trashTable tbody');
+    if(!tbody) return;
+    tbody.innerHTML = '';
+    let trash = [];
+
+    (window.APP_STATE.clients || []).filter(c => String(c.Is_Deleted).toUpperCase() === "TRUE").forEach(item => trash.push({id: item.Main_ID, name: item.Name, type: "عميل", sheetName: "Clients"}));
+    (window.APP_STATE.groups || []).filter(g => String(g.Is_Deleted).toUpperCase() === "TRUE").forEach(item => trash.push({id: item.Group_ID, name: item.Name, type: "مجموعة بيانات", sheetName: "Data_Groups"}));
+    (window.APP_STATE.records || []).filter(r => String(r.Is_Deleted).toUpperCase() === "TRUE").forEach(item => trash.push({id: item.Record_ID, name: item.Title, type: "سجل", sheetName: "Records"}));
+    (window.APP_STATE.attachments || []).filter(a => String(a.Is_Deleted).toUpperCase() === "TRUE").forEach(item => trash.push({id: item.File_ID, name: item.File_Name, type: "مرفق", sheetName: "Attachments"}));
+
+    if (trash.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-5"><i class="fas fa-box-open fa-4x mb-3 d-block text-success"></i>سلة المهملات فارغة حالياً.</td></tr>';
+      return;
+    }
+
+    trash.forEach(item => {
+      let typeBadge = '';
+      if(item.type === 'عميل') typeBadge = '<span class="badge bg-primary">عميل</span>';
+      else if(item.type === 'مجموعة بيانات') typeBadge = '<span class="badge bg-info text-dark">مجموعة بيانات</span>';
+      else if(item.type === 'سجل') typeBadge = '<span class="badge bg-success">سجل</span>';
+      else typeBadge = '<span class="badge bg-secondary">مرفق</span>';
+
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td class="fw-bold text-dark">${item.name}</td>
+        <td>${typeBadge}</td>
+        <td><small class="text-muted">${item.sheetName}</small></td>
+        <td>
+          <button class="btn btn-sm btn-success shadow-sm me-2" onclick="restoreHandler('${item.id}', '${item.sheetName}', '${item.name}', '${item.type}')"><i class="fas fa-undo-alt"></i> استعادة</button>
+          <button class="btn btn-sm btn-danger shadow-sm" onclick="hardDeleteHandler('${item.id}', '${item.sheetName}', '${item.name}', '${item.type}')"><i class="fas fa-times-circle"></i> حذف نهائي</button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  function restoreHandler(id, sheetName, itemName, itemType) {
+    confirmAction(`استعادة ${itemType} "${itemName}"؟`, '<i class="fas fa-undo-alt"></i> استعادة', () => {
+      showLoader();
+      google.script.run.withSuccessHandler(function(res) {
+        if(res.status === 'success') {
+          google.script.run.withSuccessHandler(function(data) {
+            hideLoader();
+            Object.assign(window.APP_STATE, data.db); // ⚡ دمج بدون مسح الصلاحيات
+            updateDashboardStats(); 
+            showSuccess('تم!', 'تمت الاستعادة بنجاح.');
+            loadTrashItems();
+          }).getInitialAppData(window.APP_STATE.currentUser.role);
+        } else { hideLoader(); showError('خطأ!', res.message); }
+      }).withFailureHandler(function(err) { hideLoader(); showError('خطأ اتصال!', err.message); }).restoreItem(id, sheetName, itemName, itemType);
+    });
+  }
+
+  function hardDeleteHandler(id, sheetName, itemName, itemType) {
+    confirmAction(`⚠️ حذف نهائي لـ ${itemType} "${itemName}"؟`, '<i class="fas fa-times-circle"></i> احذف نهائياً', () => {
+      showLoader();
+      google.script.run.withSuccessHandler(function(res) {
+        if(res.status === 'success') {
+          google.script.run.withSuccessHandler(function(data) {
+            hideLoader();
+            Object.assign(window.APP_STATE, data.db); // ⚡ دمج بدون مسح الصلاحيات
+            updateDashboardStats(); 
+            showSuccess('تم الحذف!', 'تم مسح البيانات نهائياً.');
+            loadTrashItems();
+          }).getInitialAppData(window.APP_STATE.currentUser.role);
+        } else { hideLoader(); showError('خطأ!', res.message); }
+      }).withFailureHandler(function(err) { hideLoader(); showError('خطأ اتصال!', err.message); }).hardDeleteItem(id, sheetName, itemName, itemType);
+    });
+  }
+</script>

@@ -1,0 +1,250 @@
+<script>
+  // ==========================================
+  // ذاكرة التطبيق المركزية (Global State)
+  // ==========================================
+  window.APP_STATE = { 
+    clients: [], 
+    groups: [], 
+    records: [], 
+    attachments: [], 
+    users: [], 
+    currentUser: null 
+  };
+
+  document.addEventListener("DOMContentLoaded", function() {
+    checkSession();
+  });
+
+  // التحقق من وجود جلسة مسجلة في المتصفح
+  function checkSession() {
+    const session = localStorage.getItem('dms_session');
+    if (session) {
+      const user = JSON.parse(session);
+      initAppAfterLogin(user);
+    } else {
+      document.getElementById('app-wrapper').style.display = 'none';
+      document.getElementById('login-screen').style.display = 'flex';
+    }
+  }
+
+  // دالة تهيئة النظام بعد تسجيل الدخول بنجاح
+  function initAppAfterLogin(user) {
+    window.APP_STATE.currentUser = user;
+    
+    // ⚡ السحر هنا: بنطبق الصلاحيات ونخفي الزراير الأول قبل ما الشاشة تظهر!
+    applyPermissions(); 
+    
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app-wrapper').style.display = 'block';
+    document.getElementById('userDisplayName').textContent = 'مرحباً، ' + user.name;
+    
+    showLoader();
+    google.script.run
+      .withSuccessHandler(function(response) {
+        hideLoader();
+        if(response.status === "success") {
+          window.APP_STATE.clients = response.db.clients;
+          window.APP_STATE.groups = response.db.groups;
+          window.APP_STATE.records = response.db.records;
+          window.APP_STATE.attachments = response.db.attachments;
+          window.APP_STATE.users = response.db.users || [];
+          
+          updateDashboardStats();
+          showPage('dashboard');
+        } else {
+          showError("خطأ في التحميل", response.message);
+        }
+      })
+      .withFailureHandler(function(error) {
+        hideLoader();
+        showError("خطأ في الاتصال", error.message);
+      })
+      .getInitialAppData(user.role);
+  }
+
+  // دالة تسجيل الخروج (معدلة لتجنب الشاشة البيضاء)
+  // دالة تسجيل الخروج (بدون ريفريش وبدون شاشة بيضاء)
+  function logout() {
+    localStorage.removeItem('dms_session');
+    
+    // 1. تصفير الذاكرة بالكامل للأمان
+    window.APP_STATE.currentUser = null;
+    window.APP_STATE.clients = [];
+    window.APP_STATE.groups = [];
+    window.APP_STATE.records = [];
+    window.APP_STATE.attachments = [];
+    window.APP_STATE.users = [];
+    
+    // 2. إخفاء النظام وإظهار شاشة الدخول فوراً
+    document.getElementById('app-wrapper').style.display = 'none';
+    document.getElementById('login-screen').style.display = 'flex';
+    
+    // 3. تنظيف خانات اللوجن
+    document.getElementById('loginUsername').value = '';
+    document.getElementById('loginPassword').value = '';
+  }
+
+  // تحديث لوحة التحكم
+  function updateDashboardStats() {
+    const cCount = document.getElementById('dash-clients-count');
+    const rCount = document.getElementById('dash-records-count');
+    const uCount = document.getElementById('dash-users-count');
+    
+    if(cCount) cCount.textContent = (window.APP_STATE.clients || []).filter(c => String(c.Is_Deleted).toUpperCase() !== "TRUE").length;
+    if(rCount) rCount.textContent = (window.APP_STATE.records || []).filter(r => String(r.Is_Deleted).toUpperCase() !== "TRUE").length;
+    if(uCount) uCount.textContent = (window.APP_STATE.users || []).filter(u => !u.isDeleted).length; 
+  }
+
+  // دالة إخفاء الأزرار بناءً على الصلاحيات
+  // دالة إخفاء الأزرار بناءً على الصلاحيات
+  function applyPermissions() {
+    if (!window.APP_STATE.currentUser) return;
+    const role = window.APP_STATE.currentUser.role;
+    
+    // 1. لو مش مدير، خبي روابط الأدمن
+    if (role !== 'Admin') {
+      const adminLinks = document.querySelectorAll('a[onclick*="users"], a[onclick*="trash"]');
+      adminLinks.forEach(link => link.style.setProperty('display', 'none', 'important'));
+    }
+
+    // 2. لو مشاهد، خبي زراير الأكشن (مع حماية زرار اللوجن)
+    if (role === 'Viewer') {
+      // ⚡ السحر هنا: ضفنا #app-wrapper عشان الدالة متلمسش شاشة الدخول خالص
+      document.querySelectorAll('#app-wrapper .btn-success, #app-wrapper .btn-primary, #app-wrapper .btn-danger, #app-wrapper .btn-warning, #app-wrapper .btn-info').forEach(btn => {
+        
+        const isLogoutBtn = btn.getAttribute('onclick') && btn.getAttribute('onclick').includes('logout');
+        
+        if (!btn.classList.contains('btn-outline-primary') && !btn.id.includes('sidebarToggle') && !isLogoutBtn) {
+           btn.style.setProperty('display', 'none', 'important');
+        }
+      });
+    }
+  }
+
+  // الراوتر المحدث بالكامل
+  function showPage(pageId) {
+    const role = window.APP_STATE.currentUser ? window.APP_STATE.currentUser.role : '';
+    
+    // حماية الصفحات الحساسة
+    if ((pageId === 'users' || pageId === 'trash') && role !== 'Admin') {
+      showError("خطأ", "ليس لديك صلاحية لدخول هذه الصفحة");
+      showPage('dashboard');
+      return;
+    }
+
+    document.querySelectorAll('.list-group-item').forEach(item => item.classList.remove('active'));
+    
+    if(window.event && window.event.currentTarget) {
+       window.event.currentTarget.classList.add('active');
+    } else {
+       const link = document.querySelector(`a[onclick="showPage('${pageId}')"]`);
+       if(link) link.classList.add('active');
+    }
+
+    const mainContent = document.getElementById('main-content');
+    
+    if (pageId === 'dashboard') {
+      mainContent.innerHTML = `
+        <div class="row">
+          <div class="col-12 mb-4">
+            <h3 class="border-bottom pb-2"><i class="fas fa-chart-line me-2"></i> لوحة التحكم</h3>
+          </div>
+          <div class="col-md-4 mb-3">
+            <div class="card text-white bg-primary shadow h-100">
+              <div class="card-body">
+                <h5 class="card-title"><i class="fas fa-address-book"></i> إجمالي العملاء</h5>
+                <h2 class="display-4 mt-3" id="dash-clients-count">0</h2>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4 mb-3">
+            <div class="card text-white bg-success shadow h-100">
+              <div class="card-body">
+                <h5 class="card-title"><i class="fas fa-file-alt"></i> إجمالي السجلات</h5>
+                <h2 class="display-4 mt-3" id="dash-records-count">0</h2>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4 mb-3">
+            <div class="card text-white bg-warning text-dark shadow h-100">
+              <div class="card-body">
+                <h5 class="card-title"><i class="fas fa-user-shield"></i> المستخدمين</h5>
+                <h2 class="display-4 mt-3" id="dash-users-count">0</h2>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+      updateDashboardStats(); // تحديث الأرقام فوراً
+    } else if (pageId === 'clients') {
+      mainContent.innerHTML = document.getElementById('clients-view-template').innerHTML;
+      loadClients(); 
+      
+    } else if (pageId === 'search') {
+      mainContent.innerHTML = document.getElementById('global-records-view-template').innerHTML;
+      loadGlobalRecords();
+      
+    } else if (pageId === 'trash') {
+      mainContent.innerHTML = document.getElementById('trash-view-template').innerHTML;
+      loadTrashItems();
+
+    } else if (pageId === 'users') {
+      mainContent.innerHTML = document.getElementById('users-view-template').innerHTML;
+      loadUsers();
+    
+    } else {
+      mainContent.innerHTML = `
+        <div class="text-center mt-5">
+          <h3 class="text-muted">صفحة ${pageId} قيد التطوير...</h3>
+        </div>
+      `;
+    }
+
+    applyPermissions(); // إعادة تطبيق الصلاحيات بعد تغيير الصفحة
+  }
+  
+  // إعدادات القائمة الجانبية
+  window.addEventListener('DOMContentLoaded', event => {
+    const sidebarToggle = document.body.querySelector('#sidebarToggle');
+    if (sidebarToggle) {
+      sidebarToggle.addEventListener('click', event => {
+        event.preventDefault();
+        document.body.classList.toggle('sb-sidenav-toggled');
+      });
+    }
+  });
+
+  // ==========================================
+  // الدوال المساعدة المركزية
+  // ==========================================
+  function showLoader() { 
+    document.getElementById('loader').style.display = 'flex'; 
+  }
+  
+  function hideLoader() { 
+    document.getElementById('loader').style.display = 'none'; 
+  }
+  
+  function showSuccess(title, text) { 
+    Swal.fire(title, text, 'success'); 
+  }
+  
+  function showError(title, text) { 
+    Swal.fire(title, text, 'error'); 
+  }
+  
+  function confirmAction(text, confirmBtnText, onConfirm) {
+    Swal.fire({
+      title: 'هل أنت متأكد؟',
+      text: text,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#6c757d',
+      confirmButtonText: confirmBtnText,
+      cancelButtonText: 'إلغاء'
+    }).then((result) => { 
+      if (result.isConfirmed) onConfirm(); 
+    });
+  }
+</script>

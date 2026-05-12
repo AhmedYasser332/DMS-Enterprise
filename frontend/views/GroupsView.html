@@ -1,0 +1,174 @@
+<template id="groups-view-template">
+  <div class="row fade-in">
+    <div class="col-12 mb-3 d-flex justify-content-between align-items-center border-bottom pb-2">
+      <div>
+        <button class="btn btn-outline-secondary btn-sm me-3 shadow-sm" onclick="App.navigate('clients')">
+          <i class="fas fa-arrow-right"></i> عودة للعملاء
+        </button>
+        <h3 class="text-primary m-0 d-inline-block align-middle">
+          <i class="fas fa-folder-open me-2"></i> مجموعات البيانات <span id="currentClientName" class="text-muted fs-5"></span>
+        </h3>
+      </div>
+      <button class="btn btn-success shadow-sm" onclick="GroupController.showAddModal()">
+        <i class="fas fa-plus"></i> إضافة مجموعة
+      </button>
+    </div>
+    
+    <div class="col-12">
+      <div class="card shadow-sm border-0 rounded-lg">
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover table-striped text-center align-middle m-0">
+              <thead class="table-dark">
+                <tr>
+                  <th>اسم المجموعة</th>
+                  <th>تاريخ الإنشاء</th>
+                  <th>بواسطة</th>
+                  <th>الإجراءات</th>
+                </tr>
+              </thead>
+              <tbody id="groupsTableBody">
+                </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="addGroupModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow-lg">
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title"><i class="fas fa-folder-plus me-2"></i> إضافة مجموعة جديدة</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-4">
+          <form id="addGroupForm" onsubmit="event.preventDefault(); GroupController.addGroup();">
+            <div class="mb-4">
+              <label class="form-label fw-bold">اسم المجموعة <span class="text-danger">*</span></label>
+              <input type="text" id="newGroupName" class="form-control form-control-lg" placeholder="مثال: الإقرارات الضريبية 2025..." required>
+            </div>
+            <button type="submit" class="btn btn-primary btn-lg w-100 shadow-sm"><i class="fas fa-save me-2"></i> حفظ المجموعة</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+class GroupController {
+  static currentClientId = null;
+
+  // 1. التهيئة ورسم الواجهة الأولية
+  static renderView(clientId) {
+    if (!clientId) {
+      App.navigate('clients'); // لو مفيش ID، ارجع للعملاء فوراً (حماية)
+      return;
+    }
+    
+    this.currentClientId = clientId;
+    const state = GlobalStore.getState();
+    const client = state.clients.find(c => c.Main_ID === clientId);
+    
+    if (client) {
+      document.getElementById('currentClientName').textContent = `(العميل: ${client.Name})`;
+    }
+    
+    this.renderTable();
+  }
+
+  // 2. رسم الجدول
+  static renderTable() {
+    const tbody = document.getElementById('groupsTableBody');
+    if (!tbody) return;
+
+    const state = GlobalStore.getState();
+    // جلب مجموعات هذا العميل فقط، والغير محذوفة
+    const clientGroups = (state.groups || []).filter(g => 
+      g.Main_ID === this.currentClientId && 
+      String(g.Is_Deleted).toUpperCase() !== "TRUE"
+    );
+
+    if (clientGroups.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="4" class="text-muted py-5"><i class="fas fa-folder fa-3x mb-3 d-block text-black-50"></i> لا توجد مجموعات بيانات لهذا العميل.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = clientGroups.map(group => `
+      <tr>
+        <td class="fw-bold text-primary">${group.Name}</td>
+        <td class="text-muted small">${group.Created_At.split(',')[0]}</td>
+        <td><span class="badge bg-light text-dark border">${group.Created_By}</span></td>
+        <td>
+          <button class="btn btn-sm btn-info text-white me-1 shadow-sm" onclick="App.navigate('records', '${group.Group_ID}')" title="فتح السجلات">
+            <i class="fas fa-file-alt"></i> السجلات
+          </button>
+          <button class="btn btn-sm btn-outline-danger shadow-sm" onclick="GroupController.deleteGroup('${group.Group_ID}', '${group.Name}')" title="حذف">
+            <i class="fas fa-trash-alt"></i>
+          </button>
+        </td>
+      </tr>
+    `).join('');
+
+    App.applyPermissions(); // إخفاء زر الحذف عن المشاهدين
+  }
+
+  // 3. إظهار المودال
+  static showAddModal() {
+    document.getElementById('addGroupForm').reset();
+    const modal = new bootstrap.Modal(document.getElementById('addGroupModal'));
+    modal.show();
+  }
+
+  // 4. إضافة مجموعة جديدة
+  static async addGroup() {
+    const name = document.getElementById('newGroupName').value.trim();
+    const state = GlobalStore.getState();
+    const userEmail = state.currentUser ? state.currentUser.username : 'System';
+
+    UIManager.showLoader("جاري حفظ المجموعة...");
+    try {
+      // إرسال الطلب للباك-إند
+      const newGroup = await ApiClient.call('api_addGroup', this.currentClientId, name, userEmail);
+      
+      // تحديث الـ Store محلياً
+      const updatedGroups = [...state.groups, newGroup];
+      GlobalStore.setState({ groups: updatedGroups });
+      
+      bootstrap.Modal.getInstance(document.getElementById('addGroupModal')).hide();
+      this.renderTable();
+      UIManager.showSuccess("تم إضافة المجموعة بنجاح!");
+    } catch (error) {
+      UIManager.showError(error.message);
+    }
+  }
+
+  // 5. مسح مجموعة
+  static async deleteGroup(groupId, groupName) {
+    const isConfirmed = await UIManager.confirmAction(`هل تريد بالتأكيد حذف مجموعة "${groupName}"؟`);
+    if (!isConfirmed) return;
+
+    UIManager.showLoader("جاري الحذف...");
+    try {
+      const state = GlobalStore.getState();
+      const userEmail = state.currentUser ? state.currentUser.username : 'System';
+      
+      await ApiClient.call('api_deleteGroup', groupId, groupName, userEmail);
+      
+      // تحديث الـ Store
+      const updatedGroups = state.groups.map(g => {
+        if (g.Group_ID === groupId) g.Is_Deleted = true;
+        return g;
+      });
+      GlobalStore.setState({ groups: updatedGroups });
+      
+      this.renderTable();
+      UIManager.showSuccess("تم نقل المجموعة للمهملات.");
+    } catch (error) {
+      UIManager.showError(error.message);
+    }
+  }
+}
+</script>

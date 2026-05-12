@@ -1,0 +1,60 @@
+<script>
+/**
+ * AppStore (Observer / State Pattern)
+ * مدير الحالة المركزي (Single Source of Truth)
+ * يمنع التعديل العشوائي للبيانات ويسهل مشاركة الداتا بين الصفحات المختلفة
+ */
+class AppStore {
+  constructor() {
+    // الحالة الافتراضية
+    this.state = {
+      currentUser: null,
+      clients: [],
+      groups: [],
+      records: []
+    };
+    
+    // قائمة المراقبين (الدوال التي سيتم تحديثها عند تغير البيانات)
+    this.listeners = [];
+  }
+
+  // إضافة مراقب (مثال: دالة تقوم بإعادة رسم جدول العملاء)
+  subscribe(listener) {
+    this.listeners.push(listener);
+    // إرجاع دالة لإلغاء الاشتراك عند الحاجة
+    return () => {
+      this.listeners = this.listeners.filter(l => l !== listener);
+    };
+  }
+
+  // إشعار جميع المراقبين بوجود تغيير
+  _notify() {
+    this.listeners.forEach(listener => listener(this.state));
+  }
+
+  // الطريقة الوحيدة والمشروعة لتعديل البيانات
+  setState(newState) {
+    this.state = { ...this.state, ...newState }; // دمج البيانات الجديدة مع القديمة
+    this._notify(); // تنبيه الواجهة للتحديث
+  }
+
+  // جلب نسخة من البيانات الحالية
+  getState() {
+    return this.state;
+  }
+
+  // مسح البيانات (عند تسجيل الخروج مثلاً)
+  clearState() {
+    this.state = {
+      currentUser: null,
+      clients: [],
+      groups: [],
+      records: []
+    };
+    this._notify();
+  }
+}
+
+// إنشاء نسخة واحدة (Singleton) لتستخدمها كل شاشات الواجهة
+const GlobalStore = new AppStore();
+</script>

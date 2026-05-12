@@ -1,0 +1,96 @@
+<template id="dashboard-template">
+  <div class="row fade-in">
+    <div class="col-12 mb-4 border-bottom pb-2">
+      <h3 class="text-primary m-0"><i class="fas fa-tachometer-alt me-2"></i> لوحة التحكم والإحصائيات</h3>
+      <p class="text-muted small m-0 mt-1">نظرة عامة على البيانات المصرح لك برؤيتها</p>
+    </div>
+    
+    <div class="col-md-3 col-sm-6 mb-4">
+      <div class="card text-white bg-primary shadow-sm border-0 h-100">
+        <div class="card-body d-flex align-items-center justify-content-between p-4">
+          <div>
+            <h6 class="text-uppercase mb-2">العملاء</h6>
+            <h2 class="m-0 fw-bold" id="stat-clients">0</h2>
+          </div>
+          <i class="fas fa-users fa-3x opacity-50"></i>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3 col-sm-6 mb-4">
+      <div class="card text-white bg-success shadow-sm border-0 h-100">
+        <div class="card-body d-flex align-items-center justify-content-between p-4">
+          <div>
+            <h6 class="text-uppercase mb-2">مجموعات البيانات</h6>
+            <h2 class="m-0 fw-bold" id="stat-groups">0</h2>
+          </div>
+          <i class="fas fa-folder-open fa-3x opacity-50"></i>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3 col-sm-6 mb-4">
+      <div class="card text-white bg-warning shadow-sm border-0 h-100">
+        <div class="card-body d-flex align-items-center justify-content-between p-4">
+          <div>
+            <h6 class="text-uppercase mb-2 text-dark">السجلات</h6>
+            <h2 class="m-0 fw-bold text-dark" id="stat-records">0</h2>
+          </div>
+          <i class="fas fa-file-alt fa-3x opacity-50 text-dark"></i>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3 col-sm-6 mb-4">
+      <div class="card text-white bg-danger shadow-sm border-0 h-100">
+        <div class="card-body d-flex align-items-center justify-content-between p-4">
+          <div>
+            <h6 class="text-uppercase mb-2">المرفقات</h6>
+            <h2 class="m-0 fw-bold" id="stat-attachments">0</h2>
+          </div>
+          <i class="fas fa-paperclip fa-3x opacity-50"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+class DashboardController {
+  static renderStats() {
+    const state = GlobalStore.getState();
+    const role = state.currentUser.role;
+    const allowed = state.currentUser.allowedClients || "";
+
+    // فلترة الداتا بناءً على الصلاحيات (عشان اليوزر ميشوفش إحصائيات مش بتاعته)
+    const activeClients = state.clients.filter(c => 
+      String(c.Is_Deleted).toUpperCase() !== "TRUE" && 
+      (role === 'Admin' || allowed.includes(c.Main_ID))
+    );
+    const allowedClientIds = activeClients.map(c => c.Main_ID);
+
+    const activeGroups = state.groups.filter(g => 
+      String(g.Is_Deleted).toUpperCase() !== "TRUE" && 
+      allowedClientIds.includes(g.Main_ID)
+    );
+    const allowedGroupIds = activeGroups.map(g => g.Group_ID);
+
+    const activeRecords = state.records.filter(r => 
+      String(r.Is_Deleted).toUpperCase() !== "TRUE" && 
+      allowedGroupIds.includes(r.Sub_ID)
+    );
+    const allowedRecordIds = activeRecords.map(r => r.Record_ID);
+
+    const activeAttachments = state.attachments.filter(a => 
+      String(a.Is_Deleted).toUpperCase() !== "TRUE" && 
+      allowedRecordIds.includes(a.Record_ID)
+    );
+
+    // تحديث الأرقام في الشاشة فوراً (بدون تحميل)
+    if(document.getElementById('stat-clients')) document.getElementById('stat-clients').textContent = activeClients.length;
+    if(document.getElementById('stat-groups')) document.getElementById('stat-groups').textContent = activeGroups.length;
+    if(document.getElementById('stat-records')) document.getElementById('stat-records').textContent = activeRecords.length;
+    if(document.getElementById('stat-attachments')) document.getElementById('stat-attachments').textContent = activeAttachments.length;
+  }
+}
+</script>

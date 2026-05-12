@@ -1,0 +1,194 @@
+<template id="records-view-template">
+  <div class="row fade-in">
+    <div class="col-12 mb-3 d-flex justify-content-between align-items-center border-bottom pb-2">
+      <div>
+        <button class="btn btn-outline-secondary btn-sm me-3 shadow-sm" onclick="RecordController.goBack()">
+          <i class="fas fa-arrow-right"></i> عودة للمجموعات
+        </button>
+        <h3 class="text-primary m-0 d-inline-block align-middle">
+          <i class="fas fa-file-alt me-2"></i> السجلات <span id="currentGroupName" class="text-muted fs-5"></span>
+        </h3>
+      </div>
+      <button class="btn btn-success shadow-sm" onclick="RecordController.showAddModal()">
+        <i class="fas fa-plus"></i> إضافة سجل
+      </button>
+    </div>
+    
+    <div class="col-12">
+      <div class="card shadow-sm border-0 rounded-lg">
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover table-striped text-center align-middle m-0">
+              <thead class="table-dark">
+                <tr>
+                  <th>عنوان السجل</th>
+                  <th>الوصف</th>
+                  <th>الوسوم (Tags)</th>
+                  <th>تاريخ الإضافة</th>
+                  <th>الإجراءات</th>
+                </tr>
+              </thead>
+              <tbody id="recordsTableBody">
+                </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="addRecordModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow-lg">
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title"><i class="fas fa-file-medical me-2"></i> إضافة سجل جديد</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-4">
+          <form id="addRecordForm" onsubmit="event.preventDefault(); RecordController.addRecord();">
+            <div class="mb-3">
+              <label class="form-label fw-bold">عنوان السجل <span class="text-danger">*</span></label>
+              <input type="text" id="newRecordTitle" class="form-control form-control-lg" placeholder="مثال: ميزانية 2024..." required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-bold">وصف مبسط (اختياري)</label>
+              <textarea id="newRecordDesc" class="form-control" rows="2" placeholder="اكتب تفاصيل أكثر هنا..."></textarea>
+            </div>
+            <div class="mb-4">
+              <label class="form-label fw-bold">وسوم للبحث (Tags)</label>
+              <input type="text" id="newRecordTags" class="form-control" placeholder="مثال: ضرايب, عاجل, مراجعة (افصل بفاصلة)">
+            </div>
+            <button type="submit" class="btn btn-primary btn-lg w-100 shadow-sm"><i class="fas fa-save me-2"></i> حفظ السجل</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+class RecordController {
+  static currentGroupId = null;
+  static parentClientId = null;
+
+  // 1. التهيئة
+  static renderView(groupId) {
+    if (!groupId) {
+      App.navigate('clients');
+      return;
+    }
+    
+    this.currentGroupId = groupId;
+    const state = GlobalStore.getState();
+    const group = state.groups.find(g => g.Group_ID === groupId);
+    
+    if (group) {
+      this.parentClientId = group.Main_ID; // حفظ ID العميل عشان زرار "العودة"
+      document.getElementById('currentGroupName').textContent = `(المجموعة: ${group.Name})`;
+    }
+    
+    this.renderTable();
+  }
+
+  // 2. زرار العودة الذكي
+  static goBack() {
+    if (this.parentClientId) {
+      App.navigate('groups', this.parentClientId);
+    } else {
+      App.navigate('clients');
+    }
+  }
+
+  // 3. رسم الجدول
+  static renderTable() {
+    const tbody = document.getElementById('recordsTableBody');
+    if (!tbody) return;
+
+    const state = GlobalStore.getState();
+    const groupRecords = (state.records || []).filter(r => 
+      r.Sub_ID === this.currentGroupId && 
+      String(r.Is_Deleted).toUpperCase() !== "TRUE"
+    );
+
+    if (groupRecords.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="5" class="text-muted py-5"><i class="fas fa-box-open fa-3x mb-3 d-block text-black-50"></i> لا توجد سجلات في هذه المجموعة.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = groupRecords.map(record => `
+      <tr>
+        <td class="fw-bold text-primary">${record.Title}</td>
+        <td class="text-muted">${record.Description || '-'}</td>
+        <td>${record.Tags ? `<span class="badge bg-warning text-dark">${record.Tags}</span>` : '-'}</td>
+        <td class="text-muted small">${record.Created_At.split(',')[0]}</td>
+        <td>
+          <button class="btn btn-sm btn-info text-white me-1 shadow-sm" onclick="App.navigate('attachments', '${record.Record_ID}')" title="فتح المرفقات">
+            <i class="fas fa-paperclip"></i> المرفقات
+          </button>
+          <button class="btn btn-sm btn-outline-danger shadow-sm" onclick="RecordController.deleteRecord('${record.Record_ID}', '${record.Title}')" title="حذف">
+            <i class="fas fa-trash-alt"></i>
+          </button>
+        </td>
+      </tr>
+    `).join('');
+
+    App.applyPermissions(); // تطبيق الصلاحيات
+  }
+
+  // 4. إظهار المودال
+  static showAddModal() {
+    document.getElementById('addRecordForm').reset();
+    const modal = new bootstrap.Modal(document.getElementById('addRecordModal'));
+    modal.show();
+  }
+
+  // 5. إضافة سجل
+  static async addRecord() {
+    const title = document.getElementById('newRecordTitle').value.trim();
+    const desc = document.getElementById('newRecordDesc').value.trim();
+    const tags = document.getElementById('newRecordTags').value.trim();
+    
+    const state = GlobalStore.getState();
+    const userEmail = state.currentUser ? state.currentUser.username : 'System';
+
+    UIManager.showLoader("جاري حفظ السجل...");
+    try {
+      const newRecord = await ApiClient.call('api_addRecord', this.currentGroupId, title, desc, tags, userEmail);
+      
+      const updatedRecords = [...state.records, newRecord];
+      GlobalStore.setState({ records: updatedRecords });
+      
+      bootstrap.Modal.getInstance(document.getElementById('addRecordModal')).hide();
+      this.renderTable();
+      UIManager.showSuccess("تم إضافة السجل بنجاح!");
+    } catch (error) {
+      UIManager.showError(error.message);
+    }
+  }
+
+  // 6. حذف سجل
+  static async deleteRecord(recordId, title) {
+    const isConfirmed = await UIManager.confirmAction(`هل تريد بالتأكيد حذف السجل "${title}"؟`);
+    if (!isConfirmed) return;
+
+    UIManager.showLoader("جاري الحذف...");
+    try {
+      const state = GlobalStore.getState();
+      const userEmail = state.currentUser ? state.currentUser.username : 'System';
+      
+      await ApiClient.call('api_deleteRecord', recordId, title, userEmail);
+      
+      const updatedRecords = state.records.map(r => {
+        if (r.Record_ID === recordId) r.Is_Deleted = true;
+        return r;
+      });
+      GlobalStore.setState({ records: updatedRecords });
+      
+      this.renderTable();
+      UIManager.showSuccess("تم نقل السجل للمهملات.");
+    } catch (error) {
+      UIManager.showError(error.message);
+    }
+  }
+}
+</script>

@@ -1,0 +1,38 @@
+<script>
+/**
+ * ApiClient (Adapter Pattern)
+ * يحول استدعاءات Google Script القديمة إلى وعود حديثة (Promises - async/await)
+ * ويفك تشفير الـ JSON القادم من الـ ResponseFactory تلقائياً.
+ */
+class ApiClient {
+  /**
+   * دالة مركزية للاتصال بالباك-إند
+   * @param {string} methodName - اسم الدالة في Controllers (مثل api_login)
+   * @param  {...any} args - المعاملات المرسلة للدالة
+   * @returns {Promise<any>}
+   */
+  static async call(methodName, ...args) {
+    return new Promise((resolve, reject) => {
+      google.script.run
+        .withSuccessHandler((responseString) => {
+          try {
+            const response = JSON.parse(responseString);
+            if (response.status === "success") {
+              resolve(response.data); // إرجاع الداتا النظيفة فقط
+            } else {
+              // إذا كان الرد من الباك-إند عبارة عن خطأ (Business Rule Error)
+              reject(new Error(response.message || "حدث خطأ غير معروف"));
+            }
+          } catch (e) {
+            reject(new Error("فشل في معالجة بيانات الخادم."));
+          }
+        })
+        .withFailureHandler((error) => {
+          // إذا حدث خطأ كارثي في الاتصال بجوجل نفسه
+          reject(new Error(error.message || "فشل الاتصال بالخادم."));
+        })
+        [methodName](...args); // استدعاء الدالة ديناميكياً
+    });
+  }
+}
+</script>

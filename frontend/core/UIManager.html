@@ -1,0 +1,63 @@
+<script>
+/**
+ * UIManager (Facade / Utility Pattern)
+ * مسؤول عن توحيد شكل الرسائل واللودر في كل النظام باستخدام SweetAlert2
+ * يمنع تكرار الكود نهائياً ويجعل استدعاء الرسائل يتم بسطر واحد فقط.
+ */
+class UIManager {
+  
+  // 1. إظهار شاشة التحميل (Loader)
+  static showLoader(message = "جاري معالجة البيانات...") {
+    Swal.fire({
+      title: message,
+      allowOutsideClick: false,
+      showConfirmButton: false,
+      didOpen: () => {
+        Swal.showLoading();
+      }
+    });
+  }
+
+  // 2. إخفاء شاشة التحميل
+  static hideLoader() {
+    Swal.close();
+  }
+
+  // 3. رسالة النجاح
+  static showSuccess(message, title = "نجاح!") {
+    Swal.fire({
+      icon: 'success',
+      title: title,
+      text: message,
+      confirmButtonColor: '#28a745',
+      timer: 2000, // تختفي تلقائياً بعد ثانيتين
+      timerProgressBar: true
+    });
+  }
+
+  // 4. رسالة الخطأ
+  static showError(message, title = "عفواً، حدث خطأ!") {
+    Swal.fire({
+      icon: 'error',
+      title: title,
+      text: message,
+      confirmButtonColor: '#d33'
+    });
+  }
+
+  // 5. نافذة التأكيد (مثال: قبل الحذف) - ترجع Promise (true/false)
+  static async confirmAction(message = "هل أنت متأكد من هذا الإجراء؟", title = "تأكيد خطير!") {
+    const result = await Swal.fire({
+      title: title,
+      text: message,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#6c757d',
+      confirmButtonText: 'نعم، نفذ الإجراء',
+      cancelButtonText: 'إلغاء'
+    });
+    return result.isConfirmed;
+  }
+}
+</script>

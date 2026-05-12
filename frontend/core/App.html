@@ -1,0 +1,162 @@
+<script>
+/**
+ * App / Main Application Controller
+ * المايسترو الذي يدير دورة حياة التطبيق، الجلسات، والتنقل بين الصفحات
+ */
+class App {
+  
+  // 1. بداية تشغيل التطبيق (تعمل عند تحميل الصفحة)
+  static boot() {
+    const session = localStorage.getItem('dms_session');
+    if (session) {
+      const user = JSON.parse(session);
+      this.initUserSession(user);
+    } else {
+      this.showLoginScreen();
+    }
+  }
+
+  // 2. إظهار شاشة الدخول
+  static showLoginScreen() {
+    document.getElementById('app-wrapper').style.display = 'none';
+    document.getElementById('login-screen').style.display = 'flex';
+  }
+
+  // 3. تهيئة النظام بعد تسجيل الدخول
+  static async initUserSession(user) {
+    // حفظ المستخدم في الذاكرة المركزية
+    GlobalStore.setState({ currentUser: user });
+    
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app-wrapper').style.display = 'block';
+    
+    const userNameElement = document.getElementById('userDisplayName');
+    if(userNameElement) userNameElement.textContent = 'مرحباً، ' + user.name;
+    
+    // تطبيق الصلاحيات الأولية لحماية الواجهة
+    this.applyPermissions();
+    
+    await this.loadInitialData();
+  }
+
+  // 4. تحميل بيانات النظام (العملاء، السجلات، الخ)
+  static async loadInitialData() {
+    UIManager.showLoader("جاري تحميل بيانات النظام المركزية...");
+    try {
+      // ملحوظة: سنقوم بإنشاء دالة api_getInitialAppData في الباك-إند في الخطوة القادمة
+      const dbData = await ApiClient.call('api_getInitialAppData');
+      
+      GlobalStore.setState({
+        clients: dbData.clients,
+        groups: dbData.groups,
+        records: dbData.records,
+        attachments: dbData.attachments,
+        users: dbData.users || []
+      });
+      
+      UIManager.hideLoader();
+      this.navigate('dashboard'); // التوجيه للوحة التحكم
+      
+    } catch (error) {
+      UIManager.showError(error.message, "فشل في تحميل البيانات");
+    }
+  }
+
+  // 5. التنقل بين الصفحات (Router) - النسخة النهائية الموحدة
+  static navigate(pageId, param = null) {
+    const state = GlobalStore.getState();
+    const role = state.currentUser ? state.currentUser.role : '';
+    
+    // حماية الصفحات الحساسة
+    if ((pageId === 'users' || pageId === 'trash') && role !== 'Admin') {
+      UIManager.showError("ليس لديك صلاحية لدخول هذه الصفحة", "دخول مرفوض");
+      this.navigate('dashboard');
+      return;
+    }
+
+    // تنشيط الزر في القائمة الجانبية
+    document.querySelectorAll('.list-group-item').forEach(item => item.classList.remove('active'));
+    // البحث عن اللينك اللي جواه كلمة navigate واسم الصفحة
+    const link = document.querySelector(`a[onclick*="App.navigate('${pageId}')"]`);
+    if(link) link.classList.add('active');
+
+    const mainContent = document.getElementById('main-content');
+    if (!mainContent) return;
+    
+    // توجيه المحتوى (Render Views)
+    switch(pageId) {
+      case 'dashboard':
+        mainContent.innerHTML = document.getElementById('dashboard-template').innerHTML;
+        if(typeof DashboardController !== 'undefined') DashboardController.renderStats();
+        break;
+      case 'clients':
+        mainContent.innerHTML = document.getElementById('clients-view-template').innerHTML;
+        if(typeof ClientController !== 'undefined') ClientController.renderTable();
+        break;
+      case 'groups':
+        mainContent.innerHTML = document.getElementById('groups-view-template').innerHTML;
+        if(typeof GroupController !== 'undefined') GroupController.renderView(param);
+        break;
+      case 'records':
+        mainContent.innerHTML = document.getElementById('records-view-template').innerHTML;
+        if(typeof RecordController !== 'undefined') RecordController.renderView(param);
+        break;
+      case 'attachments':
+        mainContent.innerHTML = document.getElementById('attachments-view-template').innerHTML;
+        if(typeof AttachmentController !== 'undefined') AttachmentController.renderView(param);
+        break;
+      case 'search':
+        mainContent.innerHTML = document.getElementById('search-view-template').innerHTML;
+        break;
+      case 'trash':
+        mainContent.innerHTML = document.getElementById('trash-view-template').innerHTML;
+        if(typeof TrashController !== 'undefined') TrashController.renderTable();
+        break;
+      case 'users':
+        mainContent.innerHTML = document.getElementById('users-view-template').innerHTML;
+        if(typeof UserController !== 'undefined') UserController.renderTable();
+        break;
+      default:
+        mainContent.innerHTML = `<div class="text-center mt-5"><h3 class="text-muted">صفحة ${pageId} قيد التطوير...</h3></div>`;
+    }
+
+    this.applyPermissions(); // إعادة تأكيد الصلاحيات بعد كل تنقل
+  }
+  
+  // 6. نظام الصلاحيات (إخفاء العناصر)
+  static applyPermissions() {
+    const state = GlobalStore.getState();
+    if (!state.currentUser) return;
+    const role = state.currentUser.role;
+    
+    if (role !== 'Admin') {
+      document.querySelectorAll('a[onclick*="users"], a[onclick*="trash"]').forEach(link => link.style.setProperty('display', 'none', 'important'));
+    }
+
+    if (role === 'Viewer') {
+      document.querySelectorAll('#app-wrapper .btn-success, #app-wrapper .btn-primary, #app-wrapper .btn-danger, #app-wrapper .btn-warning, #app-wrapper .btn-info').forEach(btn => {
+        const isLogoutBtn = btn.getAttribute('onclick') && btn.getAttribute('onclick').includes('logout');
+        if (!btn.classList.contains('btn-outline-primary') && !btn.id.includes('sidebarToggle') && !isLogoutBtn) {
+           btn.style.setProperty('display', 'none', 'important');
+        }
+      });
+    }
+  }
+
+  // 7. تسجيل الخروج
+  static logout() {
+    localStorage.removeItem('dms_session');
+    GlobalStore.clearState(); // تنظيف الذاكرة المركزية بالكامل
+    
+    document.getElementById('loginUsername').value = '';
+    document.getElementById('loginPassword').value = '';
+    
+    this.showLoginScreen();
+  }
+}
+
+// تشغيل النظام بمجرد تحميل الصفحة
+document.addEventListener("DOMContentLoaded", () => {
+  App.boot();
+});
+</script>

@@ -1,0 +1,107 @@
+<template id="users-view-template">
+  <div class="row fade-in">
+    <div class="col-12 mb-3 d-flex justify-content-between align-items-center border-bottom pb-2">
+      <h3 class="text-info m-0"><i class="fas fa-user-shield me-2"></i> إدارة المستخدمين والصلاحيات</h3>
+      <button class="btn btn-info text-white shadow-sm" onclick="UserController.showAddModal()">
+        <i class="fas fa-user-plus"></i> مستخدم جديد
+      </button>
+    </div>
+    
+    <div class="col-12">
+      <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+          <table class="table table-hover text-center align-middle m-0">
+            <thead class="table-dark">
+              <tr>
+                <th>الاسم</th>
+                <th>اسم الدخول (Username)</th>
+                <th>الصلاحية</th>
+                <th>الحالة</th>
+                <th>تاريخ الإضافة</th>
+              </tr>
+            </thead>
+            <tbody id="usersTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="addUserModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow-lg">
+        <div class="modal-header bg-info text-white">
+          <h5 class="modal-title"><i class="fas fa-user-plus me-2"></i> إضافة مستخدم</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-4">
+          <form id="addUserForm" onsubmit="event.preventDefault(); UserController.addUser();">
+            <div class="mb-3"><label class="form-label fw-bold">الاسم بالكامل</label><input type="text" id="nuName" class="form-control" required></div>
+            <div class="mb-3"><label class="form-label fw-bold">اسم الدخول</label><input type="text" id="nuUsername" class="form-control" required></div>
+            <div class="mb-3"><label class="form-label fw-bold">كلمة المرور</label><input type="password" id="nuPassword" class="form-control" required></div>
+            <div class="mb-3">
+              <label class="form-label fw-bold">الصلاحية</label>
+              <select id="nuRole" class="form-select">
+                <option value="Admin">مدير نظام (Admin)</option>
+                <option value="User">مستخدم (User)</option>
+                <option value="Viewer">مشاهد فقط (Viewer)</option>
+              </select>
+            </div>
+            <div class="mb-4"><label class="form-label fw-bold">أكواد العملاء المسموح بها (مفصول بفاصلة)</label><input type="text" id="nuAllowed" class="form-control" placeholder="مثال: CL_12345, CL_98765"></div>
+            <button type="submit" class="btn btn-info text-white btn-lg w-100 shadow-sm">حفظ المستخدم</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+class UserController {
+  static renderTable() {
+    const tbody = document.getElementById('usersTableBody');
+    const users = GlobalStore.getState().users || [];
+    
+    tbody.innerHTML = users.map(u => `
+      <tr>
+        <td class="fw-bold text-primary">${u.Name}</td>
+        <td>${u.Username}</td>
+        <td><span class="badge ${u.Role === 'Admin' ? 'bg-danger' : (u.Role === 'User' ? 'bg-success' : 'bg-secondary')}">${u.Role}</span></td>
+        <td>${String(u.Is_Active).toUpperCase() === 'TRUE' ? '<span class="text-success"><i class="fas fa-check-circle"></i> نشط</span>' : '<span class="text-danger"><i class="fas fa-times-circle"></i> موقوف</span>'}</td>
+        <td class="text-muted small">${u.Created_At.split(',')[0]}</td>
+      </tr>
+    `).join('');
+  }
+
+  static showAddModal() {
+    document.getElementById('addUserForm').reset();
+    new bootstrap.Modal(document.getElementById('addUserModal')).show();
+  }
+
+  static async addUser() {
+    const userData = {
+      Name: document.getElementById('nuName').value.trim(),
+      Username: document.getElementById('nuUsername').value.trim(),
+      Password: document.getElementById('nuPassword').value,
+      Role: document.getElementById('nuRole').value,
+      Allowed_Clients: document.getElementById('nuAllowed').value.trim(),
+      Is_Active: true
+    };
+
+    UIManager.showLoader("جاري إضافة المستخدم...");
+    try {
+      const adminEmail = GlobalStore.getState().currentUser.username;
+      const newUser = await ApiClient.call('api_addUser', userData, adminEmail);
+      
+      const updatedUsers = [...GlobalStore.getState().users, newUser];
+      GlobalStore.setState({ users: updatedUsers });
+      
+      bootstrap.Modal.getInstance(document.getElementById('addUserModal')).hide();
+      this.renderTable();
+      UIManager.showSuccess("تم إضافة المستخدم بنجاح");
+    } catch (e) {
+      UIManager.showError(e.message);
+    }
+  }
+}
+</script>

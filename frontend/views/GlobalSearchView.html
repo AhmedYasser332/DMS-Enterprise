@@ -1,0 +1,95 @@
+<template id="search-view-template">
+  <div class="row fade-in">
+    <div class="col-12 mb-4 text-center">
+      <h2 class="text-primary mb-3"><i class="fas fa-search"></i> محرك البحث الشامل</h2>
+      <div class="input-group input-group-lg shadow-sm mx-auto" style="max-width: 700px;">
+        <span class="input-group-text bg-white border-end-0 text-primary"><i class="fas fa-search"></i></span>
+        <input type="text" id="globalSearchInput" class="form-control border-start-0" placeholder="ابحث بعنوان السجل، الوصف، أو الوسوم (Tags)..." onkeyup="SearchController.performSearch(this.value)">
+      </div>
+      <small class="text-muted mt-2 d-block">البحث يتم في الوقت الفعلي (Real-Time) عبر جميع السجلات المصرح لك برؤيتها.</small>
+    </div>
+
+    <div class="col-12">
+      <div class="card shadow-sm border-0 rounded-lg">
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover table-striped text-center align-middle m-0">
+              <thead class="table-dark">
+                <tr>
+                  <th>السجل</th>
+                  <th>المسار (العميل > المجموعة)</th>
+                  <th>الوسوم</th>
+                  <th>تاريخ الإضافة</th>
+                  <th>الإجراء</th>
+                </tr>
+              </thead>
+              <tbody id="searchResultsBody">
+                </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+class SearchController {
+  static performSearch(query) {
+    const tbody = document.getElementById('searchResultsBody');
+    if (!tbody) return;
+
+    query = query.toLowerCase().trim();
+    if (query.length < 2) {
+      tbody.innerHTML = '<tr><td colspan="5" class="text-muted py-4">اكتب حرفين على الأقل للبحث...</td></tr>';
+      return;
+    }
+
+    const state = GlobalStore.getState();
+    const role = state.currentUser.role;
+    const allowed = state.currentUser.allowedClients || "";
+
+    // 1. تحديد العملاء والمجموعات المسموح بها للمستخدم
+    const allowedClients = state.clients.filter(c => String(c.Is_Deleted).toUpperCase() !== "TRUE" && (role === 'Admin' || allowed.includes(c.Main_ID)));
+    const allowedClientIds = allowedClients.map(c => c.Main_ID);
+    
+    const allowedGroups = state.groups.filter(g => String(g.Is_Deleted).toUpperCase() !== "TRUE" && allowedClientIds.includes(g.Main_ID));
+    const allowedGroupIds = allowedGroups.map(g => g.Group_ID);
+
+    // 2. فلترة السجلات المسموح بها والتي تطابق كلمة البحث
+    const results = state.records.filter(r => {
+      if (String(r.Is_Deleted).toUpperCase() === "TRUE" || !allowedGroupIds.includes(r.Sub_ID)) return false;
+      
+      const searchString = `${r.Title} ${r.Description} ${r.Tags}`.toLowerCase();
+      return searchString.includes(query);
+    });
+
+    // 3. رسم النتائج
+    if (results.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="5" class="text-danger py-4"><i class="fas fa-exclamation-circle me-2"></i> لا توجد نتائج مطابقة لـ "${query}"</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = results.map(record => {
+      // معرفة مسار السجل للـ UI
+      const group = allowedGroups.find(g => g.Group_ID === record.Sub_ID);
+      const client = allowedClients.find(c => c.Main_ID === (group ? group.Main_ID : null));
+      const path = client && group ? `${client.Name} <i class="fas fa-chevron-left fa-xs text-muted mx-1"></i> ${group.Name}` : 'مسار غير معروف';
+
+      return `
+        <tr>
+          <td class="fw-bold text-primary">${record.Title}</td>
+          <td class="text-muted small">${path}</td>
+          <td>${record.Tags ? `<span class="badge bg-warning text-dark">${record.Tags}</span>` : '-'}</td>
+          <td class="text-muted small">${record.Created_At.split(',')[0]}</td>
+          <td>
+            <button class="btn btn-sm btn-info text-white shadow-sm" onclick="App.navigate('attachments', '${record.Record_ID}')">
+              <i class="fas fa-paperclip"></i> فتح المرفقات
+            </button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+}
+</script>

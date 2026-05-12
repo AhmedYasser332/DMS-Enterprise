@@ -1,0 +1,64 @@
+<div id="login-screen" style="display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: #2c3e50; z-index: 10000; align-items: center; justify-content: center;">
+  <div class="card shadow-lg border-0" style="width: 400px; border-radius: 15px; overflow: hidden;">
+    <div class="card-header text-white text-center py-4" style="background: #3498db; border:none;">
+      <i class="fas fa-shield-alt fa-3x mb-3"></i>
+      <h4 class="m-0">نظام الأرشيف الرقمي</h4>
+      <small>يرجى تسجيل الدخول للمتابعة</small>
+    </div>
+    <div class="card-body p-4">
+      <form id="loginForm" onsubmit="event.preventDefault(); LoginController.processLogin();">
+        <div class="mb-3">
+          <label class="form-label fw-bold"><i class="fas fa-user me-1"></i> اسم المستخدم</label>
+          <input type="text" id="loginUsername" class="form-control form-control-lg" placeholder="Username" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-bold"><i class="fas fa-lock me-1"></i> كلمة المرور</label>
+          <input type="password" id="loginPassword" class="form-control form-control-lg" placeholder="••••••••" required>
+        </div>
+        <button type="submit" class="btn btn-primary btn-lg w-100 shadow-sm mt-3">
+          <i class="fas fa-sign-in-alt"></i> دخول للنظام
+        </button>
+      </form>
+    </div>
+    <div class="card-footer text-center bg-light border-0 py-3">
+      <small class="text-muted">جميع الحقوق محفوظة &copy; 2026</small>
+    </div>
+  </div>
+</div>
+
+<script>
+/**
+ * LoginController (View Controller)
+ * مسؤول عن شاشة الدخول فقط
+ */
+class LoginController {
+  static async processLogin() {
+    const user = document.getElementById('loginUsername').value.trim();
+    const pass = document.getElementById('loginPassword').value.trim();
+    
+    if(!user || !pass) {
+      UIManager.showError("يرجى إدخال اسم المستخدم وكلمة المرور", "تنبيه");
+      return;
+    }
+    
+    UIManager.showLoader("جاري التحقق من بيانات الدخول...");
+    
+    try {
+      // ⚡ السحر هنا: سطر واحد بيكلم الباك-إند ويجيب الداتا النظيفة
+      const userData = await ApiClient.call('api_login', user, pass);
+      
+      // حفظ الجلسة محلياً
+      localStorage.setItem('dms_session', JSON.stringify(userData));
+      
+      UIManager.hideLoader();
+      UIManager.showSuccess(`أهلاً بك يا ${userData.name}`);
+      
+      // تشغيل محرك التطبيق
+      App.initUserSession(userData);
+      
+    } catch (error) {
+      UIManager.showError(error.message, "فشل الدخول");
+    }
+  }
+}
+</script>

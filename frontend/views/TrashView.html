@@ -1,0 +1,73 @@
+<template id="trash-view-template">
+  <div class="row fade-in">
+    <div class="col-12 mb-3 border-bottom pb-2">
+      <h3 class="text-danger m-0"><i class="fas fa-trash-alt me-2"></i> سلة المهملات</h3>
+      <small class="text-muted">هنا يمكنك استعادة العناصر المحذوفة أو حذفها نهائياً من قاعدة البيانات.</small>
+    </div>
+    
+    <div class="col-12">
+      <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+          <table class="table table-hover text-center align-middle m-0">
+            <thead class="table-light text-danger">
+              <tr>
+                <th>النوع</th>
+                <th>الاسم / العنوان</th>
+                <th>تاريخ الحذف</th>
+                <th>الإجراءات</th>
+              </tr>
+            </thead>
+            <tbody id="trashTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+class TrashController {
+  static async renderTable() {
+    const tbody = document.getElementById('trashTableBody');
+    UIManager.showLoader("جاري جلب المحذوفات...");
+    try {
+      const items = await ApiClient.call('api_getTrashData');
+      UIManager.hideLoader();
+      
+      if (items.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="py-5 text-muted">سلة المهملات فارغة.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = items.map(item => `
+        <tr>
+          <td><span class="badge bg-secondary">${item.type}</span></td>
+          <td class="fw-bold">${item.display}</td>
+          <td class="small text-muted">${item.Created_At || '-'}</td>
+          <td>
+            <button class="btn btn-sm btn-success me-1" onclick="TrashController.restore('${item.type}', '${item.id}', '${item.display}')">استعادة</button>
+            <button class="btn btn-sm btn-outline-danger" onclick="TrashController.hardDelete('${item.type}', '${item.id}', '${item.display}')">حذف نهائي</button>
+          </td>
+        </tr>
+      `).join('');
+    } catch (e) { UIManager.showError(e.message); }
+  }
+
+  static async restore(type, id, name) {
+    const user = JSON.parse(localStorage.getItem('dms_session')).username;
+    await ApiClient.call('api_restoreItem', type, id, name, user);
+    UIManager.showSuccess("تمت استعادة العنصر بنجاح");
+    // تحديث البيانات المركزية بالكامل لضمان ظهور العنصر في صفحاته الأصلية
+    App.loadInitialData(); 
+  }
+
+  static async hardDelete(type, id, name) {
+    const ok = await UIManager.confirmAction(`تحذير: سيتم حذف "${name}" نهائياً من قاعدة البيانات ولا يمكن التراجع!`);
+    if (!ok) return;
+    const user = JSON.parse(localStorage.getItem('dms_session')).username;
+    await ApiClient.call('api_permanentDelete', type, id, name, user);
+    UIManager.showSuccess("تم الحذف النهائي");
+    this.renderTable();
+  }
+}
+</script>

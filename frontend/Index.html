@@ -1,38 +1,101 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar" dir="rtl" data-bs-theme="light">
 <head>
   <meta charset="UTF-8">
   <title>نظام الأرشيف الإلكتروني</title>
+  
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  
   <style>
-    body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-    .fade-in { animation: fadeIn 0.3s ease-in-out; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-    .sidebar { min-height: 100vh; background: #2c3e50; color: white; padding-top: 20px; }
-    .list-group-item.active { background-color: #3498db; border-color: #3498db; }
+    /* ========================================= */
+    /* 🎨 تحسينات الـ UI لراحة العين (Soft Design) */
+    /* ========================================= */
+    body {
+      font-family: 'Cairo', sans-serif; /* الخط الجديد */
+      background-color: var(--bs-body-bg);
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    .fade-in { animation: fadeIn 0.4s ease-in-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* تجميل الشريط العلوي (Navbar) بتدرج لوني هادئ */
+    .navbar {
+      background: linear-gradient(135deg, #2c3e50, #3498db) !important;
+      border-bottom: 3px solid rgba(255,255,255,0.05);
+    }
+
+    /* تجميل الكروت (Cards) */
+    .card {
+      border-radius: 12px;
+      border: 1px solid var(--bs-border-color-translucent);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+      transition: transform 0.2s;
+    }
+    .card:hover { transform: translateY(-2px); }
+
+    /* تجميل القائمة الجانبية (Sidebar) */
+    .list-group-item {
+      border: none;
+      margin-bottom: 8px;
+      border-radius: 8px !important;
+      font-weight: 600;
+      color: var(--bs-secondary-color);
+      background-color: transparent;
+      transition: all 0.2s ease;
+    }
+    .list-group-item:hover {
+      background-color: var(--bs-secondary-bg);
+      transform: translateX(-5px);
+    }
+    .list-group-item.active {
+      background-color: #3498db !important;
+      color: white !important;
+      box-shadow: 0 4px 10px rgba(52, 152, 219, 0.3);
+    }
+
+    /* تجميل الجداول (Modern Floating Tables) */
+    .table { border-collapse: separate; border-spacing: 0 8px; margin-top: -8px; }
+    .table thead th { border: none; font-weight: 700; color: var(--bs-secondary-color); background: transparent; }
+    .table tbody tr {
+      box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+      border-radius: 8px;
+      background-color: var(--bs-body-bg);
+      transition: transform 0.1s;
+    }
+    .table tbody tr:hover { transform: scale(1.01); z-index: 1; position: relative; }
+    .table tbody td { border: none; vertical-align: middle; }
+    .table tbody td:first-child { border-top-right-radius: 8px; border-bottom-right-radius: 8px; }
+    .table tbody td:last-child { border-top-left-radius: 8px; border-bottom-left-radius: 8px; }
   </style>
 </head>
 <body>
 
-  <?!= include('LoginView'); ?>
-
   <div id="app-wrapper" style="display: none;">
-    <nav class="navbar navbar-dark bg-primary shadow-sm mb-4">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm mb-4">
       <div class="container-fluid">
-        <span class="navbar-brand mb-0 h1"><i class="fas fa-archive me-2"></i> الأرشيف الإلكتروني</span>
+        <span class="navbar-brand mb-0 h1"><i class="fas fa-archive me-2"></i> الأرشيف الرقمي</span>
         <div class="d-flex align-items-center">
           <span id="userDisplayName" class="text-white me-3 fw-bold"></span>
-          <button class="btn btn-outline-light btn-sm" onclick="App.logout()"><i class="fas fa-sign-out-alt"></i> خروج</button>
+
+          <button class="btn btn-sm btn-outline-light me-3 border-0 rounded-circle" id="darkModeToggle" onclick="toggleTheme()" style="width: 35px; height: 35px;" title="تغيير المظهر">
+            <i class="fas fa-moon fs-6"></i>
+          </button>
+
+          <button class="btn btn-outline-light btn-sm rounded-pill px-3 fw-bold" onclick="App.logout()">
+            <i class="fas fa-sign-out-alt me-1"></i> خروج
+          </button>
         </div>
       </div>
     </nav>
 
-    <div class="container-fluid">
+    <div class="container-fluid px-4">
       <div class="row">
         <div class="col-md-2 mb-4">
-          <div class="list-group shadow-sm">
+          <div class="list-group">
             <a href="#" class="list-group-item list-group-item-action" onclick="App.navigate('dashboard')"><i class="fas fa-tachometer-alt fa-fw me-2"></i> الرئيسية</a>
             <a href="#" class="list-group-item list-group-item-action" onclick="App.navigate('clients')"><i class="fas fa-users fa-fw me-2"></i> العملاء (الأقسام)</a>
             <a href="#" class="list-group-item list-group-item-action" onclick="App.navigate('search')"><i class="fas fa-search fa-fw me-2"></i> البحث الشامل</a>
@@ -48,18 +111,50 @@
     </div>
   </div>
 
-  <?!= include('Store'); ?>
-  <?!= include('UIManager'); ?>
-  <?!= include('ApiClient'); ?>
-  <?!= include('App'); ?>
+  <?!= include('frontend/views/LoginView'); ?>
 
-  <?!= include('DashboardView'); ?>
-  <?!= include('ClientsView'); ?>
-  <?!= include('GroupsView'); ?>
-  <?!= include('RecordsView'); ?>
-  <?!= include('AttachmentsView'); ?>
-  <?!= include('GlobalSearchView'); ?>
-  <?!= include('TrashView'); ?>
-  <?!= include('UsersView'); ?> <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <?!= include('frontend/core/Store'); ?>
+  <?!= include('frontend/core/UIManager'); ?>
+  <?!= include('frontend/core/ApiClient'); ?>
+  <?!= include('frontend/core/App'); ?>
+
+  <?!= include('frontend/views/DashboardView'); ?>
+  <?!= include('frontend/views/ClientsView'); ?>
+  <?!= include('frontend/views/GroupsView'); ?>
+  <?!= include('frontend/views/RecordsView'); ?>
+  <?!= include('frontend/views/AttachmentsView'); ?>
+  <?!= include('frontend/views/GlobalSearchView'); ?>
+  <?!= include('frontend/views/TrashView'); ?>
+  <?!= include('frontend/views/UsersView'); ?>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    function toggleTheme() {
+      const html = document.documentElement;
+      const currentTheme = html.getAttribute('data-bs-theme');
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      
+      html.setAttribute('data-bs-theme', newTheme);
+      localStorage.setItem('dms_theme', newTheme);
+      
+      const icon = document.querySelector('#darkModeToggle i');
+      if (newTheme === 'dark') {
+        icon.classList.replace('fa-moon', 'fa-sun');
+      } else {
+        icon.classList.replace('fa-sun', 'fa-moon');
+      }
+    }
+
+    // تطبيق الثيم المحفوظ أول ما تفتح الموقع
+    document.addEventListener('DOMContentLoaded', () => {
+      const savedTheme = localStorage.getItem('dms_theme') || 'light';
+      document.documentElement.setAttribute('data-bs-theme', savedTheme);
+      const icon = document.querySelector('#darkModeToggle i');
+      if (savedTheme === 'dark' && icon) {
+        icon.classList.replace('fa-moon', 'fa-sun');
+      }
+    });
+  </script>
 </body>
 </html>

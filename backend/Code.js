@@ -1,18 +1,21 @@
 /**
  * Main Entry Point
- * نقطة البداية لتشغيل التطبيق على المتصفح
  */
 function doGet(e) {
-  return HtmlService.createTemplateFromFile('Index')
+  // ⚡ التعديل هنا: ضفنا مسار الفولدر لاسم الملف ⚡
+  return HtmlService.createTemplateFromFile('frontend/Index')
     .evaluate()
     .setTitle('نظام الأرشيف الإلكتروني (Enterprise)')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
     .addMetaTag('viewport', 'width=device-width, initial-scale=1');
 }
 
-/**
- * دالة دمج الملفات (تسمح لنا بتقسيم الواجهة لملفات صغيرة وتنظيمها)
- */
+
 function include(filename) {
-  return HtmlService.createHtmlOutputFromFile(filename).getContent();
+  try {
+    return HtmlService.createHtmlOutputFromFile(filename).getContent();
+  } catch (err) {
+    console.error("فشل في العثور على الملف: " + filename);
+    throw new Error("لم يتم العثور على ملف HTML باسم: " + filename);
+  }
 }

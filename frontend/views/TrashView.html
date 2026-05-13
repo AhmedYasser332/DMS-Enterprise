@@ -26,48 +26,97 @@
 </template>
 
 <script>
+
 class TrashController {
-  static async renderTable() {
+  // 1. رسم الجدول من الذاكرة المركزية مباشرة بدون تحميل
+  static renderTable() {
     const tbody = document.getElementById('trashTableBody');
-    UIManager.showLoader("جاري جلب المحذوفات...");
-    try {
-      const items = await ApiClient.call('api_getTrashData');
-      UIManager.hideLoader();
-      
-      if (items.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" class="py-5 text-muted">سلة المهملات فارغة.</td></tr>';
-        return;
-      }
+    if (!tbody) return;
 
-      tbody.innerHTML = items.map(item => `
-        <tr>
-          <td><span class="badge bg-secondary">${item.type}</span></td>
-          <td class="fw-bold">${item.display}</td>
-          <td class="small text-muted">${item.Created_At || '-'}</td>
-          <td>
-            <button class="btn btn-sm btn-success me-1" onclick="TrashController.restore('${item.type}', '${item.id}', '${item.display}')">استعادة</button>
-            <button class="btn btn-sm btn-outline-danger" onclick="TrashController.hardDelete('${item.type}', '${item.id}', '${item.display}')">حذف نهائي</button>
-          </td>
-        </tr>
-      `).join('');
-    } catch (e) { UIManager.showError(e.message); }
+    const state = GlobalStore.getState();
+    let items = [];
+
+    // فلترة وجمع كل العناصر المحذوفة من جميع الأقسام
+    (state.clients || []).filter(c => String(c.Is_Deleted).toUpperCase() === "TRUE")
+      .forEach(c => items.push({ type: 'عميل', display: c.Name, id: c.Main_ID, Created_At: c.Created_At }));
+
+    (state.groups || []).filter(g => String(g.Is_Deleted).toUpperCase() === "TRUE")
+      .forEach(g => items.push({ type: 'مجموعة', display: g.Name, id: g.Group_ID, Created_At: g.Created_At }));
+
+    (state.records || []).filter(r => String(r.Is_Deleted).toUpperCase() === "TRUE")
+      .forEach(r => items.push({ type: 'سجل', display: r.Title, id: r.Record_ID, Created_At: r.Created_At }));
+
+    (state.attachments || []).filter(a => String(a.Is_Deleted).toUpperCase() === "TRUE")
+      .forEach(a => items.push({ type: 'مرفق', display: a.File_Name, id: a.File_ID, Created_At: a.Uploaded_At }));
+
+    if (items.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="4" class="py-5 text-muted"><i class="fas fa-trash-restore fa-3x mb-3 d-block text-black-50"></i> سلة المهملات فارغة.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = items.map(item => `
+      <tr>
+        <td><span class="badge bg-secondary">${item.type}</span></td>
+        <td class="fw-bold">${item.display}</td>
+        <td class="small text-muted">${item.Created_At ? item.Created_At.split(',')[0] : '-'}</td>
+        <td>
+          <button class="btn btn-sm btn-success shadow-sm me-1" onclick="TrashController.restore('${item.type}', '${item.id}', '${item.display}')">
+            <i class="fas fa-undo"></i> استعادة
+          </button>
+          <button class="btn btn-sm btn-outline-danger shadow-sm" onclick="TrashController.hardDelete('${item.type}', '${item.id}', '${item.display}')">
+            <i class="fas fa-times"></i> حذف نهائي
+          </button>
+        </td>
+      </tr>
+    `).join('');
   }
 
+  // 2. استعادة العنصر (مع تحديث الذاكرة محلياً للسرعة)
   static async restore(type, id, name) {
-    const user = JSON.parse(localStorage.getItem('dms_session')).username;
-    await ApiClient.call('api_restoreItem', type, id, name, user);
-    UIManager.showSuccess("تمت استعادة العنصر بنجاح");
-    // تحديث البيانات المركزية بالكامل لضمان ظهور العنصر في صفحاته الأصلية
-    App.loadInitialData(); 
+    const state = GlobalStore.getState();
+    const user = state.currentUser ? state.currentUser.username : 'System';
+
+    UIManager.showLoader("جاري الاستعادة...");
+    try {
+      await ApiClient.call('api_restoreItem', type, id, name, user);
+      
+      // تحديث الـ Store محلياً عشان السرعة (بنشيل علامة Is_Deleted)
+      if (type === 'عميل') GlobalStore.setState({ clients: state.clients.map(c => c.Main_ID === id ? { ...c, Is_Deleted: false } : c) });
+      else if (type === 'مجموعة') GlobalStore.setState({ groups: state.groups.map(g => g.Group_ID === id ? { ...g, Is_Deleted: false } : g) });
+      else if (type === 'سجل') GlobalStore.setState({ records: state.records.map(r => r.Record_ID === id ? { ...r, Is_Deleted: false } : r) });
+      else if (type === 'مرفق') GlobalStore.setState({ attachments: state.attachments.map(a => a.File_ID === id ? { ...a, Is_Deleted: false } : a) });
+
+      UIManager.showSuccess("تمت استعادة العنصر بنجاح");
+      this.renderTable();
+    } catch (error) {
+      UIManager.showError(error.message);
+    }
   }
 
+  // 3. حذف نهائي (مع إزالته من الذاكرة محلياً)
   static async hardDelete(type, id, name) {
-    const ok = await UIManager.confirmAction(`تحذير: سيتم حذف "${name}" نهائياً من قاعدة البيانات ولا يمكن التراجع!`);
+    const ok = await UIManager.confirmAction(`تحذير: سيتم حذف "${name}" نهائياً ولن تتمكن من استعادته!`);
     if (!ok) return;
-    const user = JSON.parse(localStorage.getItem('dms_session')).username;
-    await ApiClient.call('api_permanentDelete', type, id, name, user);
-    UIManager.showSuccess("تم الحذف النهائي");
-    this.renderTable();
+
+    const state = GlobalStore.getState();
+    const user = state.currentUser ? state.currentUser.username : 'System';
+
+    UIManager.showLoader("جاري الحذف النهائي...");
+    try {
+      await ApiClient.call('api_permanentDelete', type, id, name, user);
+      
+      // حذفه من الـ Store محلياً بالكامل
+      if (type === 'عميل') GlobalStore.setState({ clients: state.clients.filter(c => c.Main_ID !== id) });
+      else if (type === 'مجموعة') GlobalStore.setState({ groups: state.groups.filter(g => g.Group_ID !== id) });
+      else if (type === 'سجل') GlobalStore.setState({ records: state.records.filter(r => r.Record_ID !== id) });
+      else if (type === 'مرفق') GlobalStore.setState({ attachments: state.attachments.filter(a => a.File_ID !== id) });
+
+      UIManager.showSuccess("تم الحذف النهائي");
+      this.renderTable();
+    } catch (error) {
+      UIManager.showError(error.message);
+    }
   }
 }
+
 </script>

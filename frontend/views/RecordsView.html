@@ -18,7 +18,7 @@
       <div class="card shadow-sm border-0 rounded-lg">
         <div class="card-body p-0">
           <div class="table-responsive">
-            <table class="table table-hover table-striped text-center align-middle m-0">
+            <table class="table table-hover text-center align-middle m-0">
               <thead class="table-dark">
                 <tr>
                   <th>عنوان السجل</th>
@@ -28,8 +28,7 @@
                   <th>الإجراءات</th>
                 </tr>
               </thead>
-              <tbody id="recordsTableBody">
-                </tbody>
+              <tbody id="recordsTableBody"></tbody>
             </table>
           </div>
         </div>
@@ -48,16 +47,20 @@
           <form id="addRecordForm" onsubmit="event.preventDefault(); RecordController.addRecord();">
             <div class="mb-3">
               <label class="form-label fw-bold">عنوان السجل <span class="text-danger">*</span></label>
-              <input type="text" id="newRecordTitle" class="form-control form-control-lg" placeholder="مثال: ميزانية 2024..." required>
+              <input type="text" id="newRecordTitle" class="form-control form-control-lg" required>
             </div>
             <div class="mb-3">
               <label class="form-label fw-bold">وصف مبسط (اختياري)</label>
-              <textarea id="newRecordDesc" class="form-control" rows="2" placeholder="اكتب تفاصيل أكثر هنا..."></textarea>
+              <textarea id="newRecordDesc" class="form-control" rows="2"></textarea>
             </div>
+            
             <div class="mb-4">
               <label class="form-label fw-bold">وسوم للبحث (Tags)</label>
-              <input type="text" id="newRecordTags" class="form-control" placeholder="مثال: ضرايب, عاجل, مراجعة (افصل بفاصلة)">
+              <select id="newRecordTagsSelect" class="form-select" onchange="RecordController.handleTagsChange()">
+                </select>
+              <input type="text" id="newRecordTagsCustom" class="form-control mt-2 d-none fade-in" placeholder="مثال: ضرايب, عاجل, مراجعة (افصل بفاصلة لعدة وسوم)">
             </div>
+
             <button type="submit" class="btn btn-primary btn-lg w-100 shadow-sm"><i class="fas fa-save me-2"></i> حفظ السجل</button>
           </form>
         </div>
@@ -71,47 +74,68 @@ class RecordController {
   static currentGroupId = null;
   static parentClientId = null;
 
-  // 1. التهيئة
-  static renderView(groupId) {
-    if (!groupId) {
-      App.navigate('clients');
-      return;
+  // دالة إظهار مربع الوسوم المخصصة
+  static handleTagsChange() {
+    const select = document.getElementById('newRecordTagsSelect');
+    const customInput = document.getElementById('newRecordTagsCustom');
+    if (select.value === 'other') {
+      customInput.classList.remove('d-none');
+    } else {
+      customInput.classList.add('d-none');
+      customInput.value = '';
     }
+  }
+
+  // تجميع الوسوم من النظام لعرضها في القائمة
+  static populateTags() {
+    const select = document.getElementById('newRecordTagsSelect');
+    const defaultTags = ['عام', 'ضريبي', 'قانوني', 'مالي', 'إداري', 'عاجل'];
     
-    this.currentGroupId = groupId;
     const state = GlobalStore.getState();
-    const group = state.groups.find(g => g.Group_ID === groupId);
+    let existingTags = [];
     
+    // استخراج كل الوسوم وتقسيمها لو كانت مفصولة بفاصلة
+    (state.records || []).forEach(r => {
+      if (r.Tags) {
+        r.Tags.split(',').forEach(t => {
+          const cleanTag = t.trim();
+          if (cleanTag) existingTags.push(cleanTag);
+        });
+      }
+    });
+    
+    const allTags = [...new Set([...defaultTags, ...existingTags])];
+    
+    select.innerHTML = '<option value="">-- بدون وسوم --</option>' + 
+      allTags.map(t => `<option value="${t}">${t}</option>`).join('') +
+      '<option value="other" class="text-primary fw-bold">➕ أخرى (كتابة وسوم مخصصة)...</option>';
+  }
+
+  static renderView(groupId) {
+    if (!groupId) { App.navigate('clients'); return; }
+    this.currentGroupId = groupId;
+    const group = GlobalStore.getState().groups.find(g => g.Group_ID === groupId);
     if (group) {
-      this.parentClientId = group.Main_ID; // حفظ ID العميل عشان زرار "العودة"
+      this.parentClientId = group.Main_ID;
       document.getElementById('currentGroupName').textContent = `(المجموعة: ${group.Name})`;
     }
-    
     this.renderTable();
   }
 
-  // 2. زرار العودة الذكي
   static goBack() {
-    if (this.parentClientId) {
-      App.navigate('groups', this.parentClientId);
-    } else {
-      App.navigate('clients');
-    }
+    if (this.parentClientId) App.navigate('groups', this.parentClientId);
+    else App.navigate('clients');
   }
 
-  // 3. رسم الجدول
   static renderTable() {
     const tbody = document.getElementById('recordsTableBody');
     if (!tbody) return;
-
-    const state = GlobalStore.getState();
-    const groupRecords = (state.records || []).filter(r => 
-      r.Sub_ID === this.currentGroupId && 
-      String(r.Is_Deleted).toUpperCase() !== "TRUE"
+    const groupRecords = (GlobalStore.getState().records || []).filter(r => 
+      r.Sub_ID === this.currentGroupId && String(r.Is_Deleted).toUpperCase() !== "TRUE"
     );
 
     if (groupRecords.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="5" class="text-muted py-5"><i class="fas fa-box-open fa-3x mb-3 d-block text-black-50"></i> لا توجد سجلات في هذه المجموعة.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="5" class="text-muted py-5"><i class="fas fa-box-open fa-3x mb-3 d-block text-black-50"></i> لا توجد سجلات.</td></tr>`;
       return;
     }
 
@@ -122,31 +146,29 @@ class RecordController {
         <td>${record.Tags ? `<span class="badge bg-warning text-dark">${record.Tags}</span>` : '-'}</td>
         <td class="text-muted small">${record.Created_At.split(',')[0]}</td>
         <td>
-          <button class="btn btn-sm btn-info text-white me-1 shadow-sm" onclick="App.navigate('attachments', '${record.Record_ID}')" title="فتح المرفقات">
-            <i class="fas fa-paperclip"></i> المرفقات
-          </button>
-          <button class="btn btn-sm btn-outline-danger shadow-sm" onclick="RecordController.deleteRecord('${record.Record_ID}', '${record.Title}')" title="حذف">
-            <i class="fas fa-trash-alt"></i>
-          </button>
+          <button class="btn btn-sm btn-info text-white me-1 shadow-sm" onclick="App.navigate('attachments', '${record.Record_ID}')"><i class="fas fa-paperclip"></i> المرفقات</button>
+          <button class="btn btn-sm btn-outline-danger shadow-sm" onclick="RecordController.deleteRecord('${record.Record_ID}', '${record.Title}')"><i class="fas fa-trash-alt"></i></button>
         </td>
       </tr>
     `).join('');
-
-    App.applyPermissions(); // تطبيق الصلاحيات
+    App.applyPermissions();
   }
 
-  // 4. إظهار المودال
   static showAddModal() {
     document.getElementById('addRecordForm').reset();
-    const modal = new bootstrap.Modal(document.getElementById('addRecordModal'));
-    modal.show();
+    this.populateTags(); // تحديث قائمة الوسوم
+    this.handleTagsChange(); // إعادة ضبط الرؤية
+    new bootstrap.Modal(document.getElementById('addRecordModal')).show();
   }
 
-  // 5. إضافة سجل
   static async addRecord() {
     const title = document.getElementById('newRecordTitle').value.trim();
     const desc = document.getElementById('newRecordDesc').value.trim();
-    const tags = document.getElementById('newRecordTags').value.trim();
+    
+    // ⚡ تحديد الوسم ⚡
+    const selectVal = document.getElementById('newRecordTagsSelect').value;
+    const customVal = document.getElementById('newRecordTagsCustom').value.trim();
+    const tags = selectVal === 'other' ? customVal : selectVal;
     
     const state = GlobalStore.getState();
     const userEmail = state.currentUser ? state.currentUser.username : 'System';
@@ -154,7 +176,6 @@ class RecordController {
     UIManager.showLoader("جاري حفظ السجل...");
     try {
       const newRecord = await ApiClient.call('api_addRecord', this.currentGroupId, title, desc, tags, userEmail);
-      
       const updatedRecords = [...state.records, newRecord];
       GlobalStore.setState({ records: updatedRecords });
       
@@ -166,24 +187,16 @@ class RecordController {
     }
   }
 
-  // 6. حذف سجل
   static async deleteRecord(recordId, title) {
     const isConfirmed = await UIManager.confirmAction(`هل تريد بالتأكيد حذف السجل "${title}"؟`);
     if (!isConfirmed) return;
-
     UIManager.showLoader("جاري الحذف...");
     try {
       const state = GlobalStore.getState();
       const userEmail = state.currentUser ? state.currentUser.username : 'System';
-      
       await ApiClient.call('api_deleteRecord', recordId, title, userEmail);
-      
-      const updatedRecords = state.records.map(r => {
-        if (r.Record_ID === recordId) r.Is_Deleted = true;
-        return r;
-      });
+      const updatedRecords = state.records.map(r => { if (r.Record_ID === recordId) r.Is_Deleted = true; return r; });
       GlobalStore.setState({ records: updatedRecords });
-      
       this.renderTable();
       UIManager.showSuccess("تم نقل السجل للمهملات.");
     } catch (error) {

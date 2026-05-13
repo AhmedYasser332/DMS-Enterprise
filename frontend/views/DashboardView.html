@@ -60,12 +60,12 @@ class DashboardController {
   static renderStats() {
     const state = GlobalStore.getState();
     const role = state.currentUser.role;
-    const allowed = state.currentUser.allowedClients || "";
+    const allowed = String(state.currentUser.allowedClients || "").toUpperCase();
 
-    // فلترة الداتا بناءً على الصلاحيات (عشان اليوزر ميشوفش إحصائيات مش بتاعته)
+    // فلترة العملاء المسموح بهم
     const activeClients = state.clients.filter(c => 
       String(c.Is_Deleted).toUpperCase() !== "TRUE" && 
-      (role === 'Admin' || allowed.includes(c.Main_ID))
+      (role === 'Admin' || allowed === 'ALL' || allowed.includes(String(c.Main_ID).toUpperCase()))
     );
     const allowedClientIds = activeClients.map(c => c.Main_ID);
 

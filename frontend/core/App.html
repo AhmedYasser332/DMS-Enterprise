@@ -4,7 +4,8 @@
  * المايسترو الذي يدير دورة حياة التطبيق، الجلسات، والتنقل بين الصفحات
  */
 class App {
-  
+  static currentPage = 'dashboard';
+  static currentParam = null;
   // 1. بداية تشغيل التطبيق (تعمل عند تحميل الصفحة)
   static boot() {
     const session = localStorage.getItem('dms_session');
@@ -64,6 +65,9 @@ class App {
 
   // 5. التنقل بين الصفحات (Router) - النسخة النهائية الموحدة
   static navigate(pageId, param = null) {
+    this.currentPage = pageId;
+    this.currentParam = param;
+
     const state = GlobalStore.getState();
     const role = state.currentUser ? state.currentUser.role : '';
     
@@ -123,35 +127,97 @@ class App {
     this.applyPermissions(); // إعادة تأكيد الصلاحيات بعد كل تنقل
   }
   
-  // 6. نظام الصلاحيات (إخفاء العناصر)
+  // 6. نظام الصلاحيات المطور (يدعم كلمة ALL)
   static applyPermissions() {
     const state = GlobalStore.getState();
     if (!state.currentUser) return;
     const role = state.currentUser.role;
     
+    // إعادة إظهار كل شيء أولاً
+    document.querySelectorAll('a[onclick*="users"], a[onclick*="trash"]').forEach(link => {
+       link.style.setProperty('display', 'block', 'important');
+    });
+
     if (role !== 'Admin') {
-      document.querySelectorAll('a[onclick*="users"], a[onclick*="trash"]').forEach(link => link.style.setProperty('display', 'none', 'important'));
+      document.querySelectorAll('a[onclick*="users"], a[onclick*="trash"]').forEach(link => {
+        link.style.setProperty('display', 'none', 'important');
+      });
     }
 
     if (role === 'Viewer') {
-      document.querySelectorAll('#app-wrapper .btn-success, #app-wrapper .btn-primary, #app-wrapper .btn-danger, #app-wrapper .btn-warning, #app-wrapper .btn-info').forEach(btn => {
-        const isLogoutBtn = btn.getAttribute('onclick') && btn.getAttribute('onclick').includes('logout');
-        if (!btn.classList.contains('btn-outline-primary') && !btn.id.includes('sidebarToggle') && !isLogoutBtn) {
-           btn.style.setProperty('display', 'none', 'important');
-        }
+      document.querySelectorAll('#app-wrapper .btn-success, #app-wrapper .btn-danger, #app-wrapper .btn-warning').forEach(btn => {
+        const isAction = btn.getAttribute('onclick') && (btn.getAttribute('onclick').includes('add') || btn.getAttribute('onclick').includes('delete'));
+        if (isAction) btn.style.setProperty('display', 'none', 'important');
       });
     }
   }
 
-  // 7. تسجيل الخروج
+  // 7. تسجيل الخروج النظيف (SPA Logout) بدون شاشة بيضاء
   static logout() {
     localStorage.removeItem('dms_session');
-    GlobalStore.clearState(); // تنظيف الذاكرة المركزية بالكامل
+    GlobalStore.clearState();
     
+    // إخفاء الواجهة وإظهار اللوجن فوراً
+    document.getElementById('app-wrapper').style.display = 'none';
+    document.getElementById('login-screen').style.display = 'flex';
+    
+    // تصفير الخانات
     document.getElementById('loginUsername').value = '';
     document.getElementById('loginPassword').value = '';
     
-    this.showLoginScreen();
+    // تصفير المحتوى الرئيسي عشان ميفضلش فيه داتا قديمة
+    document.getElementById('main-content').innerHTML = '<h3 class="text-center text-muted mt-5">جاري التحميل...</h3>';
+    
+    // إشعار خفيف بالخروج
+    Swal.fire({ toast: true, position: 'top-end', icon: 'info', title: 'تم تسجيل الخروج', showConfirmButton: false, timer: 1500 });
+  }
+
+  // 8. تحديث البيانات في الخلفية (Smart Refresh)
+  static async refreshData() {
+    const btn = document.getElementById('refreshBtn');
+    
+    // ⚡ 1. بدء التحميل: قفل الزرار وتحويله لـ Spinner
+    if(btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+    }
+
+    try {
+      // جلب البيانات من السيرفر
+      const dbData = await ApiClient.call('api_getInitialAppData');
+      
+      // تحديث الذاكرة المركزية
+      GlobalStore.setState({
+        clients: dbData.clients,
+        groups: dbData.groups,
+        records: dbData.records,
+        attachments: dbData.attachments,
+        users: dbData.users || []
+      });
+
+      // إعادة رسم الصفحة الحالية فوراً
+      this.navigate(this.currentPage, this.currentParam);
+      
+      // ⚡ 2. إشعار نجاح خفيف جداً (Toast) لا يغلق الشاشة
+      Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: 'success',
+        title: 'تم تحديث البيانات بنجاح',
+        showConfirmButton: false,
+        timer: 2000,
+        timerProgressBar: true
+      });
+      
+    } catch (error) {
+      UIManager.showError(error.message, "فشل في تحديث البيانات");
+    } finally {
+      // ⚡ 3. إنهاء التحميل: إرجاع الزرار لحالته الطبيعية
+      if(btn) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-sync-alt fs-6"></i>';
+      }
+    }
   }
 }
 

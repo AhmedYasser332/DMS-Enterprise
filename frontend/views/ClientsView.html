@@ -11,7 +11,7 @@
       <div class="card shadow-sm border-0 rounded-lg">
         <div class="card-body p-0">
           <div class="table-responsive">
-            <table class="table table-hover table-striped text-center align-middle m-0">
+            <table class="table table-hover text-center align-middle m-0">
               <thead class="table-dark">
                 <tr>
                   <th>اسم العميل</th>
@@ -21,8 +21,7 @@
                   <th>الإجراءات</th>
                 </tr>
               </thead>
-              <tbody id="clientsTableBody">
-                </tbody>
+              <tbody id="clientsTableBody"></tbody>
             </table>
           </div>
         </div>
@@ -41,16 +40,20 @@
           <form id="addClientForm" onsubmit="event.preventDefault(); ClientController.addClient();">
             <div class="mb-3">
               <label class="form-label fw-bold">اسم العميل <span class="text-danger">*</span></label>
-              <input type="text" id="newClientName" class="form-control form-control-lg" placeholder="اكتب اسم العميل..." required>
+              <input type="text" id="newClientName" class="form-control form-control-lg" required>
             </div>
             <div class="mb-3">
               <label class="form-label fw-bold">رقم التسجيل الضريبي (اختياري)</label>
-              <input type="text" id="newClientTaxId" class="form-control" placeholder="999-999-999" pattern="\\d{3}-\\d{3}-\\d{3}" title="يجب أن يكون على شكل 999-999-999">
+              <input type="text" id="newClientTaxId" class="form-control" placeholder="999-999-999" pattern="\d{3}-\d{3}-\d{3}">
             </div>
+            
             <div class="mb-4">
               <label class="form-label fw-bold">الكيان القانوني (اختياري)</label>
-              <input type="text" id="newClientLegalEntity" class="form-control" placeholder="مثال: شركة مساهمة، فردي، إلخ...">
+              <select id="newClientLegalEntitySelect" class="form-select" onchange="ClientController.handleLegalEntityChange()">
+                </select>
+              <input type="text" id="newClientLegalEntityCustom" class="form-control mt-2 d-none fade-in" placeholder="اكتب الكيان القانوني الجديد هنا...">
             </div>
+
             <button type="submit" class="btn btn-primary btn-lg w-100 shadow-sm"><i class="fas fa-save me-2"></i> حفظ بيانات العميل</button>
           </form>
         </div>
@@ -60,37 +63,74 @@
 </template>
 
 <script>
-/**
- * ClientController
- * مسؤول عن التحكم الكامل في شاشة العملاء (رسم الجدول، الإضافة، الحذف)
- */
 class ClientController {
   
-  // 1. رسم الجدول بناءً على الداتا الموجودة في الذاكرة المركزية
+  // دالة إظهار أو إخفاء مربع الإدخال حسب الاختيار
+  static handleLegalEntityChange() {
+    const select = document.getElementById('newClientLegalEntitySelect');
+    const customInput = document.getElementById('newClientLegalEntityCustom');
+    if (select.value === 'other') {
+      customInput.classList.remove('d-none');
+      customInput.required = true;
+    } else {
+      customInput.classList.add('d-none');
+      customInput.required = false;
+      customInput.value = ''; // تفريغ المربع
+    }
+  }
+
+  // دالة لتجميع الكيانات القانونية وعرضها في القائمة
+  static populateLegalEntities() {
+    const select = document.getElementById('newClientLegalEntitySelect');
+    
+    // القائمة الأساسية اللي في الصور بتاعتك
+    const defaultEntities = [
+      'منشأة فردية', 
+      'شركة مساهمة', 
+      'شركة ذات مسئولية محدودة', 
+      'شركة تضامن', 
+      'شركة توصية بسيطة', 
+      'شركة الشخص الواحد',
+      'قطاع عام',
+      'قطاع أعمال'
+    ];
+    
+    // السحر هنا: استخراج أي كيان قانوني موجود بالفعل في النظام ومش موجود في القائمة الأساسية
+    const state = GlobalStore.getState();
+    const existingEntities = (state.clients || [])
+      .map(c => c.Legal_Entity)
+      .filter(e => e && e.trim() !== ''); // تصفية الفوارغ
+    
+    // دمج القائمتين وحذف التكرار
+    const allEntities = [...new Set([...defaultEntities, ...existingEntities])];
+    
+    // رسم القائمة
+    select.innerHTML = '<option value="">-- اختر الكيان القانوني --</option>' + 
+      allEntities.map(e => `<option value="${e}">${e}</option>`).join('') +
+      '<option value="other" class="text-primary fw-bold">➕ أخرى (إضافة كيان جديد)...</option>';
+  }
+
   static renderTable() {
     const tbody = document.getElementById('clientsTableBody');
-    if (!tbody) return; // الحماية لو اليوزر في صفحة تانية
-    
-    // سحب الداتا من الـ Store
+    if (!tbody) return;
     const state = GlobalStore.getState();
     const clients = state.clients || [];
-    
-    // فلترة المحذوفين والأقسام المسموح بها للمستخدم الحالي (لو مش مدير)
     const role = state.currentUser.role;
-    const allowed = state.currentUser.allowedClients || "";
+    // نتأكد إنها نص ونحولها لـ UpperCase للمقارنة
+    const allowed = String(state.currentUser.allowedClients || "").toUpperCase();
     
     const visibleClients = clients.filter(c => {
       if (String(c.Is_Deleted).toUpperCase() === "TRUE") return false;
-      if (role === 'Admin') return true;
-      return allowed.includes(c.Main_ID);
+      // ⚡ السحر هنا: لو أدمن أو الصلاحية ALL يرى كل العملاء ⚡
+      if (role === 'Admin' || allowed === 'ALL') return true;
+      return allowed.includes(String(c.Main_ID).toUpperCase());
     });
 
     if (visibleClients.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="5" class="text-muted py-5"><i class="fas fa-folder-open fa-3x mb-3 d-block text-black-50"></i> لا توجد بيانات لعرضها.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="5" class="text-muted py-5"><i class="fas fa-folder-open fa-3x mb-3 d-block text-black-50"></i> لا توجد بيانات.</td></tr>`;
       return;
     }
 
-    // رسم الصفوف
     tbody.innerHTML = visibleClients.map(client => `
       <tr>
         <td class="fw-bold text-primary">${client.Name}</td>
@@ -98,82 +138,59 @@ class ClientController {
         <td>${client.Legal_Entity || '-'}</td>
         <td class="text-muted small">${client.Created_At.split(',')[0]}</td>
         <td>
-          <button class="btn btn-sm btn-info text-white me-1 shadow-sm" onclick="App.navigate('groups', '${client.Main_ID}')" title="فتح مجموعات البيانات">
-            <i class="fas fa-folder-open"></i> المجموعات
-          </button>
-          <button class="btn btn-sm btn-outline-danger shadow-sm" onclick="ClientController.deleteClient('${client.Main_ID}', '${client.Name}')" title="نقل للمهملات">
-            <i class="fas fa-trash-alt"></i>
-          </button>
+          <button class="btn btn-sm btn-info text-white me-1 shadow-sm" onclick="App.navigate('groups', '${client.Main_ID}')"><i class="fas fa-folder-open"></i> المجموعات</button>
+          <button class="btn btn-sm btn-outline-danger shadow-sm" onclick="ClientController.deleteClient('${client.Main_ID}', '${client.Name}')"><i class="fas fa-trash-alt"></i></button>
         </td>
       </tr>
     `).join('');
-    
-    // إعادة تطبيق الصلاحيات عشان الزراير تستخبى لو اليوزر "مشاهد"
     App.applyPermissions(); 
   }
 
-  // 2. إظهار نافذة الإضافة
   static showAddModal() {
     document.getElementById('addClientForm').reset();
-    const modal = new bootstrap.Modal(document.getElementById('addClientModal'));
-    modal.show();
+    this.populateLegalEntities(); // تحديث القائمة قبل الفتح
+    this.handleLegalEntityChange(); // إعادة ضبط مربع "أخرى"
+    new bootstrap.Modal(document.getElementById('addClientModal')).show();
   }
 
-  // 3. إضافة عميل جديد
   static async addClient() {
     const name = document.getElementById('newClientName').value.trim();
     const taxId = document.getElementById('newClientTaxId').value.trim();
-    const legalEntity = document.getElementById('newClientLegalEntity').value.trim();
+    
+    // ⚡ تحديد الكيان القانوني (من القائمة أو من مربع "أخرى") ⚡
+    const selectVal = document.getElementById('newClientLegalEntitySelect').value;
+    const customVal = document.getElementById('newClientLegalEntityCustom').value.trim();
+    const legalEntity = selectVal === 'other' ? customVal : selectVal;
+
     const state = GlobalStore.getState();
     const userEmail = state.currentUser ? state.currentUser.username : 'System';
 
     UIManager.showLoader("جاري حفظ العميل...");
-    
     try {
-      // السحر هنا: بنبعت للباك-إند بالـ async/await
       const newClient = await ApiClient.call('api_addClient', name, taxId, legalEntity, userEmail);
-      
-      // تحديث الذاكرة المركزية فوراً (بدون ما نعمل ريفريش للشيت كله)
       const updatedClients = [...state.clients, newClient];
       GlobalStore.setState({ clients: updatedClients });
       
-      // قفل المودال وإعادة رسم الجدول بس
-      const modalElement = document.getElementById('addClientModal');
-      bootstrap.Modal.getInstance(modalElement).hide();
+      bootstrap.Modal.getInstance(document.getElementById('addClientModal')).hide();
       this.renderTable();
-      
-      UIManager.showSuccess("تمت إضافة العميل بنجاح!");
-      
+      UIManager.showSuccess("تم الحفظ بنجاح!");
     } catch (error) {
       UIManager.showError(error.message);
     }
   }
 
-  // 4. حذف عميل (Soft Delete)
   static async deleteClient(clientId, clientName) {
-    // استخدام مدير التنبيهات المركزي للتأكيد
     const isConfirmed = await UIManager.confirmAction(`هل أنت متأكد من مسح العميل "${clientName}"؟`);
     if (!isConfirmed) return;
-
     UIManager.showLoader("جاري الحذف...");
-    
     try {
       const state = GlobalStore.getState();
       const userEmail = state.currentUser ? state.currentUser.username : 'System';
-      
-      // أمر الحذف للباك-إند
       await ApiClient.call('api_deleteClient', clientId, clientName, userEmail);
-      
-      // تحديث الذاكرة المركزية (تغيير حالة Is_Deleted لـ true محلياً)
-      const updatedClients = state.clients.map(c => {
-        if (c.Main_ID === clientId) c.Is_Deleted = true;
-        return c;
-      });
+      const updatedClients = state.clients.map(c => { if (c.Main_ID === clientId) c.Is_Deleted = true; return c; });
       GlobalStore.setState({ clients: updatedClients });
-      
       this.renderTable();
-      UIManager.showSuccess("تم نقل العميل إلى سلة المهملات.");
-      
+      UIManager.showSuccess("تم الحذف.");
     } catch (error) {
       UIManager.showError(error.message);
     }

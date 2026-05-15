@@ -3,3 +3,4 @@
 !frontend/**/*.html
 !appsscript.json
 !notes.txt
+!schema.txt

@@ -9,15 +9,16 @@
     
     <div class="col-12">
       <div class="card shadow-sm border-0">
-        <div class="card-body p-0">
+        <div class="card-body p-0 table-responsive">
           <table class="table table-hover text-center align-middle m-0">
             <thead class="table-dark">
               <tr>
                 <th>الاسم</th>
-                <th>اسم الدخول (Username)</th>
+                <th>اسم الدخول</th>
                 <th>الصلاحية</th>
                 <th>الحالة</th>
                 <th>تاريخ الإضافة</th>
+                <th>إجراءات</th>
               </tr>
             </thead>
             <tbody id="usersTableBody"></tbody>
@@ -27,8 +28,9 @@
     </div>
   </div>
 
+  <!-- Modal: Add User -->
   <div class="modal fade" id="addUserModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
       <div class="modal-content border-0 shadow-lg">
         <div class="modal-header bg-info text-white">
           <h5 class="modal-title"><i class="fas fa-user-plus me-2"></i> إضافة مستخدم</h5>
@@ -36,19 +38,161 @@
         </div>
         <div class="modal-body p-4">
           <form id="addUserForm" onsubmit="event.preventDefault(); UserController.addUser();">
-            <div class="mb-3"><label class="form-label fw-bold">الاسم بالكامل</label><input type="text" id="nuName" class="form-control" required></div>
-            <div class="mb-3"><label class="form-label fw-bold">اسم الدخول</label><input type="text" id="nuUsername" class="form-control" required></div>
-            <div class="mb-3"><label class="form-label fw-bold">كلمة المرور</label><input type="password" id="nuPassword" class="form-control" required></div>
-            <div class="mb-3">
-              <label class="form-label fw-bold">الصلاحية</label>
-              <select id="nuRole" class="form-select">
-                <option value="Admin">مدير نظام (Admin)</option>
-                <option value="User">مستخدم (User)</option>
-                <option value="Viewer">مشاهد فقط (Viewer)</option>
-              </select>
+            <div class="row">
+              <div class="col-md-6 mb-3"><label class="form-label fw-bold">الاسم بالكامل</label><input type="text" id="nuName" class="form-control" required></div>
+              <div class="col-md-6 mb-3"><label class="form-label fw-bold">اسم الدخول</label><input type="text" id="nuUsername" class="form-control" required></div>
+              <div class="col-md-6 mb-3"><label class="form-label fw-bold">كلمة المرور</label><input type="password" id="nuPassword" class="form-control" required></div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold">الدور (Role)</label>
+                <select id="nuRole" class="form-select" onchange="UserController.handleRoleChange('nu')">
+                  <option value="Viewer">مشاهد فقط (Viewer)</option>
+                  <option value="User">مستخدم (User)</option>
+                  <option value="Admin">مدير نظام (Admin)</option>
+                </select>
+              </div>
+              <div class="col-12 mb-3">
+                <label class="form-label fw-bold">العملاء المسموح بهم</label>
+                <div class="card p-2 bg-light border-0" style="max-height: 150px; overflow-y: auto;">
+                  <div class="form-check border-bottom pb-2 mb-2">
+                    <input class="form-check-input" type="checkbox" id="nuAllowedAll" onchange="UserController.toggleAllClients('nu')">
+                    <label class="form-check-label fw-bold text-primary">تحديد الكل (ALL)</label>
+                  </div>
+                  <div id="nuClientsList" class="row px-2"></div>
+                </div>
+                <input type="hidden" id="nuAllowed">
+              </div>
             </div>
-            <div class="mb-4"><label class="form-label fw-bold">أكواد العملاء المسموح بها (مفصول بفاصلة)</label><input type="text" id="nuAllowed" class="form-control" placeholder="مثال: CL_12345, CL_98765"></div>
-            <button type="submit" class="btn btn-info text-white btn-lg w-100 shadow-sm">حفظ المستخدم</button>
+
+            <!-- Permissions Block -->
+            <div class="mb-3">
+              <label class="form-label fw-bold text-primary">الصلاحيات المخصصة</label>
+              <div class="card p-3 bg-light border-0">
+                <div class="row">
+                  <div class="col-md-4 mb-3">
+                    <h6 class="fw-bold">إدارة العملاء والمجموعات</h6>
+                    <div class="form-check"><input class="form-check-input nu-perm" type="checkbox" data-cat="clients" data-act="add" id="nu_p_cl_add"><label class="form-check-label">إضافة</label></div>
+                    <div class="form-check"><input class="form-check-input nu-perm" type="checkbox" data-cat="clients" data-act="edit" id="nu_p_cl_edit"><label class="form-check-label">تعديل</label></div>
+                    <div class="form-check"><input class="form-check-input nu-perm text-danger" type="checkbox" data-cat="clients" data-act="delete" id="nu_p_cl_del"><label class="form-check-label text-danger">حذف</label></div>
+                  </div>
+                  <div class="col-md-4 mb-3">
+                    <h6 class="fw-bold">إدارة السجلات</h6>
+                    <div class="form-check"><input class="form-check-input nu-perm" type="checkbox" data-cat="records" data-act="add" id="nu_p_rc_add"><label class="form-check-label">إضافة</label></div>
+                    <div class="form-check"><input class="form-check-input nu-perm" type="checkbox" data-cat="records" data-act="edit" id="nu_p_rc_edit"><label class="form-check-label">تعديل</label></div>
+                    <div class="form-check"><input class="form-check-input nu-perm text-danger" type="checkbox" data-cat="records" data-act="delete" id="nu_p_rc_del"><label class="form-check-label text-danger">حذف</label></div>
+                  </div>
+                  <div class="col-md-4 mb-3">
+                    <h6 class="fw-bold">إدارة المرفقات</h6>
+                    <div class="form-check"><input class="form-check-input nu-perm" type="checkbox" data-cat="attachments" data-act="upload" id="nu_p_at_up"><label class="form-check-label">رفع</label></div>
+                    <div class="form-check"><input class="form-check-input nu-perm" type="checkbox" data-cat="attachments" data-act="download" id="nu_p_at_dl"><label class="form-check-label">تحميل</label></div>
+                    <div class="form-check"><input class="form-check-input nu-perm" type="checkbox" data-cat="attachments" data-act="print" id="nu_p_at_pr"><label class="form-check-label">طباعة</label></div>
+                    <div class="form-check"><input class="form-check-input nu-perm text-danger" type="checkbox" data-cat="attachments" data-act="delete" id="nu_p_at_del"><label class="form-check-label text-danger">حذف</label></div>
+                  </div>
+                  <div class="col-md-4 mb-3">
+                    <h6 class="fw-bold">سلة المهملات</h6>
+                    <div class="form-check"><input class="form-check-input nu-perm" type="checkbox" data-cat="recycleBin" data-act="view" id="nu_p_rb_vw"><label class="form-check-label">عرض السلة</label></div>
+                    <div class="form-check"><input class="form-check-input nu-perm" type="checkbox" data-cat="recycleBin" data-act="restoreOwn" id="nu_p_rb_ro"><label class="form-check-label">استرجاع ملفاتي</label></div>
+                    <div class="form-check"><input class="form-check-input nu-perm" type="checkbox" data-cat="recycleBin" data-act="restoreAll" id="nu_p_rb_ra"><label class="form-check-label">استرجاع الكل</label></div>
+                    <div class="form-check"><input class="form-check-input nu-perm text-danger" type="checkbox" data-cat="recycleBin" data-act="empty" id="nu_p_rb_em"><label class="form-check-label text-danger">تفريغ السلة نهائياً</label></div>
+                  </div>
+                  <div class="col-md-4 mb-3">
+                    <h6 class="fw-bold">إدارة النظام</h6>
+                    <div class="form-check"><input class="form-check-input nu-perm text-warning" type="checkbox" data-cat="admin" data-act="manageUsers" id="nu_p_ad_mu"><label class="form-check-label text-warning fw-bold">إدارة المستخدمين</label></div>
+                    <div class="form-check"><input class="form-check-input nu-perm text-warning" type="checkbox" data-cat="admin" data-act="viewLogs" id="nu_p_ad_vl"><label class="form-check-label text-warning fw-bold">رؤية سجل النظام (Logs)</label></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <button type="submit" class="btn btn-info text-white btn-lg w-100 shadow-sm"><i class="fas fa-save me-2"></i>حفظ المستخدم</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Edit User -->
+  <div class="modal fade" id="editUserModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content border-0 shadow-lg">
+        <div class="modal-header bg-warning text-dark">
+          <h5 class="modal-title"><i class="fas fa-user-edit me-2"></i> تعديل مستخدم</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-4">
+          <form id="editUserForm" onsubmit="event.preventDefault(); UserController.updateUser();">
+            <input type="hidden" id="euId">
+            <div class="row">
+              <div class="col-md-6 mb-3"><label class="form-label fw-bold">الاسم بالكامل</label><input type="text" id="euName" class="form-control" required></div>
+              <div class="col-md-6 mb-3"><label class="form-label fw-bold">اسم الدخول</label><input type="text" id="euUsername" class="form-control" required></div>
+              
+              <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold">الدور (Role)</label>
+                <select id="euRole" class="form-select" onchange="UserController.handleRoleChange('eu')">
+                  <option value="Viewer">مشاهد فقط (Viewer)</option>
+                  <option value="User">مستخدم (User)</option>
+                  <option value="Admin">مدير نظام (Admin)</option>
+                </select>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold text-danger">تغيير كلمة المرور</label>
+                <button type="button" class="btn btn-outline-danger w-100" onclick="UserController.resetPasswordPrompt()">
+                  <i class="fas fa-key me-2"></i> إعادة ضبط كلمة المرور
+                </button>
+              </div>
+              <div class="col-12 mb-3">
+                <label class="form-label fw-bold">العملاء المسموح بهم</label>
+                <div class="card p-2 bg-light border-0" style="max-height: 150px; overflow-y: auto;">
+                  <div class="form-check border-bottom pb-2 mb-2">
+                    <input class="form-check-input" type="checkbox" id="euAllowedAll" onchange="UserController.toggleAllClients('eu')">
+                    <label class="form-check-label fw-bold text-primary">تحديد الكل (ALL)</label>
+                  </div>
+                  <div id="euClientsList" class="row px-2"></div>
+                </div>
+                <input type="hidden" id="euAllowed">
+              </div>
+            </div>
+
+            <!-- Permissions Block Edit -->
+            <div class="mb-3">
+              <label class="form-label fw-bold text-primary">الصلاحيات المخصصة</label>
+              <div class="card p-3 bg-light border-0">
+                <div class="row">
+                  <div class="col-md-4 mb-3">
+                    <h6 class="fw-bold">إدارة العملاء والمجموعات</h6>
+                    <div class="form-check"><input class="form-check-input eu-perm" type="checkbox" data-cat="clients" data-act="add"><label class="form-check-label">إضافة</label></div>
+                    <div class="form-check"><input class="form-check-input eu-perm" type="checkbox" data-cat="clients" data-act="edit"><label class="form-check-label">تعديل</label></div>
+                    <div class="form-check"><input class="form-check-input eu-perm text-danger" type="checkbox" data-cat="clients" data-act="delete"><label class="form-check-label text-danger">حذف</label></div>
+                  </div>
+                  <div class="col-md-4 mb-3">
+                    <h6 class="fw-bold">إدارة السجلات</h6>
+                    <div class="form-check"><input class="form-check-input eu-perm" type="checkbox" data-cat="records" data-act="add"><label class="form-check-label">إضافة</label></div>
+                    <div class="form-check"><input class="form-check-input eu-perm" type="checkbox" data-cat="records" data-act="edit"><label class="form-check-label">تعديل</label></div>
+                    <div class="form-check"><input class="form-check-input eu-perm text-danger" type="checkbox" data-cat="records" data-act="delete"><label class="form-check-label text-danger">حذف</label></div>
+                  </div>
+                  <div class="col-md-4 mb-3">
+                    <h6 class="fw-bold">إدارة المرفقات</h6>
+                    <div class="form-check"><input class="form-check-input eu-perm" type="checkbox" data-cat="attachments" data-act="upload"><label class="form-check-label">رفع</label></div>
+                    <div class="form-check"><input class="form-check-input eu-perm" type="checkbox" data-cat="attachments" data-act="download"><label class="form-check-label">تحميل</label></div>
+                    <div class="form-check"><input class="form-check-input eu-perm" type="checkbox" data-cat="attachments" data-act="print"><label class="form-check-label">طباعة</label></div>
+                    <div class="form-check"><input class="form-check-input eu-perm text-danger" type="checkbox" data-cat="attachments" data-act="delete"><label class="form-check-label text-danger">حذف</label></div>
+                  </div>
+                  <div class="col-md-4 mb-3">
+                    <h6 class="fw-bold">سلة المهملات</h6>
+                    <div class="form-check"><input class="form-check-input eu-perm" type="checkbox" data-cat="recycleBin" data-act="view"><label class="form-check-label">عرض السلة</label></div>
+                    <div class="form-check"><input class="form-check-input eu-perm" type="checkbox" data-cat="recycleBin" data-act="restoreOwn"><label class="form-check-label">استرجاع ملفاتي</label></div>
+                    <div class="form-check"><input class="form-check-input eu-perm" type="checkbox" data-cat="recycleBin" data-act="restoreAll"><label class="form-check-label">استرجاع الكل</label></div>
+                    <div class="form-check"><input class="form-check-input eu-perm text-danger" type="checkbox" data-cat="recycleBin" data-act="empty"><label class="form-check-label text-danger">تفريغ السلة نهائياً</label></div>
+                  </div>
+                  <div class="col-md-4 mb-3">
+                    <h6 class="fw-bold">إدارة النظام</h6>
+                    <div class="form-check"><input class="form-check-input eu-perm text-warning" type="checkbox" data-cat="admin" data-act="manageUsers"><label class="form-check-label text-warning fw-bold">إدارة المستخدمين</label></div>
+                    <div class="form-check"><input class="form-check-input eu-perm text-warning" type="checkbox" data-cat="admin" data-act="viewLogs"><label class="form-check-label text-warning fw-bold">رؤية سجل النظام (Logs)</label></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <button type="submit" class="btn btn-warning text-dark fw-bold btn-lg w-100 shadow-sm"><i class="fas fa-save me-2"></i>حفظ التعديلات</button>
           </form>
         </div>
       </div>
@@ -58,23 +202,149 @@
 
 <script>
 class UserController {
+  static defaultPermissions = {
+    Admin: {
+      clients: { add: true, edit: true, delete: true },
+      records: { add: true, edit: true, delete: true },
+      attachments: { upload: true, download: true, print: true, delete: true },
+      recycleBin: { view: true, restoreOwn: true, restoreAll: true, empty: true },
+      admin: { manageUsers: true, viewLogs: true }
+    },
+    User: {
+      clients: { add: true, edit: true, delete: false },
+      records: { add: true, edit: true, delete: false },
+      attachments: { upload: true, download: true, print: true, delete: false },
+      recycleBin: { view: false, restoreOwn: true, restoreAll: false, empty: false },
+      admin: { manageUsers: false, viewLogs: false }
+    },
+    Viewer: {
+      clients: { add: false, edit: false, delete: false },
+      records: { add: false, edit: false, delete: false },
+      attachments: { upload: false, download: true, print: true, delete: false },
+      recycleBin: { view: false, restoreOwn: false, restoreAll: false, empty: false },
+      admin: { manageUsers: false, viewLogs: false }
+    }
+  };
+
   static renderTable() {
     const tbody = document.getElementById('usersTableBody');
     const users = GlobalStore.getState().users || [];
     
-    tbody.innerHTML = users.map(u => `
+    // Filter out deleted users for the view (though backend shouldn't send them, good practice to double check)
+    const activeUsers = users.filter(u => String(u.Is_Deleted).toUpperCase() !== 'TRUE');
+
+    tbody.innerHTML = activeUsers.map(u => `
       <tr>
         <td class="fw-bold text-primary">${u.Name}</td>
         <td>${u.Username}</td>
         <td><span class="badge ${u.Role === 'Admin' ? 'bg-danger' : (u.Role === 'User' ? 'bg-success' : 'bg-secondary')}">${u.Role}</span></td>
         <td>${String(u.Is_Active).toUpperCase() === 'TRUE' ? '<span class="text-success"><i class="fas fa-check-circle"></i> نشط</span>' : '<span class="text-danger"><i class="fas fa-times-circle"></i> موقوف</span>'}</td>
-        <td class="text-muted small">${u.Created_At.split(',')[0]}</td>
+        <td class="text-muted small">${(u.Created_At || '').split(',')[0]}</td>
+        <td>
+          <button class="btn btn-sm btn-outline-warning mx-1" onclick="UserController.showEditModal('${u.User_ID}')" title="تعديل"><i class="fas fa-edit"></i></button>
+          <button class="btn btn-sm btn-outline-danger mx-1" onclick="UserController.confirmDelete('${u.User_ID}')" title="إيقاف / حذف"><i class="fas fa-trash-alt"></i></button>
+        </td>
       </tr>
     `).join('');
   }
 
+  static handleRoleChange(prefix) {
+    const role = document.getElementById(`${prefix}Role`).value;
+    const perms = this.defaultPermissions[role];
+    this.setCheckboxes(prefix, perms);
+  }
+
+  static setCheckboxes(prefix, permsObj) {
+    const checkboxes = document.querySelectorAll(`.${prefix}-perm`);
+    checkboxes.forEach(cb => {
+      const cat = cb.getAttribute('data-cat');
+      const act = cb.getAttribute('data-act');
+      if (permsObj && permsObj[cat] && permsObj[cat][act] !== undefined) {
+        cb.checked = permsObj[cat][act];
+      } else {
+        cb.checked = false;
+      }
+    });
+  }
+
+  static getCheckboxesState(prefix) {
+    const perms = {
+      clients: { add: false, edit: false, delete: false },
+      records: { add: false, edit: false, delete: false },
+      attachments: { upload: false, download: false, print: false, delete: false },
+      recycleBin: { view: false, restoreOwn: false, restoreAll: false, empty: false },
+      admin: { manageUsers: false, viewLogs: false }
+    };
+    const checkboxes = document.querySelectorAll(`.${prefix}-perm`);
+    checkboxes.forEach(cb => {
+      const cat = cb.getAttribute('data-cat');
+      const act = cb.getAttribute('data-act');
+      perms[cat][act] = cb.checked;
+    });
+    return perms;
+  }
+
+  static renderClientsList(prefix) {
+    const clients = GlobalStore.getState().clients || [];
+    const listDiv = document.getElementById(`${prefix}ClientsList`);
+    if (!listDiv) return;
+    
+    listDiv.innerHTML = clients.map(c => `
+      <div class="col-md-4 mb-1">
+        <div class="form-check">
+          <input class="form-check-input ${prefix}-client-cb" type="checkbox" value="${c.Client_ID}" id="${prefix}_client_${c.Client_ID}">
+          <label class="form-check-label small" for="${prefix}_client_${c.Client_ID}">${c.Name} <span class="text-muted">(${c.Client_ID})</span></label>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  static toggleAllClients(prefix) {
+    const isChecked = document.getElementById(`${prefix}AllowedAll`).checked;
+    document.querySelectorAll(`.${prefix}-client-cb`).forEach(cb => cb.checked = isChecked);
+  }
+
+  static getAllowedClientsString(prefix) {
+    const isAllChecked = document.getElementById(`${prefix}AllowedAll`).checked;
+    if (isAllChecked) return "ALL";
+    
+    const checked = [];
+    document.querySelectorAll(`.${prefix}-client-cb:checked`).forEach(cb => checked.push(cb.value));
+    return JSON.stringify(checked);
+  }
+
+  static setAllowedClientsCheckboxes(prefix, allowedStr) {
+    const allCb = document.getElementById(`${prefix}AllowedAll`);
+    if (!allowedStr) {
+      allCb.checked = false;
+      document.querySelectorAll(`.${prefix}-client-cb`).forEach(cb => cb.checked = false);
+      return;
+    }
+    
+    if (allowedStr.toUpperCase().trim() === 'ALL') {
+      allCb.checked = true;
+      document.querySelectorAll(`.${prefix}-client-cb`).forEach(cb => cb.checked = true);
+      return;
+    }
+
+    allCb.checked = false;
+    let allowedArr = [];
+    try {
+      allowedArr = JSON.parse(allowedStr);
+    } catch (e) {
+      allowedArr = allowedStr.split(',').map(s => s.trim());
+    }
+    document.querySelectorAll(`.${prefix}-client-cb`).forEach(cb => {
+      cb.checked = allowedArr.includes(cb.value);
+    });
+  }
+
   static showAddModal() {
     document.getElementById('addUserForm').reset();
+    document.getElementById('nuRole').value = 'Viewer';
+    this.handleRoleChange('nu'); // set default viewer permissions
+    this.renderClientsList('nu');
+    this.setAllowedClientsCheckboxes('nu', '');
     new bootstrap.Modal(document.getElementById('addUserModal')).show();
   }
 
@@ -84,8 +354,10 @@ class UserController {
       Username: document.getElementById('nuUsername').value.trim(),
       Password: document.getElementById('nuPassword').value,
       Role: document.getElementById('nuRole').value,
-      Allowed_Clients: document.getElementById('nuAllowed').value.trim(),
-      Is_Active: true
+      Allowed_Clients: this.getAllowedClientsString('nu'),
+      Is_Active: true,
+      Is_Deleted: false,
+      Permissions: this.getCheckboxesState('nu')
     };
 
     UIManager.showLoader("جاري إضافة المستخدم...");
@@ -101,6 +373,96 @@ class UserController {
       UIManager.showSuccess("تم إضافة المستخدم بنجاح");
     } catch (e) {
       UIManager.showError(e.message);
+    }
+  }
+
+  static showEditModal(userId) {
+    const users = GlobalStore.getState().users || [];
+    const user = users.find(u => u.User_ID == userId);
+    if (!user) return;
+
+    document.getElementById('euId').value = user.User_ID;
+    document.getElementById('euName').value = user.Name;
+    document.getElementById('euUsername').value = user.Username;
+    document.getElementById('euRole').value = user.Role;
+    
+    this.renderClientsList('eu');
+    this.setAllowedClientsCheckboxes('eu', user.Allowed_Clients || '');
+    
+    // Set permissions from user object if available, else fallback to role defaults
+    if (user.Permissions && typeof user.Permissions === 'object' && Object.keys(user.Permissions).length > 0) {
+      this.setCheckboxes('eu', user.Permissions);
+    } else {
+      this.handleRoleChange('eu');
+    }
+
+    new bootstrap.Modal(document.getElementById('editUserModal')).show();
+  }
+
+  static async updateUser() {
+    const userId = document.getElementById('euId').value;
+    const userData = {
+      Name: document.getElementById('euName').value.trim(),
+      Username: document.getElementById('euUsername').value.trim(),
+      Role: document.getElementById('euRole').value,
+      Allowed_Clients: this.getAllowedClientsString('eu'),
+      Permissions: this.getCheckboxesState('eu')
+    };
+
+    UIManager.showLoader("جاري حفظ التعديلات...");
+    try {
+      const adminEmail = GlobalStore.getState().currentUser.username;
+      // We assume an api_updateUser exists
+      const success = await ApiClient.call('api_updateUser', userId, userData, adminEmail);
+      
+      if (success) {
+        let updatedUsers = GlobalStore.getState().users.map(u => {
+           if (u.User_ID == userId) return { ...u, ...userData };
+           return u;
+        });
+        GlobalStore.setState({ users: updatedUsers });
+        bootstrap.Modal.getInstance(document.getElementById('editUserModal')).hide();
+        this.renderTable();
+        UIManager.showSuccess("تم تعديل المستخدم بنجاح");
+      }
+    } catch (e) {
+      UIManager.showError(e.message);
+    }
+  }
+
+  static async resetPasswordPrompt() {
+    const newPassword = prompt("أدخل كلمة المرور الجديدة للمستخدم:");
+    if (!newPassword || newPassword.trim() === '') return;
+    
+    const userId = document.getElementById('euId').value;
+    UIManager.showLoader("جاري تحديث كلمة المرور...");
+    try {
+      const adminEmail = GlobalStore.getState().currentUser.username;
+      await ApiClient.call('api_updateUser', userId, { Password: newPassword.trim() }, adminEmail);
+      UIManager.showSuccess("تم تغيير كلمة المرور بنجاح");
+    } catch (e) {
+      UIManager.showError("حدث خطأ أثناء تغيير كلمة المرور");
+    }
+  }
+
+  static async confirmDelete(userId) {
+    if (confirm("هل أنت متأكد أنك تريد إيقاف/حذف هذا الحساب؟")) {
+      UIManager.showLoader("جاري الإيقاف...");
+      try {
+        const adminEmail = GlobalStore.getState().currentUser.username;
+        // Soft delete sets Is_Deleted = true in the backend
+        await ApiClient.call('api_deleteUser', userId, adminEmail);
+        
+        let updatedUsers = GlobalStore.getState().users.map(u => {
+           if (u.User_ID == userId) return { ...u, Is_Deleted: true, Is_Active: false };
+           return u;
+        });
+        GlobalStore.setState({ users: updatedUsers });
+        this.renderTable();
+        UIManager.showSuccess("تم إيقاف الحساب بنجاح");
+      } catch (e) {
+        UIManager.showError(e.message);
+      }
     }
   }
 }

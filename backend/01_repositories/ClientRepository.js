@@ -4,7 +4,7 @@
  */
 class ClientRepository extends BaseRepository {
   constructor() {
-    super(Config.TABLES.CLIENTS, "Main_ID");
+    super(Config.TABLES.CLIENTS, "Client_ID");
   }
 
   /**

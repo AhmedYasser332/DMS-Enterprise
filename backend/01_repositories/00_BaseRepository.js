@@ -6,7 +6,7 @@
 class BaseRepository {
   /**
    * @param {string} tableName - اسم الجدول (من Config.TABLES)
-   * @param {string} idColumn - اسم عمود المعرف الأساسي (مثل Main_ID, Record_ID)
+   * @param {string} idColumn - اسم عمود المعرف الأساسي (مثل Client_ID, Record_ID)
    */
   constructor(tableName, idColumn) {
     this.tableName = tableName;
@@ -26,7 +26,9 @@ class BaseRepository {
   _mapRowToObject(row, headers) {
     let obj = {};
     headers.forEach((header, index) => {
-      obj[header] = row[index];
+      if (header) {
+        obj[String(header).trim()] = row[index];
+      }
     });
     return obj;
   }
@@ -41,7 +43,7 @@ class BaseRepository {
     
     if (data.length <= 1) return [];
 
-    const headers = data[0];
+    const headers = data[0].map(h => String(h).trim());
     const rows = data.slice(1);
     const isDeletedIdx = headers.indexOf("Is_Deleted");
 
@@ -68,7 +70,23 @@ class BaseRepository {
    */
   create(entityObject) {
     const sheet = this._getSheet();
-    const headers = sheet.getDataRange().getValues()[0];
+    const rawHeaders = sheet.getDataRange().getValues()[0];
+    let headers = rawHeaders.map(h => String(h).trim());
+    
+    // Auto-migration: Check for missing columns and add them
+    let missingHeaders = [];
+    for (let key in entityObject) {
+      if (headers.indexOf(key) === -1) {
+        missingHeaders.push(key);
+      }
+    }
+    
+    if (missingHeaders.length > 0) {
+      const newHeaders = rawHeaders.concat(missingHeaders);
+      sheet.getRange(1, 1, 1, newHeaders.length).setValues([newHeaders]);
+      headers = headers.concat(missingHeaders);
+    }
+
     let newRow = new Array(headers.length).fill("");
 
     // تعبئة الصف بناءً على الـ Headers أوتوماتيكياً (Dynamic Mapping)
@@ -92,20 +110,29 @@ class BaseRepository {
   update(id, updatedFields) {
     const sheet = this._getSheet();
     const data = sheet.getDataRange().getValues();
-    const headers = data[0];
+    const headers = data[0].map(h => String(h).trim());
     const idColIdx = headers.indexOf(this.idColumn);
 
     if (idColIdx === -1) throw new Error(`Column ${this.idColumn} not found in ${this.tableName}`);
 
     for (let i = 1; i < data.length; i++) {
       if (data[i][idColIdx] == id) {
-        // تحديث الحقول المطلوبة فقط بذكاء بدون لمس باقي الصف
+        // تحسين الأداء: تجميع التحديثات في مصفوفة وتحديث الصف بالكامل مرة واحدة (Batch Operation)
+        let rowToUpdate = [...data[i]];
+        let hasChanges = false;
+        
         for (let key in updatedFields) {
           const targetColIdx = headers.indexOf(key);
           if (targetColIdx !== -1) {
-            sheet.getRange(i + 1, targetColIdx + 1).setValue(updatedFields[key]);
+            rowToUpdate[targetColIdx] = updatedFields[key];
+            hasChanges = true;
           }
         }
+        
+        if (hasChanges) {
+          sheet.getRange(i + 1, 1, 1, headers.length).setValues([rowToUpdate]);
+        }
+        
         this.db.commit();
         return true;
       }

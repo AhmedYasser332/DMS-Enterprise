@@ -3,7 +3,7 @@
  */
 class AttachmentRepository extends BaseRepository {
   constructor() {
-    super(Config.TABLES.ATTACHMENTS, "File_ID");
+    super(Config.TABLES.ATTACHMENTS, "Attachment_ID");
   }
 
   findByRecordId(recordId) {

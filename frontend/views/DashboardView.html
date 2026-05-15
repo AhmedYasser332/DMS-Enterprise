@@ -65,19 +65,19 @@ class DashboardController {
     // فلترة العملاء المسموح بهم
     const activeClients = state.clients.filter(c => 
       String(c.Is_Deleted).toUpperCase() !== "TRUE" && 
-      (role === 'Admin' || allowed === 'ALL' || allowed.includes(String(c.Main_ID).toUpperCase()))
+      (role === 'Admin' || allowed === 'ALL' || allowed.includes(String(c.Client_ID).toUpperCase()))
     );
-    const allowedClientIds = activeClients.map(c => c.Main_ID);
+    const allowedClientIds = activeClients.map(c => c.Client_ID);
 
     const activeGroups = state.groups.filter(g => 
       String(g.Is_Deleted).toUpperCase() !== "TRUE" && 
-      allowedClientIds.includes(g.Main_ID)
+      allowedClientIds.includes(g.Client_ID)
     );
     const allowedGroupIds = activeGroups.map(g => g.Group_ID);
 
     const activeRecords = state.records.filter(r => 
       String(r.Is_Deleted).toUpperCase() !== "TRUE" && 
-      allowedGroupIds.includes(r.Sub_ID)
+      allowedGroupIds.includes(r.Group_ID)
     );
     const allowedRecordIds = activeRecords.map(r => r.Record_ID);
 

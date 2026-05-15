@@ -3,9 +3,18 @@
  * مسؤولة عن عمليات العملاء وقواعد العمل الخاصة بهم
  */
 class ClientService {
-  constructor(clientRepository, logRepository) {
+  constructor(clientRepository, logRepository, userRepository) {
     this.clientRepo = clientRepository;
     this.logRepo = logRepository;
+    this.userRepo = userRepository;
+  }
+
+  _checkPermission(userEmail, action) {
+    if(!userEmail || userEmail === 'System') return; 
+    const user = this.userRepo.findByUsername(userEmail);
+    if(!user) throw new Error("مستخدم غير صالح لعملية " + action);
+    if(user.Role === 'Admin') return; 
+    if(user.Role === 'Viewer') throw new Error("صلاحيات القراءة فقط. لا يمكنك " + action);
   }
 
   getAllClients() {
@@ -13,6 +22,7 @@ class ClientService {
   }
 
   addClient(name, taxId, legalEntity, userEmail) {
+    this._checkPermission(userEmail, 'إضافة عميل');
     // 1. Business Rule: Validation الأساسي
     if (!name || name.trim() === "") {
       throw new Error("اسم العميل حقل إجباري لا يمكن تركه فارغاً.");
@@ -35,7 +45,7 @@ class ClientService {
 
     // إنشاء الكائن (Entity)
     const newClient = {
-      "Main_ID": "CL_" + new Date().getTime(),
+      "Client_ID": "CL_" + new Date().getTime(),
       "Name": name.trim(),
       "Tax_ID": taxId || "-",
       "Legal_Entity": legalEntity || "-",
@@ -53,7 +63,17 @@ class ClientService {
     return createdClient;
   }
 
+  updateClient(clientId, updateData, userEmail) {
+    this._checkPermission(userEmail, 'تعديل عميل');
+    if (updateData.Name && updateData.Name.trim() === "") throw new Error("اسم العميل لا يمكن أن يكون فارغاً.");
+    
+    this.clientRepo.update(clientId, updateData);
+    this.logRepo.logAction("تعديل عميل", `تم تعديل بيانات العميل ID: ${clientId}`, userEmail);
+    return true;
+  }
+
   deleteClient(clientId, clientName, userEmail) {
+    this._checkPermission(userEmail, 'حذف عميل');
     // Business Rule: Soft Delete
     const success = this.clientRepo.softDelete(clientId);
     
@@ -66,4 +86,4 @@ class ClientService {
   }
 }
 
-const clientService = new ClientService(clientRepo, logRepo);
+const clientService = new ClientService(clientRepo, logRepo, userRepo);

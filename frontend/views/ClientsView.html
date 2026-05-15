@@ -1,9 +1,9 @@
 <template id="clients-view-template">
   <div class="row fade-in">
-    <div class="col-12 mb-3 d-flex justify-content-between align-items-center border-bottom pb-2">
-      <h3 class="text-primary m-0"><i class="fas fa-users me-2"></i> إدارة العملاء</h3>
-      <button class="btn btn-success shadow-sm" onclick="ClientController.showAddModal()">
-        <i class="fas fa-plus"></i> إضافة عميل جديد
+    <div class="col-12 mb-4 d-flex justify-content-between align-items-center pb-2">
+      <h3 class="text-primary m-0 fw-bold"><i class="fas fa-users me-2"></i> إدارة العملاء</h3>
+      <button class="btn btn-primary shadow-sm" onclick="ClientController.showAddModal()">
+        <i class="fas fa-plus me-1"></i> إضافة عميل جديد
       </button>
     </div>
     
@@ -11,8 +11,8 @@
       <div class="card shadow-sm border-0 rounded-lg">
         <div class="card-body p-0">
           <div class="table-responsive">
-            <table class="table table-hover text-center align-middle m-0">
-              <thead class="table-dark">
+            <table class="table text-center align-middle m-0">
+              <thead>
                 <tr>
                   <th>اسم العميل</th>
                   <th>السجل الضريبي</th>
@@ -122,8 +122,8 @@ class ClientController {
     const visibleClients = clients.filter(c => {
       if (String(c.Is_Deleted).toUpperCase() === "TRUE") return false;
       // ⚡ السحر هنا: لو أدمن أو الصلاحية ALL يرى كل العملاء ⚡
-      if (role === 'Admin' || allowed === 'ALL') return true;
-      return allowed.includes(String(c.Main_ID).toUpperCase());
+      if (String(role).toUpperCase() === 'ADMIN' || allowed === 'ALL') return true;
+      return allowed.includes(String(c.Client_ID).toUpperCase());
     });
 
     if (visibleClients.length === 0) {
@@ -138,8 +138,8 @@ class ClientController {
         <td>${client.Legal_Entity || '-'}</td>
         <td class="text-muted small">${client.Created_At.split(',')[0]}</td>
         <td>
-          <button class="btn btn-sm btn-info text-white me-1 shadow-sm" onclick="App.navigate('groups', '${client.Main_ID}')"><i class="fas fa-folder-open"></i> المجموعات</button>
-          <button class="btn btn-sm btn-outline-danger shadow-sm" onclick="ClientController.deleteClient('${client.Main_ID}', '${client.Name}')"><i class="fas fa-trash-alt"></i></button>
+          <button class="btn btn-sm text-primary me-1 shadow-sm fw-bold" style="background: rgba(79, 70, 229, 0.1);" onclick="App.navigate('groups', '${client.Client_ID}')"><i class="fas fa-folder-open me-1"></i> المجموعات</button>
+          <button class="btn btn-sm text-danger shadow-sm fw-bold" style="background: rgba(239, 68, 68, 0.1);" onclick="ClientController.deleteClient('${client.Client_ID}', '${client.Name}')"><i class="fas fa-trash-alt"></i></button>
         </td>
       </tr>
     `).join('');
@@ -187,7 +187,7 @@ class ClientController {
       const state = GlobalStore.getState();
       const userEmail = state.currentUser ? state.currentUser.username : 'System';
       await ApiClient.call('api_deleteClient', clientId, clientName, userEmail);
-      const updatedClients = state.clients.map(c => { if (c.Main_ID === clientId) c.Is_Deleted = true; return c; });
+      const updatedClients = state.clients.map(c => c.Client_ID === clientId ? { ...c, Is_Deleted: true } : c);
       GlobalStore.setState({ clients: updatedClients });
       this.renderTable();
       UIManager.showSuccess("تم الحذف.");

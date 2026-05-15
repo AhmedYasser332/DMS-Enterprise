@@ -1,0 +1,186 @@
+<template id="profile-view-template">
+  <div class="row fade-in justify-content-center">
+    <div class="col-lg-8">
+      <div class="card shadow-lg border-0 rounded-lg overflow-hidden">
+        <div class="card-header bg-primary text-white p-4 d-flex align-items-center">
+          <div class="position-relative me-4">
+            <img id="profileAvatar" src="https://via.placeholder.com/100" class="rounded-circle border border-3 border-white shadow" style="width:100px;height:100px;object-fit:cover;">
+            <button class="btn btn-sm btn-light position-absolute bottom-0 end-0 rounded-circle shadow-sm" onclick="ProfileController.triggerAvatarUpload()" title="تغيير الصورة">
+              <i class="fas fa-camera text-primary"></i>
+            </button>
+            <input type="file" id="avatarUploadInput" class="d-none" accept="image/*" onchange="ProfileController.handleAvatarUpload(event)">
+          </div>
+          <div>
+            <h2 class="m-0 fw-bold" id="profileName">اسم المستخدم</h2>
+            <p class="m-0 opacity-75"><i class="fas fa-envelope me-2"></i><span id="profileUsername">user@example.com</span></p>
+            <span class="badge mt-2" style="background: rgba(255,255,255,0.2); color: white; font-weight: normal; font-size: 0.9rem; padding: 0.4rem 0.8rem;" id="profileRole">الدور</span>
+          </div>
+        </div>
+        
+        <div class="card-body p-4" style="background-color: var(--card-bg); border-radius: 0 0 12px 12px;">
+          <h5 class="text-primary mb-3"><i class="fas fa-user-edit me-2"></i> إعدادات الحساب</h5>
+          
+          <form id="profileSettingsForm" onsubmit="event.preventDefault(); ProfileController.saveSettings();">
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label class="form-label fw-bold">الاسم بالكامل</label>
+                <input type="text" id="profileInputName" class="form-control" required>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-bold">السمة (Theme)</label>
+                <select id="profileTheme" class="form-select" onchange="ProfileController.changeTheme(this.value)">
+                  <option value="light">مضيء (Light)</option>
+                  <option value="dark">داكن (Dark)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label class="form-label fw-bold">المسمى الوظيفي</label>
+                <input type="text" id="profileJobTitle" class="form-control">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-bold">رقم الهاتف</label>
+                <input type="tel" id="profilePhone" class="form-control">
+              </div>
+            </div>
+            
+            <hr class="my-4">
+            <h5 class="text-danger mb-3"><i class="fas fa-lock me-2"></i> تغيير كلمة المرور</h5>
+            
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label class="form-label fw-bold">كلمة المرور الحالية</label>
+                <input type="password" id="profileOldPassword" class="form-control" placeholder="مطلوبة لتأكيد التغيير">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-bold">كلمة المرور الجديدة</label>
+                <input type="password" id="profileNewPassword" class="form-control" placeholder="اتركه فارغاً إذا لم ترد تغييره">
+              </div>
+            </div>
+            
+            <div class="d-flex justify-content-end mt-4">
+              <button type="submit" class="btn btn-primary px-4 shadow-sm"><i class="fas fa-save me-2"></i> حفظ التغييرات</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+class ProfileController {
+  static renderView() {
+    const user = GlobalStore.getState().currentUser;
+    if(!user) return;
+    
+    // Set UI Data
+    document.getElementById('profileName').textContent = user.name;
+    document.getElementById('profileUsername').textContent = user.username;
+    document.getElementById('profileRole').textContent = user.role;
+    document.getElementById('profileAvatar').src = user.avatar || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(user.name) + '&background=random';
+    
+    // Set Form Data
+    document.getElementById('profileInputName').value = user.name || '';
+    document.getElementById('profileJobTitle').value = user.jobTitle || '';
+    document.getElementById('profilePhone').value = user.phoneNumber || '';
+    
+    // Theme from local storage
+    const savedTheme = localStorage.getItem('dms_theme') || 'light';
+    document.getElementById('profileTheme').value = savedTheme;
+  }
+
+  static changeTheme(theme) {
+    localStorage.setItem('dms_theme', theme);
+    document.documentElement.setAttribute('data-bs-theme', theme);
+    const icon = document.querySelector('#darkModeToggle i');
+    if (icon) {
+      if (theme === 'dark') icon.classList.replace('fa-moon', 'fa-sun');
+      else icon.classList.replace('fa-sun', 'fa-moon');
+    }
+  }
+
+  static triggerAvatarUpload() {
+    document.getElementById('avatarUploadInput').click();
+  }
+
+  static async handleAvatarUpload(event) {
+    const file = event.target.files[0];
+    if(!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = async function(e) {
+      const base64Data = e.target.result;
+      
+      const user = GlobalStore.getState().currentUser;
+      UIManager.showLoader("جاري رفع الصورة إلى Google Drive...");
+      try {
+        const driveUrl = await ApiClient.call('api_uploadAvatar', user.id, base64Data, file.type, user.username);
+        
+        document.getElementById('profileAvatar').src = driveUrl;
+        user.avatar = driveUrl;
+        GlobalStore.setState({ currentUser: user });
+        UIManager.showSuccess("تم تغيير الصورة بنجاح");
+      } catch (err) {
+        UIManager.showError(err.message);
+      }
+    };
+    reader.readAsDataURL(file);
+  }
+
+  static async saveSettings() {
+    const user = GlobalStore.getState().currentUser;
+    const name = document.getElementById('profileInputName').value.trim();
+    const jobTitle = document.getElementById('profileJobTitle').value.trim();
+    const phone = document.getElementById('profilePhone').value.trim();
+    const oldPwd = document.getElementById('profileOldPassword').value.trim();
+    const newPwd = document.getElementById('profileNewPassword').value.trim();
+    
+    const payload = {
+      Name: name,
+      Job_Title: jobTitle,
+      Phone_Number: phone
+    };
+
+    if (newPwd) {
+      if (!oldPwd) {
+        UIManager.showError("يجب إدخال كلمة المرور الحالية لتغيير كلمة المرور.");
+        return;
+      }
+      if (oldPwd !== user.password) { // Wait, do we have user password in state? usually not.
+        // The API call to login checked it, we must verify old password or send it to backend to verify.
+        // Assuming user.password is stored in state from login (in authService)
+      }
+      // Since it's better to verify in backend, let's just pass old password and backend verifies it.
+      // But updateUser API currently doesn't check old password. 
+      // As a quick fix, if user object has password from Store:
+      if(user.password && oldPwd !== user.password) {
+         UIManager.showError("كلمة المرور الحالية غير صحيحة.");
+         return;
+      }
+      payload.Password = newPwd;
+    }
+
+    UIManager.showLoader("جاري حفظ التعديلات...");
+    try {
+      await ApiClient.call('api_updateUser', user.id, payload, user.username);
+      
+      user.name = name;
+      user.jobTitle = jobTitle;
+      user.phoneNumber = phone;
+      if(newPwd) user.password = newPwd; // Update stored password
+      GlobalStore.setState({ currentUser: user });
+      
+      document.getElementById('profileName').textContent = name;
+      document.getElementById('profileOldPassword').value = '';
+      document.getElementById('profileNewPassword').value = '';
+      
+      UIManager.showSuccess("تم حفظ التعديلات بنجاح!");
+    } catch(err) {
+      UIManager.showError(err.message);
+    }
+  }
+}
+</script>

@@ -3,17 +3,31 @@
  * مسؤولة عن إدارة مجموعات البيانات (الأقسام الفرعية)
  */
 class GroupService {
-  constructor(groupRepository, clientRepository, logRepository) {
+  constructor(groupRepository, clientRepository, logRepository, userRepository) {
     this.groupRepo = groupRepository;
     this.clientRepo = clientRepository; // حقن مستودع العملاء للتأكد من وجود العميل!
     this.logRepo = logRepository;
+    this.userRepo = userRepository;
+  }
+
+  _checkPermission(userEmail, action) {
+    if(!userEmail || userEmail === 'System') return; 
+    const user = this.userRepo.findByUsername(userEmail);
+    if(!user) throw new Error("مستخدم غير صالح لعملية " + action);
+    if(user.Role === 'Admin') return; 
+    if(user.Role === 'Viewer') throw new Error("صلاحيات القراءة فقط. لا يمكنك " + action);
   }
 
   getGroupsByClient(clientId) {
     return this.groupRepo.findByClientId(clientId);
   }
 
+  getAllGroups() {
+    return this.groupRepo.findAll();
+  }
+
   addGroup(clientId, groupName, userEmail) {
+    this._checkPermission(userEmail, 'إضافة مجموعة');
     if (!groupName || groupName.trim() === "") {
       throw new Error("اسم المجموعة لا يمكن أن يكون فارغاً.");
     }
@@ -25,8 +39,8 @@ class GroupService {
     }
 
     const newGroup = {
-      "Group_ID": "GP_" + new Date().getTime(),
-      "Main_ID": clientId,
+      "Group_ID": "GRP_" + new Date().getTime(),
+      "Client_ID": clientId,
       "Name": groupName.trim(),
       "Created_By": userEmail || "Admin",
       "Created_At": new Date().toLocaleString('en-GB'),
@@ -39,7 +53,17 @@ class GroupService {
     return createdGroup;
   }
 
+  updateGroup(groupId, updateData, userEmail) {
+    this._checkPermission(userEmail, 'تعديل مجموعة');
+    if (updateData.Name && updateData.Name.trim() === "") throw new Error("اسم المجموعة لا يمكن أن يكون فارغاً.");
+    
+    this.groupRepo.update(groupId, updateData);
+    this.logRepo.logAction("تعديل مجموعة", `تم تعديل بيانات المجموعة ID: ${groupId}`, userEmail);
+    return true;
+  }
+
   deleteGroup(groupId, groupName, userEmail) {
+    this._checkPermission(userEmail, 'حذف مجموعة');
     const success = this.groupRepo.softDelete(groupId);
     if (!success) throw new Error("تعذر مسح المجموعة.");
     
@@ -48,4 +72,4 @@ class GroupService {
   }
 }
 
-const groupService = new GroupService(groupRepo, clientRepo, logRepo);
+const groupService = new GroupService(groupRepo, clientRepo, logRepo, userRepo);

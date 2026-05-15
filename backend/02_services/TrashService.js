@@ -1,7 +1,24 @@
 class TrashService {
-  constructor(clientRepo, groupRepo, recordRepo, logRepo) {
+  constructor(clientRepo, groupRepo, recordRepo, logRepo, userRepository) {
     this.repos = [clientRepo, groupRepo, recordRepo]; // بنراقب الجداول دي
     this.logRepo = logRepo;
+    this.userRepo = userRepository;
+  }
+
+  _checkPermission(userEmail, action) {
+    if(!userEmail || userEmail === 'System') return; 
+    const user = this.userRepo.findByUsername(userEmail);
+    if(!user) throw new Error("مستخدم غير صالح لعملية " + action);
+    if(user.Role === 'Admin') return; 
+    
+    // Check specific permissions if needed
+    let perms = {};
+    if(user.Permissions) {
+      try { perms = JSON.parse(user.Permissions); } catch(e) {}
+    }
+    if(!perms.recycleBin?.restore && action === 'استعادة') throw new Error("صلاحيات غير كافية لـ " + action);
+    if(!perms.recycleBin?.delete && action === 'حذف نهائي') throw new Error("صلاحيات غير كافية لـ " + action);
+    if(!perms.recycleBin?.view && action === 'عرض') throw new Error("صلاحيات غير كافية لـ " + action);
   }
 
   // جلب كل العناصر اللي فيها Is_Deleted = true
@@ -10,7 +27,7 @@ class TrashService {
     
     // جلب العملاء المحذوفين
     this.repos[0].findAll(false).filter(c => String(c.Is_Deleted).toUpperCase() === "TRUE")
-      .forEach(c => allDeleted.push({...c, type: 'عميل', display: c.Name, id: c.Main_ID}));
+      .forEach(c => allDeleted.push({...c, type: 'عميل', display: c.Name, id: c.Client_ID}));
       
     // جلب المجموعات المحذوفة
     this.repos[1].findAll(false).filter(g => String(g.Is_Deleted).toUpperCase() === "TRUE")
@@ -24,6 +41,7 @@ class TrashService {
   }
 
   restoreItem(type, id, name, userEmail) {
+    this._checkPermission(userEmail, 'استعادة');
     let repo = type === 'عميل' ? this.repos[0] : (type === 'مجموعة' ? this.repos[1] : this.repos[2]);
     repo.restore(id);
     this.logRepo.logAction("استعادة", `تم استعادة ${type}: ${name}`, userEmail);
@@ -31,6 +49,7 @@ class TrashService {
   }
 
   permanentDelete(type, id, name, userEmail) {
+    this._checkPermission(userEmail, 'حذف نهائي');
     let repo = type === 'عميل' ? this.repos[0] : (type === 'مجموعة' ? this.repos[1] : this.repos[2]);
     repo.hardDelete(id);
     this.logRepo.logAction("حذف نهائي", `تم حذف ${type} نهائياً: ${name}`, userEmail);
@@ -38,4 +57,4 @@ class TrashService {
   }
 }
 
-const trashService = new TrashService(clientRepo, groupRepo, recordRepo, logRepo);
+const trashService = new TrashService(clientRepo, groupRepo, recordRepo, logRepo, userRepo);

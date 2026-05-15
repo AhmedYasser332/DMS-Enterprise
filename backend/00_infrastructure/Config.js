@@ -9,11 +9,12 @@ const Config = {
   // أسماء الجداول (الشيتات)
   TABLES: {
     CLIENTS: "Clients",
-    GROUPS: "Data_Groups",
+    GROUPS: "Groups",
     RECORDS: "Records",
     ATTACHMENTS: "Attachments",
     USERS: "Users",
-    LOGS: "Activity_Log"
+    LOGS: "Activity_Log",
+    TAGS: "Tags"
   },
   
   // أنواع الصلاحيات (Roles)

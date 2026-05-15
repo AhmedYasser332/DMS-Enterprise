@@ -52,17 +52,17 @@ class SearchController {
     // 1. تحديد العملاء المسموح بهم
     const allowedClients = state.clients.filter(c => 
       String(c.Is_Deleted).toUpperCase() !== "TRUE" && 
-      (role === 'Admin' || allowed === 'ALL' || allowed.includes(String(c.Main_ID).toUpperCase()))
+      (role === 'Admin' || allowed === 'ALL' || allowed.includes(String(c.Client_ID).toUpperCase()))
     );
 
-    const allowedClientIds = allowedClients.map(c => c.Main_ID);
+    const allowedClientIds = allowedClients.map(c => c.Client_ID);
     
-    const allowedGroups = state.groups.filter(g => String(g.Is_Deleted).toUpperCase() !== "TRUE" && allowedClientIds.includes(g.Main_ID));
+    const allowedGroups = state.groups.filter(g => String(g.Is_Deleted).toUpperCase() !== "TRUE" && allowedClientIds.includes(g.Client_ID));
     const allowedGroupIds = allowedGroups.map(g => g.Group_ID);
 
     // 2. فلترة السجلات المسموح بها والتي تطابق كلمة البحث
     const results = state.records.filter(r => {
-      if (String(r.Is_Deleted).toUpperCase() === "TRUE" || !allowedGroupIds.includes(r.Sub_ID)) return false;
+      if (String(r.Is_Deleted).toUpperCase() === "TRUE" || !allowedGroupIds.includes(r.Group_ID)) return false;
       
       const searchString = `${r.Title} ${r.Description} ${r.Tags}`.toLowerCase();
       return searchString.includes(query);
@@ -76,8 +76,8 @@ class SearchController {
 
     tbody.innerHTML = results.map(record => {
       // معرفة مسار السجل للـ UI
-      const group = allowedGroups.find(g => g.Group_ID === record.Sub_ID);
-      const client = allowedClients.find(c => c.Main_ID === (group ? group.Main_ID : null));
+      const group = allowedGroups.find(g => g.Group_ID === record.Group_ID);
+      const client = allowedClients.find(c => c.Client_ID === (group ? group.Client_ID : null));
       const path = client && group ? `${client.Name} <i class="fas fa-chevron-left fa-xs text-muted mx-1"></i> ${group.Name}` : 'مسار غير معروف';
 
       return `

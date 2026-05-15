@@ -20,17 +20,18 @@ class AuthService {
       throw new Error("كلمة المرور خاطئة، حاول مرة أخرى!");
     }
     
-    // 3. التحقق من حالة الحساب (نشط أم موقوف)
-    if (String(user.Is_Active).toUpperCase() !== 'TRUE') {
-      throw new Error("هذا الحساب موقوف، يرجى مراجعة الإدارة.");
+    // 3. التحقق من حالة الحساب (محذوف / موقوف)
+    if (String(user.Is_Deleted).toUpperCase() === 'TRUE') {
+      throw new Error("تم إيقاف هذا الحساب، يرجى مراجعة مدير النظام.");
     }
     
     return {
-      id: user.User_ID,
+      userId: user.User_ID,
       name: user.Name,
       username: user.Username,
       role: user.Role,
-      allowedClients: user.Allowed_Clients || ""
+      allowedClients: user.Allowed_Clients || "",
+      permissions: user.Permissions || null
     };
   }
 }

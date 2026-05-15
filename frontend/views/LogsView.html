@@ -1,0 +1,91 @@
+<template id="logs-view-template">
+  <div class="row fade-in">
+    <div class="col-12 mb-3 border-bottom pb-2">
+      <h3 class="text-warning m-0"><i class="fas fa-list-alt me-2"></i> سجل النظام (Logs)</h3>
+      <small class="text-muted">عرض كافة حركات النظام للمراقبة والتدقيق.</small>
+    </div>
+    
+    <div class="col-12 mb-3">
+      <input type="text" id="logSearchInput" class="form-control" placeholder="بحث في السجلات (حسب الحدث، المستخدم، التاريخ...)" onkeyup="LogController.filterLogs()">
+    </div>
+
+    <div class="col-12">
+      <div class="card shadow-sm border-0">
+        <div class="card-body p-0 table-responsive" style="max-height: 600px; overflow-y: auto;">
+          <table class="table table-hover text-center align-middle m-0" id="logsTable">
+            <thead class="table-dark" style="position: sticky; top: 0; z-index: 10;">
+              <tr>
+                <th>التاريخ والوقت</th>
+                <th>المستخدم</th>
+                <th>الحدث</th>
+                <th>التفاصيل</th>
+              </tr>
+            </thead>
+            <tbody id="logsTableBody">
+              <tr><td colspan="4" class="py-5 text-muted">جاري تحميل السجلات...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+class LogController {
+  static allLogs = [];
+
+  static async loadView() {
+    const tbody = document.getElementById('logsTableBody');
+    if (!tbody) return;
+
+    // Check permissions
+    const state = GlobalStore.getState();
+    const currentUser = state.currentUser || {};
+    const perms = currentUser.permissions?.admin || { viewLogs: false };
+    
+    if (!perms.viewLogs && currentUser.role !== 'Admin') {
+      tbody.innerHTML = '<tr><td colspan="4" class="py-5 text-danger"><i class="fas fa-ban fa-3x mb-3 d-block"></i> عذراً، ليس لديك صلاحية لعرض سجل النظام.</td></tr>';
+      return;
+    }
+
+    try {
+      const logs = await ApiClient.call('api_getLogs');
+      this.allLogs = logs || [];
+      this.renderTable(this.allLogs);
+    } catch (error) {
+      tbody.innerHTML = `<tr><td colspan="4" class="py-5 text-danger">خطأ في التحميل: ${error.message}</td></tr>`;
+    }
+  }
+
+  static renderTable(logsArray) {
+    const tbody = document.getElementById('logsTableBody');
+    if (!tbody) return;
+
+    if (logsArray.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="4" class="py-5 text-muted">لا توجد سجلات لعرضها.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = logsArray.map(log => `
+      <tr>
+        <td class="small text-muted" style="white-space: nowrap;">${log.Timestamp}</td>
+        <td class="fw-bold text-primary">${log.User_ID || '-'}</td>
+        <td><span class="badge bg-warning text-dark">${log.Action}</span></td>
+        <td class="text-start">${log.Details}</td>
+      </tr>
+    `).join('');
+  }
+
+  static filterLogs() {
+    const term = document.getElementById('logSearchInput').value.toLowerCase();
+    const filtered = this.allLogs.filter(l => 
+      (l.Action || '').toLowerCase().includes(term) ||
+      (l.Details || '').toLowerCase().includes(term) ||
+      (l.User_ID || '').toLowerCase().includes(term) ||
+      (l.Timestamp || '').toLowerCase().includes(term)
+    );
+    this.renderTable(filtered);
+  }
+}
+</script>

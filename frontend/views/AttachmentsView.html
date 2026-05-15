@@ -9,15 +9,33 @@
           <i class="fas fa-paperclip me-2"></i> المرفقات <span id="currentRecordTitle" class="text-muted fs-5"></span>
         </h3>
       </div>
-      <input type="file" id="fileInput" style="display: none;" onchange="AttachmentController.handleFileUpload(this)">
-      <button class="btn btn-success shadow-sm" onclick="document.getElementById('fileInput').click()">
-        <i class="fas fa-upload"></i> رفع ملف جديد
-      </button>
+      <div class="d-flex">
+        <input type="file" id="fileInput" class="d-none" onchange="AttachmentController.uploadFile(this)">
+        <button class="btn btn-success shadow-sm" onclick="document.getElementById('fileInput').click()">
+          <i class="fas fa-upload"></i> رفع ملف جديد
+        </button>
+      </div>
     </div>
     
     <div class="col-12">
-      <div id="attachmentsContainer" class="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-4">
+      <div class="card shadow-sm border-0 rounded-lg">
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover text-center align-middle m-0">
+              <thead class="table-dark">
+                <tr>
+                  <th>نوع الملف</th>
+                  <th>اسم الملف</th>
+                  <th>الحجم</th>
+                  <th>تاريخ الرفع</th>
+                  <th>الإجراءات</th>
+                </tr>
+              </thead>
+              <tbody id="attachmentsTableBody"></tbody>
+            </table>
+          </div>
         </div>
+      </div>
     </div>
   </div>
 </template>
@@ -25,116 +43,247 @@
 <script>
 class AttachmentController {
   static currentRecordId = null;
-  static parentGroupId = null;
+
+  static escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
 
   static renderView(recordId) {
     if (!recordId) { App.navigate('clients'); return; }
-    
     this.currentRecordId = recordId;
     const state = GlobalStore.getState();
-    const record = state.records.find(r => r.Record_ID === recordId);
-    
+    const records = state.records || [];
+    const record = records.find(r => r.Record_ID === recordId);
     if (record) {
-      this.parentGroupId = record.Sub_ID;
-      document.getElementById('currentRecordTitle').textContent = `(السجل: ${record.Title})`;
+      const titleEl = document.getElementById('currentRecordTitle');
+      if (titleEl) titleEl.textContent = `(السجل: ${record.Title})`;
     }
-    
-    this.renderCards();
+    this.renderTable();
   }
 
   static goBack() {
-    App.navigate('records', this.parentGroupId);
+    const state = GlobalStore.getState();
+    const records = state.records || [];
+    const record = records.find(r => r.Record_ID === this.currentRecordId);
+    if (record) App.navigate('records', record.Group_ID);
+    else App.navigate('clients');
   }
 
-  static renderCards() {
-    const container = document.getElementById('attachmentsContainer');
-    if (!container) return;
-
+  static renderTable() {
+    const tbody = document.getElementById('attachmentsTableBody');
+    if (!tbody) return;
     const state = GlobalStore.getState();
-    const fileAttachments = (state.attachments || []).filter(a => 
-      a.Record_ID === this.currentRecordId && 
-      String(a.Is_Deleted).toUpperCase() !== "TRUE"
+    const allAttachments = state.attachments || [];
+    const attachments = allAttachments.filter(a => 
+      a.Record_ID === this.currentRecordId && String(a.Is_Deleted).toUpperCase() !== "TRUE"
     );
 
-    if (fileAttachments.length === 0) {
-      container.innerHTML = `<div class="col-12 text-center py-5 text-muted"><i class="fas fa-cloud-upload-alt fa-4x mb-3 d-block text-black-50"></i> لا توجد مرفقات لهذا السجل.</div>`;
+    if (attachments.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="5" class="text-muted py-5"><i class="fas fa-file-excel fa-3x mb-3 d-block text-black-50"></i> لا توجد مرفقات.</td></tr>`;
       return;
     }
 
-    container.innerHTML = fileAttachments.map(file => `
-      <div class="col">
-        <div class="card h-100 shadow-sm border-0 record-card">
-          <div class="card-body text-center p-4">
-            <i class="fas fa-file-pdf fa-3x text-danger mb-3"></i> <h6 class="card-title text-truncate" title="${file.File_Name}">${file.File_Name}</h6>
-            <p class="text-muted small mb-3">${file.Uploaded_At.split(',')[0]}</p>
-            <div class="d-flex justify-content-center gap-2">
-              <a href="${file.Drive_URL}" target="_blank" class="btn btn-sm btn-primary shadow-sm">
-                <i class="fas fa-eye"></i> عرض
-              </a>
-              <button class="btn btn-sm btn-outline-danger shadow-sm" onclick="AttachmentController.deleteFile('${file.File_ID}', '${file.File_Name}')">
-                <i class="fas fa-trash"></i>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    `).join('');
+    tbody.innerHTML = attachments.map(a => {
+      // Fallbacks in case the backend DB was missing these new columns for old records
+      const inferredMimeType = (a.Mime_Type || '').toLowerCase() || (/\.(pdf)$/i.test(a.File_Name) ? 'pdf' : (/\.(jpe?g|png|gif|webp)$/i.test(a.File_Name) ? 'image' : ''));
+      const isPrintable = inferredMimeType.includes('pdf') || inferredMimeType.includes('image');
+      const safeName = AttachmentController.escapeHtml(a.File_Name || 'بدون اسم');
+      const size = a.Size ? AttachmentController.formatSize(a.Size) : 'غير معروف';
+      const date = a.Uploaded_At ? String(a.Uploaded_At).split(',')[0] : '-';
+      const viewLink = a.View_Link || a.Drive_URL || '#';
+      
+      const jsSafeId = String(a.Attachment_ID || '').replace(/'/g, "\\'").replace(/"/g, '\\"');
+      const jsSafeName = String(a.File_Name || '').replace(/'/g, "\\'").replace(/"/g, '\\"');
 
-    App.applyPermissions();
+      return `
+      <tr>
+        <td>${AttachmentController.getFileIcon(inferredMimeType)}</td>
+        <td class="fw-bold text-truncate" style="max-width: 250px;" title="${safeName}">${safeName}</td>
+        <td><span class="badge bg-light text-dark border">${size}</span></td>
+        <td class="text-muted small">${date}</td>
+        <td>
+          <a href="${viewLink}" target="_blank" class="btn btn-sm btn-outline-primary me-1 shadow-sm" title="عرض">
+            <i class="fas fa-eye"></i>
+          </a>
+          
+          ${isPrintable ? `
+          <button class="btn btn-sm btn-outline-secondary me-1 shadow-sm" onclick="AttachmentController.printAttachment('${jsSafeId}')" title="طباعة">
+            <i class="fas fa-print"></i>
+          </button>` : ''}
+
+          <button class="btn btn-sm btn-outline-danger shadow-sm" onclick="AttachmentController.deleteFile('${jsSafeId}', '${jsSafeName}')" title="حذف">
+            <i class="fas fa-trash-alt"></i>
+          </button>
+        </td>
+      </tr>
+    `}).join('');
+    
+    if (typeof App !== 'undefined' && typeof App.applyPermissions === 'function') {
+      App.applyPermissions();
+    }
   }
 
-  static async handleFileUpload(input) {
-    const file = input.files[0];
+  static async printAttachment(attachmentId) {
+    try {
+      if (typeof UIManager !== 'undefined') UIManager.showLoader('جاري تجهيز الملف للطباعة...');
+      
+      const state = GlobalStore.getState();
+      const attachments = state.attachments || [];
+      const attachment = attachments.find(a => a.Attachment_ID === attachmentId);
+      if (!attachment) throw new Error('لم يتم العثور على بيانات المرفق.');
+
+      const mimeType = String(attachment.Mime_Type || '').toLowerCase();
+      if (!mimeType.includes('pdf') && !mimeType.includes('image')) {
+        throw new Error('نوع الملف غير مدعوم للطباعة المباشرة.');
+      }
+
+      // طلب الملف كـ Base64 من الباك-إند لتخطي حظر جوجل درايف للطباعة المباشرة
+      const fileData = await ApiClient.call('api_getFileBase64', attachment.Drive_File_ID);
+      if (!fileData || !fileData.base64) {
+        throw new Error('فشل جلب بيانات الملف للطباعة.');
+      }
+
+      // تحويل الـ Base64 إلى Blob محلي
+      const byteCharacters = atob(fileData.base64);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: fileData.mimeType || mimeType });
+      const localUrl = URL.createObjectURL(blob);
+
+      if (mimeType.includes('image')) {
+        const pWin = window.open('', '_blank', 'width=800,height=600');
+        if (!pWin) throw new Error('يرجى السماح بالنوافذ المنبثقة (Pop-ups) للطباعة.');
+        pWin.document.write(`
+          <html>
+            <head><title>طباعة المرفق</title></head>
+            <body style="margin:0; display:flex; align-items:center; justify-content:center;">
+              <img src="${localUrl}" style="max-width:100%; max-height:100%;" onload="window.print(); window.close();" onerror="window.close();">
+            </body>
+          </html>
+        `);
+        pWin.document.close();
+      } else if (mimeType.includes('pdf')) {
+        const iframe = document.createElement('iframe');
+        iframe.style.display = 'none';
+        iframe.src = localUrl;
+        
+        iframe.onload = () => {
+          try {
+            iframe.contentWindow.focus();
+            iframe.contentWindow.print();
+            setTimeout(() => {
+              if (document.body.contains(iframe)) document.body.removeChild(iframe);
+              URL.revokeObjectURL(localUrl);
+            }, 10000); // إعطاء وقت كاف للطباعة قبل الحذف
+          } catch (e) {
+            window.open(localUrl, '_blank');
+            if (document.body.contains(iframe)) document.body.removeChild(iframe);
+          }
+        };
+        document.body.appendChild(iframe);
+      }
+    } catch (error) {
+      console.error("Print Error:", error);
+      if (typeof UIManager !== 'undefined') UIManager.showError(error.message || 'حدث خطأ أثناء محاولة الطباعة.');
+    } finally {
+      if (typeof UIManager !== 'undefined') UIManager.hideLoader();
+    }
+  }
+
+  static getFileIcon(mimeType) {
+    const type = String(mimeType || '').toLowerCase();
+    if (type.includes('pdf')) return '<i class="fas fa-file-pdf text-danger fs-4"></i>';
+    if (type.includes('image')) return '<i class="fas fa-file-image text-success fs-4"></i>';
+    if (type.includes('word')) return '<i class="fas fa-file-word text-primary fs-4"></i>';
+    if (type.includes('excel') || type.includes('sheet')) return '<i class="fas fa-file-excel text-success fs-4"></i>';
+    return '<i class="fas fa-file fs-4 text-secondary"></i>';
+  }
+
+  static formatSize(bytes) {
+    const val = parseInt(bytes);
+    if (isNaN(val) || val <= 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(val) / Math.log(k));
+    return parseFloat((val / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+  }
+
+  static async uploadFile(input) {
+    const file = input.files && input.files[0];
     if (!file) return;
 
-    UIManager.showLoader("جاري رفع الملف ومعالجته...");
-    
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-      const base64Data = e.target.result.split(',')[1];
-      const state = GlobalStore.getState();
-      const userEmail = state.currentUser ? state.currentUser.username : 'System';
-
-      try {
-        await ApiClient.call('api_uploadAttachment', this.currentRecordId, file.name, base64Data, file.type, userEmail);
-        
-        // ⚡ ملاحظة هامة: بما أن الرفع يتطلب تحديث الـ Attachments من السيرفر للتأكد من الـ URL والـ ID
-        // سنقوم بإعادة تحميل البيانات الأولية لتحديث الذاكرة المركزية بالكامل
-        const dbData = await ApiClient.call('api_getInitialAppData');
-        GlobalStore.setState({ attachments: dbData.attachments });
-        
-        this.renderCards();
-        UIManager.showSuccess("تم رفع الملف بنجاح على Google Drive!");
-      } catch (error) {
-        UIManager.showError(error.message);
-      } finally {
-        input.value = ''; // تنظيف المدخل
+    try {
+      if (file.size > 50 * 1024 * 1024) { 
+        throw new Error("حجم الملف كبير جداً! الحد الأقصى 50 ميجا بايت.");
       }
-    };
-    reader.readAsDataURL(file);
+
+      if (typeof UIManager !== 'undefined') UIManager.showLoader(`جاري رفع "${file.name}"...`);
+
+      const base64String = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target.result.split(',')[1]);
+        reader.onerror = () => reject(new Error("حدث خطأ أثناء قراءة الملف من جهازك."));
+        reader.readAsDataURL(file);
+      });
+
+      const state = GlobalStore.getState();
+      const userEmail = state.currentUser ? (state.currentUser.username || state.currentUser.email) : 'System';
+      const currentRecId = AttachmentController.currentRecordId;
+
+      if (!currentRecId) throw new Error("لا يوجد سجل محدد لربط المرفق به.");
+
+      const newAttachment = await ApiClient.call('api_uploadAttachment', currentRecId, file.name, base64String, file.type, userEmail);
+
+      const allAttachments = state.attachments || [];
+      GlobalStore.setState({ attachments: [...allAttachments, newAttachment] });
+      
+      AttachmentController.renderTable();
+      if (typeof UIManager !== 'undefined') UIManager.showSuccess("تم رفع الملف بنجاح!");
+      
+    } catch (error) {
+      console.error("Upload Error:", error);
+      if (typeof UIManager !== 'undefined') UIManager.showError(error.message || "حدث خطأ غير معروف أثناء الرفع.");
+    } finally {
+      input.value = "";
+      if (typeof UIManager !== 'undefined') UIManager.hideLoader();
+    }
   }
 
   static async deleteFile(fileId, fileName) {
-    const isConfirmed = await UIManager.confirmAction(`هل تريد حذف المرفق "${fileName}"؟`);
-    if (!isConfirmed) return;
+    let ok = true;
+    if (typeof UIManager !== 'undefined') {
+      ok = await UIManager.confirmAction(`هل تريد حذف المرفق "${fileName}"؟`);
+    } else {
+      ok = confirm(`هل تريد حذف المرفق "${fileName}"؟`);
+    }
+    if (!ok) return;
 
-    UIManager.showLoader("جاري الحذف...");
+    if (typeof UIManager !== 'undefined') UIManager.showLoader("جاري الحذف...");
     try {
       const state = GlobalStore.getState();
-      const userEmail = state.currentUser ? state.currentUser.username : 'System';
-      
+      const userEmail = state.currentUser ? (state.currentUser.username || state.currentUser.email) : 'System';
       await ApiClient.call('api_deleteAttachment', fileId, fileName, userEmail);
       
-      const updatedAtts = state.attachments.map(a => {
-        if (a.File_ID === fileId) a.Is_Deleted = true;
-        return a;
-      });
-      GlobalStore.setState({ attachments: updatedAtts });
+      const allAttachments = state.attachments || [];
+      const updatedFiles = allAttachments.map(a => a.Attachment_ID === fileId ? { ...a, Is_Deleted: true } : a);
+      GlobalStore.setState({ attachments: updatedFiles });
       
-      this.renderCards();
-      UIManager.showSuccess("تم حذف الملف.");
+      AttachmentController.renderTable();
+      if (typeof UIManager !== 'undefined') UIManager.showSuccess("تم الحذف.");
     } catch (error) {
-      UIManager.showError(error.message);
+      console.error("Delete Error:", error);
+      if (typeof UIManager !== 'undefined') UIManager.showError(error.message || "حدث خطأ أثناء الحذف.");
+    } finally {
+      if (typeof UIManager !== 'undefined') UIManager.hideLoader();
     }
   }
 }

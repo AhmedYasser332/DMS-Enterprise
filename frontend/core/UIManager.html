@@ -6,14 +6,33 @@
  */
 class UIManager {
   
+  static escapeHTML(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
   // 1. إظهار شاشة التحميل (Loader)
   static showLoader(message = "جاري معالجة البيانات...") {
     Swal.fire({
-      title: message,
+      title: `<div class="mt-3 fs-5 fw-bold" style="font-family: 'Tajawal', sans-serif; color: var(--primary-color);">${message}</div>`,
       allowOutsideClick: false,
       showConfirmButton: false,
+      background: 'var(--card-bg)',
+      color: 'var(--text-main)',
+      customClass: {
+        popup: 'rounded-4 shadow-lg border-0'
+      },
       didOpen: () => {
         Swal.showLoading();
+        const loader = Swal.getHtmlContainer().querySelector('.swal2-loader');
+        if (loader) {
+          loader.style.borderColor = 'var(--primary-color) transparent var(--primary-color) transparent';
+        }
       }
     });
   }
@@ -29,8 +48,15 @@ class UIManager {
       icon: 'success',
       title: title,
       text: message,
-      confirmButtonColor: '#28a745',
-      timer: 2000, // تختفي تلقائياً بعد ثانيتين
+      confirmButtonColor: 'var(--primary-color)',
+      background: 'var(--card-bg)',
+      color: 'var(--text-main)',
+      customClass: {
+        popup: 'rounded-4 shadow-lg border-0',
+        confirmButton: 'btn btn-primary rounded-3 px-4 shadow-sm'
+      },
+      buttonsStyling: false,
+      timer: 2000,
       timerProgressBar: true
     });
   }
@@ -41,7 +67,14 @@ class UIManager {
       icon: 'error',
       title: title,
       text: message,
-      confirmButtonColor: '#d33'
+      confirmButtonColor: '#ef4444',
+      background: 'var(--card-bg)',
+      color: 'var(--text-main)',
+      customClass: {
+        popup: 'rounded-4 shadow-lg border-0',
+        confirmButton: 'btn btn-danger rounded-3 px-4 shadow-sm'
+      },
+      buttonsStyling: false
     });
   }
 
@@ -52,8 +85,14 @@ class UIManager {
       text: message,
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonColor: '#d33',
-      cancelButtonColor: '#6c757d',
+      background: 'var(--card-bg)',
+      color: 'var(--text-main)',
+      customClass: {
+        popup: 'rounded-4 shadow-lg border-0',
+        confirmButton: 'btn btn-danger rounded-3 px-4 shadow-sm me-2',
+        cancelButton: 'btn btn-secondary rounded-3 px-4 shadow-sm'
+      },
+      buttonsStyling: false,
       confirmButtonText: 'نعم، نفذ الإجراء',
       cancelButtonText: 'إلغاء'
     });

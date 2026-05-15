@@ -1,228 +1,200 @@
 <script>
-/**
- * App / Main Application Controller
- * المايسترو الذي يدير دورة حياة التطبيق، الجلسات، والتنقل بين الصفحات
- */
-class App {
-  static currentPage = 'dashboard';
-  static currentParam = null;
-  // 1. بداية تشغيل التطبيق (تعمل عند تحميل الصفحة)
-  static boot() {
-    const session = localStorage.getItem('dms_session');
-    if (session) {
-      const user = JSON.parse(session);
-      this.initUserSession(user);
-    } else {
-      this.showLoginScreen();
-    }
-  }
+  /**
+   * App / Main Application Controller (Refactored Clean Code)
+   */
+  class App {
+    static currentPage = 'dashboard';
+    static currentParam = null;
 
-  // 2. إظهار شاشة الدخول
-  static showLoginScreen() {
-    document.getElementById('app-wrapper').style.display = 'none';
-    document.getElementById('login-screen').style.display = 'flex';
-  }
+    // 1. التخلص من الـ Magic Strings 
+    static ROLES = { ADMIN: 'Admin', USER: 'User', VIEWER: 'Viewer' };
 
-  // 3. تهيئة النظام بعد تسجيل الدخول
-  static async initUserSession(user) {
-    // حفظ المستخدم في الذاكرة المركزية
-    GlobalStore.setState({ currentUser: user });
-    
-    document.getElementById('login-screen').style.display = 'none';
-    document.getElementById('app-wrapper').style.display = 'block';
-    
-    const userNameElement = document.getElementById('userDisplayName');
-    if(userNameElement) userNameElement.textContent = 'مرحباً، ' + user.name;
-    
-    // تطبيق الصلاحيات الأولية لحماية الواجهة
-    this.applyPermissions();
-    
-    await this.loadInitialData();
-  }
+    // 2. إصلاح كارثة الـ Evaluation Order باستخدام الـ Strings
+    static ROUTES = {
+      'dashboard': { template: 'dashboard-template', controllerName: 'DashboardController', method: 'renderStats' },
+      'clients': { template: 'clients-view-template', controllerName: 'ClientController', method: 'renderTable' },
+      'groups': { template: 'groups-view-template', controllerName: 'GroupController', method: 'renderView' },
+      'records': { template: 'records-view-template', controllerName: 'RecordController', method: 'renderView' },
+      'attachments': { template: 'attachments-view-template', controllerName: 'AttachmentController', method: 'renderView' },
+      'search': { template: 'search-view-template' },
+      'trash': { template: 'trash-view-template', controllerName: 'TrashController', method: 'renderTable', restricted: true },
+      'users': { template: 'users-view-template', controllerName: 'UserController', method: 'renderTable', restricted: true },
+      'profile': { template: 'profile-view-template', controllerName: 'ProfileController', method: 'renderView' },
+      'logs': { template: 'logs-view-template', controllerName: 'LogController', method: 'loadView', restricted: true }
+    };
 
-  // 4. تحميل بيانات النظام (العملاء، السجلات، الخ)
-  static async loadInitialData() {
-    UIManager.showLoader("جاري تحميل بيانات النظام المركزية...");
-    try {
-      // ملحوظة: سنقوم بإنشاء دالة api_getInitialAppData في الباك-إند في الخطوة القادمة
-      const dbData = await ApiClient.call('api_getInitialAppData');
-      
-      GlobalStore.setState({
-        clients: dbData.clients,
-        groups: dbData.groups,
-        records: dbData.records,
-        attachments: dbData.attachments,
-        users: dbData.users || []
-      });
-      
-      UIManager.hideLoader();
-      this.navigate('dashboard'); // التوجيه للوحة التحكم
-      
-    } catch (error) {
-      UIManager.showError(error.message, "فشل في تحميل البيانات");
-    }
-  }
-
-  // 5. التنقل بين الصفحات (Router) - النسخة النهائية الموحدة
-  static navigate(pageId, param = null) {
-    this.currentPage = pageId;
-    this.currentParam = param;
-
-    const state = GlobalStore.getState();
-    const role = state.currentUser ? state.currentUser.role : '';
-    
-    // حماية الصفحات الحساسة
-    if ((pageId === 'users' || pageId === 'trash') && role !== 'Admin') {
-      UIManager.showError("ليس لديك صلاحية لدخول هذه الصفحة", "دخول مرفوض");
-      this.navigate('dashboard');
-      return;
+    static boot() {
+      const session = localStorage.getItem('dms_session');
+      if (session) this.initUserSession(JSON.parse(session));
+      else this.showLoginScreen();
     }
 
-    // تنشيط الزر في القائمة الجانبية
-    document.querySelectorAll('.list-group-item').forEach(item => item.classList.remove('active'));
-    // البحث عن اللينك اللي جواه كلمة navigate واسم الصفحة
-    const link = document.querySelector(`a[onclick*="App.navigate('${pageId}')"]`);
-    if(link) link.classList.add('active');
+    static showLoginScreen() {
+      document.getElementById('app-wrapper').style.display = 'none';
+      document.getElementById('login-screen').style.display = 'flex';
+    }
 
-    const mainContent = document.getElementById('main-content');
-    if (!mainContent) return;
-    
-    // توجيه المحتوى (Render Views)
-    switch(pageId) {
-      case 'dashboard':
-        mainContent.innerHTML = document.getElementById('dashboard-template').innerHTML;
-        if(typeof DashboardController !== 'undefined') DashboardController.renderStats();
-        break;
-      case 'clients':
-        mainContent.innerHTML = document.getElementById('clients-view-template').innerHTML;
-        if(typeof ClientController !== 'undefined') ClientController.renderTable();
-        break;
-      case 'groups':
-        mainContent.innerHTML = document.getElementById('groups-view-template').innerHTML;
-        if(typeof GroupController !== 'undefined') GroupController.renderView(param);
-        break;
-      case 'records':
-        mainContent.innerHTML = document.getElementById('records-view-template').innerHTML;
-        if(typeof RecordController !== 'undefined') RecordController.renderView(param);
-        break;
-      case 'attachments':
-        mainContent.innerHTML = document.getElementById('attachments-view-template').innerHTML;
-        if(typeof AttachmentController !== 'undefined') AttachmentController.renderView(param);
-        break;
-      case 'search':
-        mainContent.innerHTML = document.getElementById('search-view-template').innerHTML;
-        break;
-      case 'trash':
-        mainContent.innerHTML = document.getElementById('trash-view-template').innerHTML;
-        if(typeof TrashController !== 'undefined') TrashController.renderTable();
-        break;
-      case 'users':
-        mainContent.innerHTML = document.getElementById('users-view-template').innerHTML;
-        if(typeof UserController !== 'undefined') UserController.renderTable();
-        break;
-      default:
+    static async initUserSession(user) {
+      GlobalStore.setState({ currentUser: user });
+      document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('app-wrapper').style.display = 'block';
+
+      const userNameElement = document.getElementById('userDisplayName');
+      if (userNameElement) userNameElement.textContent = 'مرحباً، ' + user.name;
+
+      this.applyPermissions();
+      await this.loadInitialData();
+    }
+
+    static async loadInitialData() {
+      UIManager.showLoader("جاري تحميل بيانات النظام المركزية...");
+      try {
+        const dbData = await ApiClient.call('api_getInitialAppData');
+        GlobalStore.setState({
+          clients: dbData.clients, groups: dbData.groups,
+          records: dbData.records, attachments: dbData.attachments, users: dbData.users || []
+        });
+        UIManager.hideLoader();
+        this.navigate('dashboard');
+      } catch (error) {
+        UIManager.showError(error.message, "فشل في تحميل البيانات");
+      }
+    }
+
+
+
+    static navigate(pageId, param = null) {
+      this.currentPage = pageId;
+      this.currentParam = param;
+
+      const state = GlobalStore.getState();
+      const currentUser = state.currentUser;
+      const role = currentUser ? currentUser.role : '';
+      const perms = currentUser ? (currentUser.permissions || {}) : {};
+      const route = this.ROUTES[pageId];
+
+      if (route?.restricted && role !== this.ROLES.ADMIN) {
+        let allowed = false;
+        if (pageId === 'users' && perms.admin?.manageUsers) allowed = true;
+        if (pageId === 'logs' && perms.admin?.viewLogs) allowed = true;
+        if (pageId === 'trash' && perms.recycleBin?.view) allowed = true;
+
+        if (!allowed) {
+          UIManager.showError("ليس لديك صلاحية لدخول هذه الصفحة", "دخول مرفوض");
+          this.navigate('dashboard');
+          return;
+        }
+      }
+
+      document.querySelectorAll('.list-group-item').forEach(item => item.classList.remove('active'));
+      const link = document.querySelector(`a[onclick*="App.navigate('${pageId}')"]`);
+      if (link) link.classList.add('active');
+
+      const mainContent = document.getElementById('main-content');
+      if (!mainContent) return;
+
+      if (route) {
+        mainContent.innerHTML = document.getElementById(route.template).innerHTML;
+        // ⚡ الإصلاح السحري: استدعاء الكنترولر من نافذة المتصفح الحالية وقت التشغيل
+        if (route.controllerName) {
+          try {
+            new Function('param', `return ${route.controllerName}.${route.method}(param)`)(param);
+          } catch (e) {
+            console.error("Routing error:", e);
+          }
+        }
+      } else {
         mainContent.innerHTML = `<div class="text-center mt-5"><h3 class="text-muted">صفحة ${pageId} قيد التطوير...</h3></div>`;
+      }
+
+      this.applyPermissions();
     }
 
-    this.applyPermissions(); // إعادة تأكيد الصلاحيات بعد كل تنقل
-  }
-  
-  // 6. نظام الصلاحيات المطور (يدعم كلمة ALL)
-  static applyPermissions() {
-    const state = GlobalStore.getState();
-    if (!state.currentUser) return;
-    const role = state.currentUser.role;
-    
-    // إعادة إظهار كل شيء أولاً
-    document.querySelectorAll('a[onclick*="users"], a[onclick*="trash"]').forEach(link => {
-       link.style.setProperty('display', 'block', 'important');
-    });
+    static applyPermissions() {
+      const state = GlobalStore.getState();
+      if (!state.currentUser) return;
 
-    if (role !== 'Admin') {
-      document.querySelectorAll('a[onclick*="users"], a[onclick*="trash"]').forEach(link => {
-        link.style.setProperty('display', 'none', 'important');
+      const role = state.currentUser.role;
+      const perms = state.currentUser.permissions || {};
+
+      // Default show
+      document.querySelectorAll('a[onclick*="users"], a[onclick*="trash"], a[onclick*="logs"]').forEach(link => {
+        link.style.setProperty('display', 'block', 'important');
       });
+
+      // Handle Admin permissions visibility
+      if (role !== this.ROLES.ADMIN) {
+        if (!perms.admin?.manageUsers) document.querySelector('a[onclick*="users"]')?.style.setProperty('display', 'none', 'important');
+        if (!perms.admin?.viewLogs) document.querySelector('a[onclick*="logs"]')?.style.setProperty('display', 'none', 'important');
+        if (!perms.recycleBin?.view) document.querySelector('a[onclick*="trash"]')?.style.setProperty('display', 'none', 'important');
+      }
+
+      if (role === this.ROLES.VIEWER) {
+        document.querySelectorAll('#app-wrapper .btn-success, #app-wrapper .btn-danger, #app-wrapper .btn-warning').forEach(btn => {
+          const isAction = btn.getAttribute('onclick') && (btn.getAttribute('onclick').includes('add') || btn.getAttribute('onclick').includes('delete'));
+          if (isAction) btn.style.setProperty('display', 'none', 'important');
+        });
+      }
     }
 
-    if (role === 'Viewer') {
-      document.querySelectorAll('#app-wrapper .btn-success, #app-wrapper .btn-danger, #app-wrapper .btn-warning').forEach(btn => {
-        const isAction = btn.getAttribute('onclick') && (btn.getAttribute('onclick').includes('add') || btn.getAttribute('onclick').includes('delete'));
-        if (isAction) btn.style.setProperty('display', 'none', 'important');
-      });
-    }
-  }
-
-  // 7. تسجيل الخروج النظيف (SPA Logout) بدون شاشة بيضاء
-  static logout() {
-    localStorage.removeItem('dms_session');
-    GlobalStore.clearState();
-    
-    // إخفاء الواجهة وإظهار اللوجن فوراً
-    document.getElementById('app-wrapper').style.display = 'none';
-    document.getElementById('login-screen').style.display = 'flex';
-    
-    // تصفير الخانات
-    document.getElementById('loginUsername').value = '';
-    document.getElementById('loginPassword').value = '';
-    
-    // تصفير المحتوى الرئيسي عشان ميفضلش فيه داتا قديمة
-    document.getElementById('main-content').innerHTML = '<h3 class="text-center text-muted mt-5">جاري التحميل...</h3>';
-    
-    // إشعار خفيف بالخروج
-    Swal.fire({ toast: true, position: 'top-end', icon: 'info', title: 'تم تسجيل الخروج', showConfirmButton: false, timer: 1500 });
-  }
-
-  // 8. تحديث البيانات في الخلفية (Smart Refresh)
-  static async refreshData() {
-    const btn = document.getElementById('refreshBtn');
-    
-    // ⚡ 1. بدء التحميل: قفل الزرار وتحويله لـ Spinner
-    if(btn) {
-      btn.disabled = true;
-      btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+    static logout() {
+      localStorage.removeItem('dms_session');
+      GlobalStore.clearState();
+      document.getElementById('app-wrapper').style.display = 'none';
+      document.getElementById('login-screen').style.display = 'flex';
+      document.getElementById('loginUsername').value = '';
+      document.getElementById('loginPassword').value = '';
+      document.getElementById('main-content').innerHTML = '<h3 class="text-center text-muted mt-5">جاري التحميل...</h3>';
+      Swal.fire({ toast: true, position: 'top-end', icon: 'info', title: 'تم تسجيل الخروج', showConfirmButton: false, timer: 1500 });
     }
 
-    try {
-      // جلب البيانات من السيرفر
-      const dbData = await ApiClient.call('api_getInitialAppData');
-      
-      // تحديث الذاكرة المركزية
-      GlobalStore.setState({
-        clients: dbData.clients,
-        groups: dbData.groups,
-        records: dbData.records,
-        attachments: dbData.attachments,
-        users: dbData.users || []
-      });
+    static showAccountSettings() {
+      document.getElementById('accountSettingsForm').reset();
+      new bootstrap.Modal(document.getElementById('accountSettingsModal')).show();
+    }
 
-      // إعادة رسم الصفحة الحالية فوراً
-      this.navigate(this.currentPage, this.currentParam);
-      
-      // ⚡ 2. إشعار نجاح خفيف جداً (Toast) لا يغلق الشاشة
-      Swal.fire({
-        toast: true,
-        position: 'top-end',
-        icon: 'success',
-        title: 'تم تحديث البيانات بنجاح',
-        showConfirmButton: false,
-        timer: 2000,
-        timerProgressBar: true
-      });
-      
-    } catch (error) {
-      UIManager.showError(error.message, "فشل في تحديث البيانات");
-    } finally {
-      // ⚡ 3. إنهاء التحميل: إرجاع الزرار لحالته الطبيعية
-      if(btn) {
-        btn.disabled = false;
-        btn.innerHTML = '<i class="fas fa-sync-alt fs-6"></i>';
+    static async updateAccountSettings() {
+      const newPassword = document.getElementById('myNewPassword').value.trim();
+      if (!newPassword) return;
+
+      UIManager.showLoader("جاري تحديث كلمة المرور...");
+      try {
+        const state = GlobalStore.getState();
+        const currentUser = state.currentUser;
+        // using the same api we used for update, but here user updates himself
+        await ApiClient.call('api_updateUser', currentUser.userId, { Password: newPassword }, currentUser.username);
+
+        bootstrap.Modal.getInstance(document.getElementById('accountSettingsModal')).hide();
+        UIManager.showSuccess("تم تغيير كلمة المرور بنجاح");
+      } catch (e) {
+        UIManager.showError("حدث خطأ أثناء تغيير كلمة المرور");
+      }
+    }
+
+    static async refreshData() {
+      const btn = document.getElementById('refreshBtn');
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+      }
+      try {
+        const dbData = await ApiClient.call('api_getInitialAppData');
+        GlobalStore.setState({
+          clients: dbData.clients, groups: dbData.groups,
+          records: dbData.records, attachments: dbData.attachments, users: dbData.users || []
+        });
+        this.navigate(this.currentPage, this.currentParam);
+        Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'تم تحديث البيانات بنجاح', showConfirmButton: false, timer: 2000, timerProgressBar: true });
+      } catch (error) {
+        UIManager.showError(error.message, "فشل في تحديث البيانات");
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fas fa-sync-alt fs-6"></i>';
+        }
       }
     }
   }
-}
 
-// تشغيل النظام بمجرد تحميل الصفحة
-document.addEventListener("DOMContentLoaded", () => {
-  App.boot();
-});
+  document.addEventListener("DOMContentLoaded", () => App.boot());
 </script>

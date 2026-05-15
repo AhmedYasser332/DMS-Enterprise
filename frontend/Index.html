@@ -4,92 +4,182 @@
   <meta charset="UTF-8">
   <title>نظام الأرشيف الإلكتروني</title>
   
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   
   <style>
     /* ========================================= */
-    /* 🎨 تحسينات الـ UI لراحة العين (Soft Design) */
+    /* 🎨 Enterprise SaaS & Modern UI System */
     /* ========================================= */
+    :root {
+      --primary-color: #2563EB;
+      --primary-hover: #1D4ED8;
+      --app-bg: #F8FAFC;
+      --card-bg: #FFFFFF;
+      --glass-bg: rgba(255, 255, 255, 0.75);
+      --glass-border: rgba(255, 255, 255, 0.4);
+      --glass-shadow: 0 10px 40px -10px rgba(0,0,0,0.08);
+      --text-main: #1e293b;
+      --text-muted: #64748b;
+      --bs-primary: #2563EB;
+      --bs-primary-rgb: 37, 99, 235;
+    }
+
+    [data-bs-theme="dark"] {
+      --primary-color: #3B82F6;
+      --primary-hover: #60A5FA;
+      --app-bg: #0F172A;
+      --card-bg: #1E293B;
+      --glass-bg: rgba(30, 41, 59, 0.75);
+      --glass-border: rgba(255, 255, 255, 0.05);
+      --glass-shadow: 0 10px 40px -10px rgba(0,0,0,0.4);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --bs-body-color: var(--text-main);
+      --bs-secondary-color: var(--text-muted);
+      --bs-primary: #3B82F6;
+      --bs-primary-rgb: 59, 130, 246;
+      --bs-body-bg: #0F172A;
+    }
+
     body {
-      font-family: 'Cairo', sans-serif; /* الخط الجديد */
-      background-color: var(--bs-body-bg);
-      transition: background-color 0.3s ease, color 0.3s ease;
+      font-family: 'Tajawal', 'Cairo', sans-serif;
+      background-color: var(--app-bg);
+      color: var(--text-main);
+      transition: background-color 0.4s ease, color 0.4s ease;
     }
 
-    .fade-in { animation: fadeIn 0.4s ease-in-out; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+    .text-primary { color: var(--primary-color) !important; }
+    .bg-primary { background-color: var(--primary-color) !important; }
+    .btn-primary { background-color: var(--primary-color); border-color: var(--primary-color); }
+    .btn-primary:hover { background-color: var(--primary-hover); border-color: var(--primary-hover); }
 
-    /* تجميل الشريط العلوي (Navbar) بتدرج لوني هادئ */
+    .fade-in { animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(20px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+
+    /* Navbar */
     .navbar {
-      background: linear-gradient(135deg, #2c3e50, #3498db) !important;
-      border-bottom: 3px solid rgba(255,255,255,0.05);
+      background: var(--card-bg) !important;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--glass-border);
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
     }
 
-    /* تجميل الكروت (Cards) */
-    .card {
+    /* Cards */
+    .card, .modal-content {
+      background: var(--card-bg);
       border-radius: 12px;
-      border: 1px solid var(--bs-border-color-translucent);
-      box-shadow: 0 4px 15px rgba(0,0,0,0.03);
-      transition: transform 0.2s;
+      border: 1px solid var(--glass-border);
+      box-shadow: var(--glass-shadow);
+      transition: all 0.3s ease;
     }
-    .card:hover { transform: translateY(-2px); }
+    .card:hover { 
+      transform: translateY(-4px); 
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1); 
+    }
 
-    /* تجميل القائمة الجانبية (Sidebar) */
+    /* Sidebar */
+    .list-group {
+      background: var(--card-bg);
+      border-radius: 16px;
+      padding: 12px;
+      border: 1px solid var(--glass-border);
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    }
     .list-group-item {
       border: none;
       margin-bottom: 8px;
-      border-radius: 8px !important;
+      border-radius: 12px !important;
       font-weight: 600;
-      color: var(--bs-secondary-color);
+      color: var(--text-muted);
       background-color: transparent;
-      transition: all 0.2s ease;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+      padding: 12px 15px;
     }
-    .list-group-item:hover {
-      background-color: var(--bs-secondary-bg);
-      transform: translateX(-5px);
+    .list-group-item:hover { 
+      transform: translateX(-4px); 
+      background-color: rgba(var(--bs-primary-rgb), 0.08);
+      color: var(--primary-color);
     }
     .list-group-item.active {
-      background-color: #3498db !important;
+      background-color: var(--primary-color) !important;
       color: white !important;
-      box-shadow: 0 4px 10px rgba(52, 152, 219, 0.3);
+      box-shadow: 0 8px 20px rgba(var(--bs-primary-rgb), 0.3);
     }
 
-    /* تجميل الجداول (Modern Floating Tables) */
-    .table { border-collapse: separate; border-spacing: 0 8px; margin-top: -8px; }
-    .table thead th { border: none; font-weight: 700; color: var(--bs-secondary-color); background: transparent; }
-    .table tbody tr {
-      box-shadow: 0 2px 5px rgba(0,0,0,0.02);
-      border-radius: 8px;
-      background-color: var(--bs-body-bg);
-      transition: transform 0.1s;
+    /* Tables */
+    .table { border-collapse: collapse; margin-top: 0; }
+    .table thead th { 
+      border: none; 
+      font-weight: 700; 
+      color: var(--text-muted); 
+      font-size: 0.85rem; 
+      padding: 12px 16px;
+      background-color: rgba(0,0,0,0.02);
+      border-bottom: 2px solid var(--glass-border);
     }
-    .table tbody tr:hover { transform: scale(1.01); z-index: 1; position: relative; }
-    .table tbody td { border: none; vertical-align: middle; }
-    .table tbody td:first-child { border-top-right-radius: 8px; border-bottom-right-radius: 8px; }
-    .table tbody td:last-child { border-top-left-radius: 8px; border-bottom-left-radius: 8px; }
+    [data-bs-theme="dark"] .table thead th { background-color: rgba(255,255,255,0.02); }
+    .table tbody tr {
+      background: transparent;
+      transition: all 0.2s ease;
+      border-bottom: 1px solid var(--glass-border);
+    }
+    .table tbody tr:hover { 
+      background-color: rgba(var(--bs-primary-rgb), 0.04); 
+    }
+    [data-bs-theme="dark"] .table tbody tr:hover { 
+      background-color: rgba(var(--bs-primary-rgb), 0.1); 
+    }
+    .table tbody td { border: none; vertical-align: middle; padding: 16px; color: var(--text-main); }
+    
+    /* Buttons */
+    .btn { 
+      border-radius: 12px; 
+      font-weight: 600; 
+      transition: all 0.3s ease; 
+      padding: 0.5rem 1.25rem;
+    }
+    .btn-sm { border-radius: 8px; padding: 0.4rem 0.8rem; }
+    .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(var(--bs-primary-rgb), 0.2); }
+    
+    /* Input Fields */
+    .form-control, .form-select {
+      border-radius: 12px;
+      border: 1px solid var(--glass-border);
+      padding: 0.75rem 1rem;
+      background-color: var(--app-bg);
+      color: var(--text-main);
+      transition: all 0.3s ease;
+    }
+    .form-control:focus, .form-select:focus {
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 0.25rem rgba(var(--bs-primary-rgb), 0.25);
+    }
   </style>
 </head>
 <body>
 
   <div id="app-wrapper" style="display: none;">
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm mb-4">
+    <nav class="navbar navbar-expand-lg shadow-sm mb-4">
       <div class="container-fluid">
-        <span class="navbar-brand mb-0 h1"><i class="fas fa-archive me-2"></i> الأرشيف الرقمي</span>
+        <span class="navbar-brand mb-0 h1 text-primary fw-bold"><i class="fas fa-archive me-2"></i> الأرشيف الرقمي</span>
         <div class="d-flex align-items-center">
-          <span id="userDisplayName" class="text-white me-3 fw-bold"></span>
+          <span id="userDisplayName" class="me-3 fw-bold" style="color: var(--text-main);"></span>
 
-          <button class="btn btn-sm btn-outline-light me-2 border-0 rounded-circle" id="refreshBtn" onclick="App.refreshData()" style="width: 35px; height: 35px;" title="تحديث البيانات">
+          <button class="btn btn-sm btn-light me-2 border-0 rounded-circle text-primary d-flex align-items-center justify-content-center" id="refreshBtn" onclick="App.refreshData()" style="width: 35px; height: 35px; background: rgba(var(--bs-primary-rgb), 0.1);" title="تحديث البيانات">
             <i class="fas fa-sync-alt fs-6"></i>
           </button>
 
-          <button class="btn btn-sm btn-outline-light me-3 border-0 rounded-circle" id="darkModeToggle" onclick="toggleTheme()" style="width: 35px; height: 35px;" title="تغيير المظهر">
+          <button class="btn btn-sm btn-light me-3 border-0 rounded-circle text-primary d-flex align-items-center justify-content-center" id="darkModeToggle" onclick="toggleTheme()" style="width: 35px; height: 35px; background: rgba(var(--bs-primary-rgb), 0.1);" title="تغيير المظهر">
             <i class="fas fa-moon fs-6"></i>
           </button>
 
-          <button class="btn btn-outline-light btn-sm rounded-pill px-3 fw-bold" onclick="App.logout()">
+          <button class="btn btn-primary btn-sm rounded-3 px-3 fw-bold" onclick="App.logout()">
             <i class="fas fa-sign-out-alt me-1"></i> خروج
           </button>          
         </div>
@@ -98,18 +188,41 @@
 
     <div class="container-fluid px-4">
       <div class="row">
-        <div class="col-md-2 mb-4">
+        <div class="col-md-3 col-lg-2 mb-4">
           <div class="list-group">
             <a href="#" class="list-group-item list-group-item-action" onclick="App.navigate('dashboard')"><i class="fas fa-tachometer-alt fa-fw me-2"></i> الرئيسية</a>
             <a href="#" class="list-group-item list-group-item-action" onclick="App.navigate('clients')"><i class="fas fa-users fa-fw me-2"></i> العملاء (الأقسام)</a>
             <a href="#" class="list-group-item list-group-item-action" onclick="App.navigate('search')"><i class="fas fa-search fa-fw me-2"></i> البحث الشامل</a>
+            <a href="#" class="list-group-item list-group-item-action" onclick="App.navigate('profile')"><i class="fas fa-user-circle fa-fw me-2 text-primary"></i> الملف الشخصي</a>
             <a href="#" class="list-group-item list-group-item-action text-danger" onclick="App.navigate('trash')"><i class="fas fa-trash-alt fa-fw me-2"></i> سلة المهملات</a>
             <a href="#" class="list-group-item list-group-item-action text-info" onclick="App.navigate('users')"><i class="fas fa-user-shield fa-fw me-2"></i> إدارة المستخدمين</a>
+            <a href="#" class="list-group-item list-group-item-action text-warning" onclick="App.navigate('logs')"><i class="fas fa-list-alt fa-fw me-2"></i> سجل النظام</a>
           </div>
         </div>
 
-        <div class="col-md-10" id="main-content">
+        <div class="col-md-9 col-lg-10" id="main-content">
           <h3 class="text-center text-muted mt-5">جاري التحميل...</h3>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Account Settings -->
+  <div class="modal fade" id="accountSettingsModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow-lg">
+        <div class="modal-header bg-secondary text-white">
+          <h5 class="modal-title"><i class="fas fa-user-cog me-2"></i> إعدادات الحساب</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-4">
+          <form id="accountSettingsForm" onsubmit="event.preventDefault(); App.updateAccountSettings();">
+            <div class="mb-3">
+              <label class="form-label fw-bold">كلمة المرور الجديدة</label>
+              <input type="password" id="myNewPassword" class="form-control" placeholder="أدخل كلمة المرور الجديدة" required>
+            </div>
+            <button type="submit" class="btn btn-secondary w-100 shadow-sm"><i class="fas fa-save me-2"></i>حفظ التعديلات</button>
+          </form>
         </div>
       </div>
     </div>
@@ -130,6 +243,8 @@
   <?!= include('frontend/views/GlobalSearchView'); ?>
   <?!= include('frontend/views/TrashView'); ?>
   <?!= include('frontend/views/UsersView'); ?>
+  <?!= include('frontend/views/ProfileView'); ?>
+  <?!= include('frontend/views/LogsView'); ?>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 

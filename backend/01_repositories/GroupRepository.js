@@ -10,7 +10,7 @@ class GroupRepository extends BaseRepository {
    * استعلام مخصص: جلب كل المجموعات التابعة لعميل معين
    */
   findByClientId(clientId) {
-    return this.findAll().filter(group => group.Main_ID === clientId);
+    return this.findAll().filter(group => group.Client_ID === clientId);
   }
 }
 

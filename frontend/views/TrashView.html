@@ -28,31 +28,47 @@
 <script>
 
 class TrashController {
-  // 1. رسم الجدول من الذاكرة المركزية مباشرة بدون تحميل
+  // 1. رسم الجدول من الذاكرة المركزية بناءً على الصلاحيات
   static renderTable() {
     const tbody = document.getElementById('trashTableBody');
     if (!tbody) return;
 
     const state = GlobalStore.getState();
-    let items = [];
+    const currentUser = state.currentUser || {};
+    const perms = currentUser.permissions?.recycleBin || { view: false, restoreOwn: false, restoreAll: false, empty: false };
 
-    // فلترة وجمع كل العناصر المحذوفة من جميع الأقسام
-    (state.clients || []).filter(c => String(c.Is_Deleted).toUpperCase() === "TRUE")
-      .forEach(c => items.push({ type: 'عميل', display: c.Name, id: c.Main_ID, Created_At: c.Created_At }));
-
-    (state.groups || []).filter(g => String(g.Is_Deleted).toUpperCase() === "TRUE")
-      .forEach(g => items.push({ type: 'مجموعة', display: g.Name, id: g.Group_ID, Created_At: g.Created_At }));
-
-    (state.records || []).filter(r => String(r.Is_Deleted).toUpperCase() === "TRUE")
-      .forEach(r => items.push({ type: 'سجل', display: r.Title, id: r.Record_ID, Created_At: r.Created_At }));
-
-    (state.attachments || []).filter(a => String(a.Is_Deleted).toUpperCase() === "TRUE")
-      .forEach(a => items.push({ type: 'مرفق', display: a.File_Name, id: a.File_ID, Created_At: a.Uploaded_At }));
-
-    if (items.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="4" class="py-5 text-muted"><i class="fas fa-trash-restore fa-3x mb-3 d-block text-black-50"></i> سلة المهملات فارغة.</td></tr>';
+    // إذا لم يكن لديه صلاحية العرض إطلاقاً
+    if (!perms.view && currentUser.role !== 'Admin') {
+      tbody.innerHTML = '<tr><td colspan="4" class="py-5 text-danger"><i class="fas fa-ban fa-3x mb-3 d-block"></i> عذراً، ليس لديك صلاحية لعرض سلة المهملات.</td></tr>';
       return;
     }
+
+    let items = [];
+
+    // دالة مساعدة للتحقق هل العنصر يخص المستخدم أم لا
+    const isOwner = (itemEmail) => itemEmail === currentUser.username;
+    
+    // هل نعرض هذا العنصر؟
+    const canSeeItem = (itemEmail) => currentUser.role === 'Admin' || perms.restoreAll || (perms.restoreOwn && isOwner(itemEmail));
+
+    (state.clients || []).filter(c => String(c.Is_Deleted).toUpperCase() === "TRUE" && canSeeItem(c.Created_By))
+      .forEach(c => items.push({ type: 'عميل', display: c.Name, id: c.Client_ID, Created_At: c.Created_At }));
+
+    (state.groups || []).filter(g => String(g.Is_Deleted).toUpperCase() === "TRUE" && canSeeItem(g.Created_By))
+      .forEach(g => items.push({ type: 'مجموعة', display: g.Name, id: g.Group_ID, Created_At: g.Created_At }));
+
+    (state.records || []).filter(r => String(r.Is_Deleted).toUpperCase() === "TRUE" && canSeeItem(r.Created_By))
+      .forEach(r => items.push({ type: 'سجل', display: r.Title, id: r.Record_ID, Created_At: r.Created_At }));
+
+    (state.attachments || []).filter(a => String(a.Is_Deleted).toUpperCase() === "TRUE" && canSeeItem(a.Uploaded_By))
+      .forEach(a => items.push({ type: 'مرفق', display: a.File_Name, id: a.Attachment_ID, Created_At: a.Uploaded_At }));
+
+    if (items.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="4" class="py-5 text-muted"><i class="fas fa-trash-restore fa-3x mb-3 d-block text-black-50"></i> سلة المهملات فارغة (أو لا توجد عناصر تخصك).</td></tr>';
+      return;
+    }
+
+    const canEmpty = currentUser.role === 'Admin' || perms.empty;
 
     tbody.innerHTML = items.map(item => `
       <tr>
@@ -63,15 +79,13 @@ class TrashController {
           <button class="btn btn-sm btn-success shadow-sm me-1" onclick="TrashController.restore('${item.type}', '${item.id}', '${item.display}')">
             <i class="fas fa-undo"></i> استعادة
           </button>
-          <button class="btn btn-sm btn-outline-danger shadow-sm" onclick="TrashController.hardDelete('${item.type}', '${item.id}', '${item.display}')">
-            <i class="fas fa-times"></i> حذف نهائي
-          </button>
+          ${canEmpty ? `<button class="btn btn-sm btn-outline-danger shadow-sm" onclick="TrashController.hardDelete('${item.type}', '${item.id}', '${item.display}')"><i class="fas fa-times"></i> حذف نهائي</button>` : ''}
         </td>
       </tr>
     `).join('');
   }
 
-  // 2. استعادة العنصر (مع تحديث الذاكرة محلياً للسرعة)
+  // 2. استعادة العنصر
   static async restore(type, id, name) {
     const state = GlobalStore.getState();
     const user = state.currentUser ? state.currentUser.username : 'System';
@@ -80,11 +94,10 @@ class TrashController {
     try {
       await ApiClient.call('api_restoreItem', type, id, name, user);
       
-      // تحديث الـ Store محلياً عشان السرعة (بنشيل علامة Is_Deleted)
-      if (type === 'عميل') GlobalStore.setState({ clients: state.clients.map(c => c.Main_ID === id ? { ...c, Is_Deleted: false } : c) });
+      if (type === 'عميل') GlobalStore.setState({ clients: state.clients.map(c => c.Client_ID === id ? { ...c, Is_Deleted: false } : c) });
       else if (type === 'مجموعة') GlobalStore.setState({ groups: state.groups.map(g => g.Group_ID === id ? { ...g, Is_Deleted: false } : g) });
       else if (type === 'سجل') GlobalStore.setState({ records: state.records.map(r => r.Record_ID === id ? { ...r, Is_Deleted: false } : r) });
-      else if (type === 'مرفق') GlobalStore.setState({ attachments: state.attachments.map(a => a.File_ID === id ? { ...a, Is_Deleted: false } : a) });
+      else if (type === 'مرفق') GlobalStore.setState({ attachments: state.attachments.map(a => a.Attachment_ID === id ? { ...a, Is_Deleted: false } : a) });
 
       UIManager.showSuccess("تمت استعادة العنصر بنجاح");
       this.renderTable();
@@ -93,7 +106,7 @@ class TrashController {
     }
   }
 
-  // 3. حذف نهائي (مع إزالته من الذاكرة محلياً)
+  // 3. حذف نهائي
   static async hardDelete(type, id, name) {
     const ok = await UIManager.confirmAction(`تحذير: سيتم حذف "${name}" نهائياً ولن تتمكن من استعادته!`);
     if (!ok) return;
@@ -105,11 +118,10 @@ class TrashController {
     try {
       await ApiClient.call('api_permanentDelete', type, id, name, user);
       
-      // حذفه من الـ Store محلياً بالكامل
-      if (type === 'عميل') GlobalStore.setState({ clients: state.clients.filter(c => c.Main_ID !== id) });
+      if (type === 'عميل') GlobalStore.setState({ clients: state.clients.filter(c => c.Client_ID !== id) });
       else if (type === 'مجموعة') GlobalStore.setState({ groups: state.groups.filter(g => g.Group_ID !== id) });
       else if (type === 'سجل') GlobalStore.setState({ records: state.records.filter(r => r.Record_ID !== id) });
-      else if (type === 'مرفق') GlobalStore.setState({ attachments: state.attachments.filter(a => a.File_ID !== id) });
+      else if (type === 'مرفق') GlobalStore.setState({ attachments: state.attachments.filter(a => a.Attachment_ID !== id) });
 
       UIManager.showSuccess("تم الحذف النهائي");
       this.renderTable();

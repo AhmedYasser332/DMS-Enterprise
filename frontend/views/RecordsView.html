@@ -55,14 +55,61 @@
             </div>
             
             <div class="mb-4">
-              <label class="form-label fw-bold">وسوم للبحث (Tags)</label>
-              <select id="newRecordTagsSelect" class="form-select" onchange="RecordController.handleTagsChange()">
-                </select>
-              <input type="text" id="newRecordTagsCustom" class="form-control mt-2 d-none fade-in" placeholder="مثال: ضرايب, عاجل, مراجعة (افصل بفاصلة لعدة وسوم)">
+              <label class="form-label fw-bold">الوسوم (Tags)</label>
+              <div class="d-flex align-items-start gap-2">
+                <div class="flex-grow-1 border rounded p-2 bg-light min-vh-25" id="selectedTagsContainer" style="min-height: 45px;">
+                  <!-- Selected tags will appear here -->
+                </div>
+                <button type="button" class="btn btn-outline-secondary" onclick="RecordController.openTagSelector()">
+                  <i class="fas fa-tags"></i>
+                </button>
+                <button type="button" class="btn btn-outline-primary manage-tags-btn" onclick="RecordController.openManageTags()" style="display:none;">
+                  <i class="fas fa-cog"></i>
+                </button>
+              </div>
             </div>
 
             <button type="submit" class="btn btn-primary btn-lg w-100 shadow-sm"><i class="fas fa-save me-2"></i> حفظ السجل</button>
           </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tag Selector Modal -->
+  <div class="modal fade" id="tagSelectorModal" tabindex="-1">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h6 class="modal-title">اختر الوسوم</h6>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div id="availableTagsList" class="d-flex flex-wrap gap-2">
+            <!-- Available tags here -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Manage Tags Modal -->
+  <div class="modal fade" id="manageTagsModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header bg-dark text-white">
+          <h5 class="modal-title">إدارة الوسوم</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="addTagForm" onsubmit="event.preventDefault(); RecordController.addNewTag();" class="mb-3 d-flex gap-2">
+            <input type="text" id="newTagName" class="form-control form-control-sm" placeholder="اسم التاج" required>
+            <input type="color" id="newTagColor" class="form-control form-control-color form-control-sm" value="#0d6efd" title="اختر لون">
+            <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i></button>
+          </form>
+          <div id="manageTagsList" class="list-group list-group-flush" style="max-height: 300px; overflow-y: auto;">
+            <!-- Managed tags list -->
+          </div>
         </div>
       </div>
     </div>
@@ -74,41 +121,135 @@ class RecordController {
   static currentGroupId = null;
   static parentClientId = null;
 
-  // دالة إظهار مربع الوسوم المخصصة
-  static handleTagsChange() {
-    const select = document.getElementById('newRecordTagsSelect');
-    const customInput = document.getElementById('newRecordTagsCustom');
-    if (select.value === 'other') {
-      customInput.classList.remove('d-none');
-    } else {
-      customInput.classList.add('d-none');
-      customInput.value = '';
+  static selectedTags = [];
+
+  static applyPermissionsLocal() {
+    const state = GlobalStore.getState();
+    const role = state.currentUser?.role;
+    if (role === 'Admin') {
+      document.querySelectorAll('.manage-tags-btn').forEach(b => b.style.display = 'block');
     }
   }
 
-  // تجميع الوسوم من النظام لعرضها في القائمة
-  static populateTags() {
-    const select = document.getElementById('newRecordTagsSelect');
-    const defaultTags = ['عام', 'ضريبي', 'قانوني', 'مالي', 'إداري', 'عاجل'];
+  static renderSelectedTags() {
+    const container = document.getElementById('selectedTagsContainer');
+    if (!container) return;
+    container.innerHTML = this.selectedTags.map(tag => `
+      <span class="badge rounded-pill me-1 mb-1 shadow-sm border" style="background-color: ${tag.Color}; color: #fff;">
+        ${tag.Name}
+        <i class="fas fa-times ms-1 text-white-50" style="cursor:pointer;" onclick="RecordController.removeTag('${tag.Tag_ID}')"></i>
+      </span>
+    `).join('');
+  }
+
+  static removeTag(tagId) {
+    this.selectedTags = this.selectedTags.filter(t => t.Tag_ID !== tagId);
+    this.renderSelectedTags();
+  }
+
+  static openTagSelector() {
+    const list = document.getElementById('availableTagsList');
+    const tags = GlobalStore.getState().tags || [];
+    const activeTags = tags.filter(t => String(t.Is_Deleted).toUpperCase() !== 'TRUE');
     
-    const state = GlobalStore.getState();
-    let existingTags = [];
+    list.innerHTML = activeTags.map(tag => {
+      const isSelected = this.selectedTags.some(t => t.Tag_ID === tag.Tag_ID);
+      return `
+        <span class="badge rounded-pill border shadow-sm ${isSelected ? 'opacity-50' : ''}" 
+              style="background-color: ${tag.Color}; color: #fff; cursor: ${isSelected ? 'not-allowed' : 'pointer'};"
+              ${isSelected ? '' : `onclick="RecordController.selectTag('${tag.Tag_ID}')"`}>
+          ${tag.Name} ${isSelected ? '<i class="fas fa-check ms-1"></i>' : ''}
+        </span>
+      `;
+    }).join('');
     
-    // استخراج كل الوسوم وتقسيمها لو كانت مفصولة بفاصلة
-    (state.records || []).forEach(r => {
-      if (r.Tags) {
-        r.Tags.split(',').forEach(t => {
-          const cleanTag = t.trim();
-          if (cleanTag) existingTags.push(cleanTag);
-        });
-      }
-    });
+    if (activeTags.length === 0) list.innerHTML = '<span class="text-muted small">لا توجد وسوم مسجلة، قم بإضافة وسوم أولاً.</span>';
     
-    const allTags = [...new Set([...defaultTags, ...existingTags])];
+    new bootstrap.Modal(document.getElementById('tagSelectorModal')).show();
+  }
+
+  static selectTag(tagId) {
+    const tag = GlobalStore.getState().tags.find(t => t.Tag_ID === tagId);
+    if (tag && !this.selectedTags.find(t => t.Tag_ID === tagId)) {
+      this.selectedTags.push(tag);
+      this.renderSelectedTags();
+    }
+    bootstrap.Modal.getInstance(document.getElementById('tagSelectorModal')).hide();
+  }
+
+  static openManageTags() {
+    this.renderManageTagsList();
+    new bootstrap.Modal(document.getElementById('manageTagsModal')).show();
+  }
+
+  static renderManageTagsList() {
+    const list = document.getElementById('manageTagsList');
+    const tags = GlobalStore.getState().tags || [];
+    const activeTags = tags.filter(t => String(t.Is_Deleted).toUpperCase() !== 'TRUE');
     
-    select.innerHTML = '<option value="">-- بدون وسوم --</option>' + 
-      allTags.map(t => `<option value="${t}">${t}</option>`).join('') +
-      '<option value="other" class="text-primary fw-bold">➕ أخرى (كتابة وسوم مخصصة)...</option>';
+    list.innerHTML = activeTags.map(tag => `
+      <div class="list-group-item d-flex justify-content-between align-items-center px-1">
+        <div>
+          <input type="color" class="form-control form-control-color form-control-sm d-inline-block p-0 me-2" 
+                 style="width: 20px; height: 20px;" value="${tag.Color}" onchange="RecordController.updateTagColor('${tag.Tag_ID}', this.value)">
+          <span class="fw-bold small">${tag.Name}</span>
+        </div>
+        <button class="btn btn-sm btn-link text-danger p-0 m-0" onclick="RecordController.deleteTag('${tag.Tag_ID}', '${tag.Name}')"><i class="fas fa-trash"></i></button>
+      </div>
+    `).join('');
+  }
+
+  static async addNewTag() {
+    const name = document.getElementById('newTagName').value.trim();
+    const color = document.getElementById('newTagColor').value;
+    if (!name) return;
+    
+    const userEmail = GlobalStore.getState().currentUser?.username;
+    UIManager.showLoader("جاري إضافة التاج...");
+    try {
+      const newTag = await ApiClient.call('api_addTag', name, color, userEmail);
+      GlobalStore.setState({ tags: [...(GlobalStore.getState().tags || []), newTag] });
+      document.getElementById('addTagForm').reset();
+      this.renderManageTagsList();
+      UIManager.hideLoader();
+    } catch (e) {
+      UIManager.showError(e.message);
+    }
+  }
+
+  static async updateTagColor(tagId, newColor) {
+    const tag = GlobalStore.getState().tags.find(t => t.Tag_ID === tagId);
+    if(!tag) return;
+    const userEmail = GlobalStore.getState().currentUser?.username;
+    try {
+      await ApiClient.call('api_updateTag', tagId, tag.Name, newColor, userEmail);
+      tag.Color = newColor;
+      GlobalStore.setState({ tags: GlobalStore.getState().tags });
+    } catch (e) {
+      UIManager.showError(e.message);
+    }
+  }
+
+  static async deleteTag(tagId, name) {
+    const ok = await UIManager.confirmAction(`هل أنت متأكد من حذف التاج ${name}؟`);
+    if(!ok) return;
+    
+    const userEmail = GlobalStore.getState().currentUser?.username;
+    UIManager.showLoader("جاري مسح التاج...");
+    try {
+      await ApiClient.call('api_deleteTag', tagId, name, userEmail);
+      const tags = GlobalStore.getState().tags.map(t => t.Tag_ID === tagId ? {...t, Is_Deleted: true} : t);
+      GlobalStore.setState({ tags });
+      
+      // Remove from selected if it was there
+      this.selectedTags = this.selectedTags.filter(t => t.Tag_ID !== tagId);
+      this.renderSelectedTags();
+      
+      this.renderManageTagsList();
+      UIManager.hideLoader();
+    } catch (e) {
+      UIManager.showError(e.message);
+    }
   }
 
   static renderView(groupId) {
@@ -116,7 +257,7 @@ class RecordController {
     this.currentGroupId = groupId;
     const group = GlobalStore.getState().groups.find(g => g.Group_ID === groupId);
     if (group) {
-      this.parentClientId = group.Main_ID;
+      this.parentClientId = group.Client_ID;
       document.getElementById('currentGroupName').textContent = `(المجموعة: ${group.Name})`;
     }
     this.renderTable();
@@ -131,19 +272,35 @@ class RecordController {
     const tbody = document.getElementById('recordsTableBody');
     if (!tbody) return;
     const groupRecords = (GlobalStore.getState().records || []).filter(r => 
-      r.Sub_ID === this.currentGroupId && String(r.Is_Deleted).toUpperCase() !== "TRUE"
+      r.Group_ID === this.currentGroupId && String(r.Is_Deleted).toUpperCase() !== "TRUE"
     );
 
     if (groupRecords.length === 0) {
       tbody.innerHTML = `<tr><td colspan="5" class="text-muted py-5"><i class="fas fa-box-open fa-3x mb-3 d-block text-black-50"></i> لا توجد سجلات.</td></tr>`;
       return;
     }
+    
+    // Helper to render tags
+    const renderTagsBadge = (tagsStr) => {
+      if(!tagsStr) return '-';
+      try {
+        const tagIds = JSON.parse(tagsStr);
+        const allTags = GlobalStore.getState().tags || [];
+        return tagIds.map(id => {
+          const t = allTags.find(tag => tag.Tag_ID === id);
+          if (t) return `<span class="badge rounded-pill me-1 mb-1 border shadow-sm" style="background-color:${t.Color}; color:#fff;">${t.Name}</span>`;
+          return '';
+        }).join('');
+      } catch (e) {
+        return `<span class="badge bg-secondary">${tagsStr}</span>`;
+      }
+    };
 
     tbody.innerHTML = groupRecords.map(record => `
       <tr>
         <td class="fw-bold text-primary">${record.Title}</td>
         <td class="text-muted">${record.Description || '-'}</td>
-        <td>${record.Tags ? `<span class="badge bg-warning text-dark">${record.Tags}</span>` : '-'}</td>
+        <td style="max-width:200px; white-space:normal;">${renderTagsBadge(record.Tags)}</td>
         <td class="text-muted small">${record.Created_At.split(',')[0]}</td>
         <td>
           <button class="btn btn-sm btn-info text-white me-1 shadow-sm" onclick="App.navigate('attachments', '${record.Record_ID}')"><i class="fas fa-paperclip"></i> المرفقات</button>
@@ -152,12 +309,13 @@ class RecordController {
       </tr>
     `).join('');
     App.applyPermissions();
+    this.applyPermissionsLocal();
   }
 
   static showAddModal() {
     document.getElementById('addRecordForm').reset();
-    this.populateTags(); // تحديث قائمة الوسوم
-    this.handleTagsChange(); // إعادة ضبط الرؤية
+    this.selectedTags = [];
+    this.renderSelectedTags();
     new bootstrap.Modal(document.getElementById('addRecordModal')).show();
   }
 
@@ -166,9 +324,8 @@ class RecordController {
     const desc = document.getElementById('newRecordDesc').value.trim();
     
     // ⚡ تحديد الوسم ⚡
-    const selectVal = document.getElementById('newRecordTagsSelect').value;
-    const customVal = document.getElementById('newRecordTagsCustom').value.trim();
-    const tags = selectVal === 'other' ? customVal : selectVal;
+    const tagsArr = this.selectedTags.map(t => t.Tag_ID);
+    const tags = JSON.stringify(tagsArr);
     
     const state = GlobalStore.getState();
     const userEmail = state.currentUser ? state.currentUser.username : 'System';
@@ -195,7 +352,7 @@ class RecordController {
       const state = GlobalStore.getState();
       const userEmail = state.currentUser ? state.currentUser.username : 'System';
       await ApiClient.call('api_deleteRecord', recordId, title, userEmail);
-      const updatedRecords = state.records.map(r => { if (r.Record_ID === recordId) r.Is_Deleted = true; return r; });
+      const updatedRecords = state.records.map(r => r.Record_ID === recordId ? { ...r, Is_Deleted: true } : r);
       GlobalStore.setState({ records: updatedRecords });
       this.renderTable();
       UIManager.showSuccess("تم نقل السجل للمهملات.");

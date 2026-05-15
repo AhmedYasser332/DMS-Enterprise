@@ -10,7 +10,7 @@ class RecordRepository extends BaseRepository {
    * استعلام مخصص: جلب السجلات التابعة لمجموعة بيانات معينة
    */
   findByGroupId(groupId) {
-    return this.findAll().filter(record => record.Sub_ID === groupId);
+    return this.findAll().filter(record => record.Group_ID === groupId);
   }
 }
 

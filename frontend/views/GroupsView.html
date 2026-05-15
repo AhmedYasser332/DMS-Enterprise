@@ -70,7 +70,7 @@ class GroupController {
     
     this.currentClientId = clientId;
     const state = GlobalStore.getState();
-    const client = state.clients.find(c => c.Main_ID === clientId);
+    const client = state.clients.find(c => c.Client_ID === clientId);
     
     if (client) {
       document.getElementById('currentClientName').textContent = `(العميل: ${client.Name})`;
@@ -87,7 +87,7 @@ class GroupController {
     const state = GlobalStore.getState();
     // جلب مجموعات هذا العميل فقط، والغير محذوفة
     const clientGroups = (state.groups || []).filter(g => 
-      g.Main_ID === this.currentClientId && 
+      g.Client_ID === this.currentClientId && 
       String(g.Is_Deleted).toUpperCase() !== "TRUE"
     );
 
@@ -158,10 +158,7 @@ class GroupController {
       await ApiClient.call('api_deleteGroup', groupId, groupName, userEmail);
       
       // تحديث الـ Store
-      const updatedGroups = state.groups.map(g => {
-        if (g.Group_ID === groupId) g.Is_Deleted = true;
-        return g;
-      });
+      const updatedGroups = state.groups.map(g => g.Group_ID === groupId ? { ...g, Is_Deleted: true } : g);
       GlobalStore.setState({ groups: updatedGroups });
       
       this.renderTable();

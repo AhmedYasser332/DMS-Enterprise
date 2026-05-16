@@ -1,0 +1,31 @@
+# 🔑 Credentials & Security (خط أحمر)
+.clasprc.json
+credentials.json
+client_secret.json
+
+# 📦 Node & Dependencies (لو قررت تستخدم npm لاحقاً)
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# 💻 IDEs & Editors (ملفات محرر الأكواد)
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# 🖥️ OS Generated Files (ملفات الويندوز والماك المخفية)
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# 🗂️ Logs & Debugging (ملفات الـ Logs)
+*.log
+logs/

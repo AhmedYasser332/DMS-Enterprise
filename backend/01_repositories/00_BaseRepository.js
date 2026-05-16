@@ -160,7 +160,8 @@ class BaseRepository {
   hardDelete(id) {
     const sheet = this._getSheet();
     const data = sheet.getDataRange().getValues();
-    const idColIdx = data[0].indexOf(this.idColumn);
+    const headers = data[0].map(h => String(h).trim());
+    const idColIdx = headers.indexOf(this.idColumn);
     
     for (let i = 1; i < data.length; i++) {
       if (data[i][idColIdx] == id) {

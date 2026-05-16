@@ -14,11 +14,11 @@ class TrashService {
     // Check specific permissions if needed
     let perms = {};
     if(user.Permissions) {
-      try { perms = JSON.parse(user.Permissions); } catch(e) {}
+      try { perms = typeof user.Permissions === 'string' ? JSON.parse(user.Permissions) : user.Permissions; } catch(e) {}
     }
-    if(!perms.recycleBin?.restore && action === 'استعادة') throw new Error("صلاحيات غير كافية لـ " + action);
-    if(!perms.recycleBin?.delete && action === 'حذف نهائي') throw new Error("صلاحيات غير كافية لـ " + action);
-    if(!perms.recycleBin?.view && action === 'عرض') throw new Error("صلاحيات غير كافية لـ " + action);
+    if(action === 'استعادة' && !perms.recycleBin?.restoreOwn && !perms.recycleBin?.restoreAll) throw new Error("صلاحيات غير كافية لـ " + action);
+    if(action === 'حذف نهائي' && !perms.recycleBin?.empty) throw new Error("صلاحيات غير كافية لـ " + action);
+    if(action === 'عرض' && !perms.recycleBin?.view) throw new Error("صلاحيات غير كافية لـ " + action);
   }
 
   // جلب كل العناصر اللي فيها Is_Deleted = true

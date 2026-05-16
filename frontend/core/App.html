@@ -1,5 +1,46 @@
 <script>
   /**
+   * TaskUtils — Shared Task Utility (Single Source of Truth)
+   * Eliminates DRY violations between MyTasksController & TaskAdminController.
+   * Defines all task status constants and the shared urgency calculation.
+   */
+  const TaskUtils = Object.freeze({
+    ACTIVE_STATUSES:  Object.freeze(['Pending', 'Needs_Review', 'Overdue']),
+    ARCHIVE_STATUSES: Object.freeze(['Completed']),
+
+    isActive(task)   { return this.ACTIVE_STATUSES.includes(task.Status); },
+    isArchived(task) { return this.ARCHIVE_STATUSES.includes(task.Status); },
+
+    /**
+     * Calculates a task's urgency label, CSS class, and icon for display.
+     * @param {object} task - A task object from the GlobalStore.
+     * @returns {{ label: string, cssClass: string, icon: string, daysLeft?: number }}
+     */
+    getUrgency(task) {
+      if (task.Status === 'Completed')    return { label: 'مكتملة',               cssClass: 'bg-success',          icon: 'fa-check-circle' };
+      if (task.Status === 'Needs_Review') return { label: 'بانتظار المراجعة',    cssClass: 'bg-info',             icon: 'fa-hourglass-half' };
+
+      const dl = new Date(task.Deadline);
+      const now = new Date();
+      now.setHours(0, 0, 0, 0);
+      dl.setHours(0, 0, 0, 0);
+
+      if (isNaN(dl.getTime())) return { label: 'غير محدد', cssClass: 'bg-secondary', icon: 'fa-question-circle' };
+
+      const days = Math.ceil((dl - now) / 86400000);
+      const c = parseInt(task.Critical_Days) || 1;
+      const w = parseInt(task.Warning_Days)  || 3;
+
+      if (days < 0)   return { label: 'متأخرة ('  + Math.abs(days) + ' يوم)', cssClass: 'bg-danger',              icon: 'fa-times-circle',       daysLeft: days };
+      if (days === 0) return { label: 'اليوم آخر موعد!',                       cssClass: 'bg-danger',              icon: 'fa-fire',               daysLeft: 0    };
+      if (days <= c)  return { label: 'حرجة ('    + days + ' يوم)',             cssClass: 'bg-danger',              icon: 'fa-fire',               daysLeft: days };
+      if (days <= w)  return { label: 'تحذير ('   + days + ' يوم)',             cssClass: 'bg-warning text-dark',   icon: 'fa-exclamation-triangle',daysLeft: days };
+      return                  { label: 'باقي '    + days + ' يوم',              cssClass: 'bg-primary',             icon: 'fa-clock',              daysLeft: days };
+    }
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  /**
    * App / Main Application Controller (Refactored Clean Code)
    */
   class App {
@@ -20,7 +61,9 @@
       'trash': { template: 'trash-view-template', controllerName: 'TrashController', method: 'renderTable', restricted: true },
       'users': { template: 'users-view-template', controllerName: 'UserController', method: 'renderTable', restricted: true },
       'profile': { template: 'profile-view-template', controllerName: 'ProfileController', method: 'renderView' },
-      'logs': { template: 'logs-view-template', controllerName: 'LogController', method: 'loadView', restricted: true }
+      'logs': { template: 'logs-view-template', controllerName: 'LogController', method: 'loadView', restricted: true },
+      'tasks-admin': { template: 'tasks-admin-template', controllerName: 'TaskAdminController', method: 'renderView', restricted: true },
+      'my-tasks': { template: 'my-tasks-template', controllerName: 'MyTasksController', method: 'renderView' }
     };
 
     static boot() {
@@ -49,13 +92,21 @@
     static async loadInitialData() {
       UIManager.showLoader("جاري تحميل بيانات النظام المركزية...");
       try {
-        const dbData = await ApiClient.call('api_getInitialAppData');
+        const currentUser = GlobalStore.getState().currentUser;
+        const dbData = await ApiClient.call('api_getInitialAppData', currentUser.username);
         GlobalStore.setState({
           clients: dbData.clients, groups: dbData.groups,
-          records: dbData.records, attachments: dbData.attachments, users: dbData.users || []
+          records: dbData.records, attachments: dbData.attachments, users: dbData.users || [],
+          tags: dbData.tags || [], legalEntities: dbData.legalEntities || [],
+          tasks: dbData.tasks || [], taskTemplates: dbData.taskTemplates || []
         });
         UIManager.hideLoader();
-        this.navigate('dashboard');
+        // Role-based default page: Users land on My Tasks, Admins on Dashboard
+        if (currentUser.role === this.ROLES.ADMIN) {
+          this.navigate('dashboard');
+        } else {
+          this.navigate('my-tasks');
+        }
       } catch (error) {
         UIManager.showError(error.message, "فشل في تحميل البيانات");
       }
@@ -78,10 +129,11 @@
         if (pageId === 'users' && perms.admin?.manageUsers) allowed = true;
         if (pageId === 'logs' && perms.admin?.viewLogs) allowed = true;
         if (pageId === 'trash' && perms.recycleBin?.view) allowed = true;
+        if (pageId === 'tasks-admin') allowed = false; // Tasks Admin is strictly Admin-only
 
         if (!allowed) {
           UIManager.showError("ليس لديك صلاحية لدخول هذه الصفحة", "دخول مرفوض");
-          this.navigate('dashboard');
+          this.navigate('my-tasks');
           return;
         }
       }
@@ -114,21 +166,32 @@
       const state = GlobalStore.getState();
       if (!state.currentUser) return;
 
-      const role = state.currentUser.role;
-      const perms = state.currentUser.permissions || {};
+      const { role, permissions: perms = {} } = state.currentUser;
 
-      // Default show
-      document.querySelectorAll('a[onclick*="users"], a[onclick*="trash"], a[onclick*="logs"]').forEach(link => {
-        link.style.setProperty('display', 'block', 'important');
-      });
-
-      // Handle Admin permissions visibility
-      if (role !== this.ROLES.ADMIN) {
-        if (!perms.admin?.manageUsers) document.querySelector('a[onclick*="users"]')?.style.setProperty('display', 'none', 'important');
-        if (!perms.admin?.viewLogs) document.querySelector('a[onclick*="logs"]')?.style.setProperty('display', 'none', 'important');
-        if (!perms.recycleBin?.view) document.querySelector('a[onclick*="trash"]')?.style.setProperty('display', 'none', 'important');
+      // 1. Control Admin Tools Toggle (Group Visibility)
+      const adminWrapper = document.getElementById('adminToolsWrapper');
+      if (adminWrapper) {
+        const hasAnyAdminAccess = (role === this.ROLES.ADMIN || 
+                                 perms.admin?.manageUsers || 
+                                 perms.admin?.viewLogs || 
+                                 perms.recycleBin?.view);
+        adminWrapper.style.setProperty('display', hasAnyAdminAccess ? 'block' : 'none', 'important');
       }
 
+      // 2. Control individual links visibility for fine-grained access
+      const visibilityMap = {
+        'users': (role === this.ROLES.ADMIN || perms.admin?.manageUsers),
+        'logs': (role === this.ROLES.ADMIN || perms.admin?.viewLogs),
+        'trash': (role === this.ROLES.ADMIN || perms.recycleBin?.view),
+        'tasks-admin': (role === this.ROLES.ADMIN)
+      };
+
+      Object.entries(visibilityMap).forEach(([key, isVisible]) => {
+        const el = document.querySelector(`a[onclick*="${key}"]`);
+        if (el) el.style.setProperty('display', isVisible ? 'block' : 'none', 'important');
+      });
+
+      // 3. Viewer-only restrictions
       if (role === this.ROLES.VIEWER) {
         document.querySelectorAll('#app-wrapper .btn-success, #app-wrapper .btn-danger, #app-wrapper .btn-warning').forEach(btn => {
           const isAction = btn.getAttribute('onclick') && (btn.getAttribute('onclick').includes('add') || btn.getAttribute('onclick').includes('delete'));
@@ -178,10 +241,13 @@
         btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
       }
       try {
-        const dbData = await ApiClient.call('api_getInitialAppData');
+        const currentUser = GlobalStore.getState().currentUser;
+        const dbData = await ApiClient.call('api_getInitialAppData', currentUser.username);
         GlobalStore.setState({
           clients: dbData.clients, groups: dbData.groups,
-          records: dbData.records, attachments: dbData.attachments, users: dbData.users || []
+          records: dbData.records, attachments: dbData.attachments, users: dbData.users || [],
+          tags: dbData.tags || [], legalEntities: dbData.legalEntities || [],
+          tasks: dbData.tasks || [], taskTemplates: dbData.taskTemplates || []
         });
         this.navigate(this.currentPage, this.currentParam);
         Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'تم تحديث البيانات بنجاح', showConfirmButton: false, timer: 2000, timerProgressBar: true });

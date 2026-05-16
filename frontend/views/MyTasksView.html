@@ -1,0 +1,249 @@
+<template id="my-tasks-template">
+  <div class="fade-in">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h4 class="fw-bold mb-0"><i class="fas fa-tasks me-2 text-primary"></i> مهامي</h4>
+    </div>
+
+    <!-- Bootstrap 5 Nav Tabs -->
+    <ul class="nav nav-tabs mb-4" id="myTasksTabs" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active d-flex align-items-center gap-2" id="myTasks-tab-active"
+                data-bs-toggle="tab" data-bs-target="#myTasks-pane-active"
+                type="button" role="tab" aria-selected="true">
+          <i class="fas fa-bolt"></i>
+          مهامي الحالية
+          <span class="badge rounded-pill bg-primary" id="myActiveTasksCount">0</span>
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link d-flex align-items-center gap-2" id="myTasks-tab-archive"
+                data-bs-toggle="tab" data-bs-target="#myTasks-pane-archive"
+                type="button" role="tab" aria-selected="false">
+          <i class="fas fa-history"></i>
+          سجل إنجازاتي
+          <span class="badge rounded-pill bg-success" id="myArchiveTasksCount">0</span>
+        </button>
+      </li>
+    </ul>
+
+    <!-- Tab Panes -->
+    <div class="tab-content" id="myTasksTabContent">
+      <!-- Pane 1: Active Tasks -->
+      <div class="tab-pane fade show active" id="myTasks-pane-active" role="tabpanel">
+        <div id="myActiveTasksContainer"></div>
+      </div>
+      <!-- Pane 2: Archive / History -->
+      <div class="tab-pane fade" id="myTasks-pane-archive" role="tabpanel">
+        <div id="myArchiveContainer"></div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+class MyTasksController {
+
+  /**
+   * Main entry point. Reads personal tasks from GlobalStore (filtering by
+   * current user's User_ID regardless of role), then delegates to sub-renderers.
+   * BUG FIX: Admins previously saw ALL tasks here; now strictly filtered by Assigned_To.
+   */
+  static renderView() {
+    const state    = GlobalStore.getState();
+    const allTasks = state.tasks   || [];
+    const clients  = state.clients || [];
+    const currentUser = state.currentUser;
+
+    // ─── THE FIX ────────────────────────────────────────────────────────────────
+    // The user's session in localStorage might have a stale User_ID if the database was recreated.
+    // We must look up the fresh user object from the database using the username.
+    const freshUser = (state.users || []).find(u => u.Username === currentUser.username);
+    const myUserId = freshUser ? freshUser.User_ID : (currentUser.userId || currentUser.User_ID || currentUser.id);
+    
+    const myTasks = allTasks.filter(t => {
+      if (!t.Assigned_To || !myUserId) return false;
+      return String(t.Assigned_To).trim() === String(myUserId).trim();
+    });
+    // ────────────────────────────────────────────────────────────────────────────
+
+    this._renderActiveTasks(myTasks, clients);
+    this._renderArchiveTasks(myTasks, clients);
+  }
+
+  // ─── Private: Render Active Tasks Tab ─────────────────────────────────────────
+
+  static _renderActiveTasks(myTasks, clients) {
+    const activeTasks = myTasks.filter(t => TaskUtils.isActive(t));
+    const container   = document.getElementById('myActiveTasksContainer');
+    const countBadge  = document.getElementById('myActiveTasksCount');
+
+    countBadge.textContent = activeTasks.length;
+
+    if (!activeTasks.length) {
+      container.innerHTML = `
+        <div class="text-center py-5">
+          <i class="fas fa-clipboard-check fa-4x mb-3" style="color: var(--text-muted); opacity: 0.3;"></i>
+          <h5 class="text-muted">لا توجد مهام نشطة 🎉</h5>
+          <p class="text-muted small">عندما يتم تعيين مهام لك ستظهر هنا</p>
+        </div>`;
+      return;
+    }
+
+    // Sort by nearest deadline first
+    const sorted = [...activeTasks].sort((a, b) => new Date(a.Deadline) - new Date(b.Deadline));
+
+    container.innerHTML = '<div class="row g-3">' + sorted.map(task => {
+      const urgency      = TaskUtils.getUrgency(task);
+      const client       = clients.find(c => c.Client_ID === task.Client_ID);
+      const isNeedsReview = task.Status === 'Needs_Review';
+      const isPending    = task.Status === 'Pending';
+      const hasClient    = task.Client_ID && task.Client_ID.trim() !== '';
+      const hasRejection = isPending && task.Rejection_Reason && task.Rejection_Reason.trim() !== '';
+
+      // Border color reflects urgency
+      let borderColor = 'rgba(var(--bs-primary-rgb), 0.2)';
+      if (!isNeedsReview) {
+        if (hasRejection)                            borderColor = '#ef4444';
+        else if (urgency.cssClass.includes('danger'))  borderColor = '#ef4444';
+        else if (urgency.cssClass.includes('warning')) borderColor = '#f59e0b';
+      }
+      if (isNeedsReview) borderColor = '#06b6d4';
+
+      // Footer action button
+      let footerContent = '';
+      if (isNeedsReview) {
+        footerContent = '<span class="badge bg-info rounded-pill px-3 py-2 flex-fill text-center"><i class="fas fa-hourglass-half me-1"></i> في انتظار مراجعة المسؤول</span>';
+      } else {
+        footerContent = `<button class="btn btn-success btn-sm flex-fill shadow-sm" onclick="MyTasksController.completeTask('${task.Task_ID}')"><i class="fas fa-check me-1"></i> تقديم للمراجعة</button>`;
+      }
+
+      return `
+      <div class="col-md-6 col-lg-4">
+        <div class="card h-100" style="border-right: 4px solid ${borderColor};">
+          <div class="card-header d-flex justify-content-between align-items-center" style="background: transparent; border-bottom: 1px solid var(--glass-border);">
+            <h6 class="mb-0 fw-bold">${UIManager.escapeHTML(task.Title)}</h6>
+            <span class="badge ${urgency.cssClass} rounded-pill px-2 py-1">
+              <i class="fas ${urgency.icon} me-1"></i>${urgency.label}
+            </span>
+          </div>
+          <div class="card-body">
+            ${task.Description ? `<p class="text-muted small mb-2">${UIManager.escapeHTML(task.Description)}</p>` : ''}
+            <div class="d-flex align-items-center mb-2">
+              <i class="fas fa-calendar-alt text-muted me-2"></i>
+              <small class="text-muted">الموعد: <strong>${task.Deadline || '—'}</strong></small>
+            </div>
+            ${hasClient && client ? `<div class="d-flex align-items-center mb-2"><i class="fas fa-user-tie text-muted me-2"></i><small class="text-muted">العميل: <strong>${UIManager.escapeHTML(client.Name)}</strong></small></div>` : ''}
+            ${hasRejection ? `<div class="alert alert-danger py-2 px-3 mb-0 mt-2 small"><i class="fas fa-times-circle me-1"></i><strong>سبب الرفض:</strong> ${UIManager.escapeHTML(task.Rejection_Reason)}</div>` : ''}
+            ${isNeedsReview && task.Completion_Note ? `<div class="alert alert-info py-2 px-3 mb-0 mt-2 small"><i class="fas fa-hourglass-half me-1"></i><strong>ملاحظة الإنجاز:</strong> ${UIManager.escapeHTML(task.Completion_Note)}</div>` : ''}
+          </div>
+          <div class="card-footer d-flex gap-2" style="background: transparent; border-top: 1px solid var(--glass-border);">
+            ${footerContent}
+            ${hasClient ? `<button class="btn btn-outline-primary btn-sm shadow-sm" onclick="App.navigate('groups','${task.Client_ID}')" title="عرض العميل"><i class="fas fa-external-link-alt"></i></button>` : ''}
+          </div>
+        </div>
+      </div>`;
+    }).join('') + '</div>';
+  }
+
+  // ─── Private: Render Archive (History) Tab ────────────────────────────────────
+
+  static _renderArchiveTasks(myTasks, clients) {
+    const archivedTasks = myTasks.filter(t => TaskUtils.isArchived(t));
+    const container     = document.getElementById('myArchiveContainer');
+    const countBadge    = document.getElementById('myArchiveTasksCount');
+
+    countBadge.textContent = archivedTasks.length;
+
+    if (!archivedTasks.length) {
+      container.innerHTML = `
+        <div class="text-center py-5">
+          <i class="fas fa-trophy fa-4x mb-3" style="color: var(--text-muted); opacity: 0.25;"></i>
+          <h5 class="text-muted">لا توجد مهام مكتملة بعد</h5>
+          <p class="text-muted small">المهام التي تُنجزها وتعتمدها الإدارة ستظهر هنا</p>
+        </div>`;
+      return;
+    }
+
+    // Sort by most recently completed first
+    const sorted = [...archivedTasks].sort((a, b) => new Date(b.Completed_At) - new Date(a.Completed_At));
+
+    container.innerHTML = `
+      <ul class="list-group list-group-flush">
+        ${sorted.map(task => {
+          const client   = clients.find(c => c.Client_ID === task.Client_ID);
+          const hasClient = task.Client_ID && task.Client_ID.trim() !== '';
+          return `
+          <li class="list-group-item py-3 px-0" style="background: transparent; border-bottom: 1px solid var(--glass-border);">
+            <div class="d-flex align-items-start gap-3">
+              <div class="mt-1 flex-shrink-0">
+                <i class="fas fa-check-double fa-lg text-success"></i>
+              </div>
+              <div class="flex-grow-1">
+                <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                  <h6 class="fw-bold mb-1">${UIManager.escapeHTML(task.Title)}</h6>
+                  <span class="badge bg-success rounded-pill px-3 py-1">
+                    <i class="fas fa-check-circle me-1"></i> مكتملة ومعتمدة
+                  </span>
+                </div>
+                <div class="d-flex flex-wrap gap-3 text-muted small mb-2">
+                  ${hasClient && client ? `<span><i class="fas fa-user-tie me-1"></i>${UIManager.escapeHTML(client.Name)}</span>` : ''}
+                  <span><i class="fas fa-calendar-alt me-1"></i>الموعد: <strong>${task.Deadline || '—'}</strong></span>
+                  <span><i class="fas fa-flag-checkered me-1"></i>اكتمل: <strong>${task.Completed_At || '—'}</strong></span>
+                </div>
+                ${task.Completion_Note ? `
+                  <div class="alert alert-success py-2 px-3 mb-0 small">
+                    <i class="fas fa-sticky-note me-1"></i>
+                    <strong>ملاحظة الإنجاز:</strong> ${UIManager.escapeHTML(task.Completion_Note)}
+                  </div>` : ''}
+              </div>
+            </div>
+          </li>`;
+        }).join('')}
+      </ul>`;
+  }
+
+  // ─── Public: Complete Task Action ─────────────────────────────────────────────
+
+  static async completeTask(taskId) {
+    const { value: note } = await Swal.fire({
+      title: '<i class="fas fa-clipboard-check text-success me-2"></i> إكمال المهمة',
+      html: '<p class="text-muted mb-0">اكتب ملاحظة الإنجاز (إجباري)</p>',
+      input: 'textarea',
+      inputPlaceholder: 'مثال: تم رفع الإقرار بنجاح على المنظومة',
+      inputAttributes: { required: true },
+      showCancelButton: true,
+      confirmButtonText: '<i class="fas fa-check me-1"></i> تأكيد الإكمال',
+      cancelButtonText: 'إلغاء',
+      background: 'var(--card-bg)',
+      color: 'var(--text-main)',
+      customClass: { popup: 'rounded-4 shadow-lg border-0', confirmButton: 'btn btn-success rounded-3 px-4 shadow-sm me-2', cancelButton: 'btn btn-secondary rounded-3 px-4 shadow-sm' },
+      buttonsStyling: false,
+      inputValidator: (val) => { if (!val || !val.trim()) return 'يجب كتابة ملاحظة الإنجاز!'; }
+    });
+
+    if (!note) return;
+
+    const userEmail = GlobalStore.getState().currentUser.username;
+    UIManager.showLoader('جاري تسجيل الإكمال...');
+
+    try {
+      await ApiClient.call('api_completeTask', taskId, note.trim(), userEmail);
+
+      // Zero-Latency: Optimistic update to Needs_Review before server round-trip
+      const state = GlobalStore.getState();
+      const updatedTasks = state.tasks.map(t => {
+        if (t.Task_ID === taskId) {
+          return { ...t, Status: 'Needs_Review', Completion_Note: note.trim(), Completed_At: new Date().toLocaleString('en-GB'), Rejection_Reason: '' };
+        }
+        return t;
+      });
+      GlobalStore.setState({ tasks: updatedTasks });
+
+      UIManager.showSuccess('تم تقديم المهمة للمراجعة بنجاح! 📨');
+      this.renderView();
+    } catch (error) {
+      UIManager.showError(error.message);
+    }
+  }
+}
+</script>

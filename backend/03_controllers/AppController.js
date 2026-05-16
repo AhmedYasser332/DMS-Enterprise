@@ -3,17 +3,6 @@
  * البوابات الرسمية والوحيدة التي يمكن للواجهة الأمامية (Frontend) التحدث معها
  */
 
-function _enforcePermission(userEmail, actionType) {
-  // adminEmail or userEmail is passed. We fetch the user from DB.
-  if(!userEmail || userEmail === 'System') return; // Bypass for initial setup or system calls if necessary
-  const user = userService.userRepo.findByUsername(userEmail);
-  if(!user) throw new Error("مستخدم غير صالح لعملية " + actionType);
-  if(user.Role === 'Admin') return; // Admins can do everything
-  if(user.Role === 'Viewer') throw new Error("صلاحيات القراءة فقط. لا يمكنك " + actionType);
-  
-  // Custom permissions check can be expanded here based on actionType
-}
-
 // ==========================================
 // 1. Auth Controllers (تسجيل الدخول)
 // ==========================================
@@ -158,7 +147,7 @@ function api_getFileBase64(driveFileId) {
 // ==========================================
 // 6. System Boot Controller (تحميل أولي)
 // ==========================================
-function api_getInitialAppData() {
+function api_getInitialAppData(userEmail) {
   try {
     // نقوم بجلب كل البيانات المطلوبة للذاكرة المركزية عبر طبقة الخدمات (Services) للحفاظ على المعمارية النظيفة
     const data = {
@@ -167,7 +156,10 @@ function api_getInitialAppData() {
       records: recordService.getAllRecords(),
       attachments: attachmentService.getAllAttachments(),
       users: userService.getAllUsers(),
-      tags: tagService.getAllTags()
+      tags: tagService.getAllTags(),
+      legalEntities: legalEntityService.getAllEntities(),
+      tasks: taskService.getAllTasks(userEmail),
+      taskTemplates: taskTemplateService.getAllTemplates()
     };
     return ResponseFactory.success(data, "تم تحميل النظام");
   } catch (error) {
@@ -258,5 +250,112 @@ function api_deleteTag(tagId, name, userEmail) {
 
     const res = tagService.deleteTag(tagId, name, userEmail);
     return ResponseFactory.success(res, "تم مسح التاج");
+  } catch (error) { return ResponseFactory.error(error.message); }
+}
+
+// ==========================================
+// 9. Legal Entities API
+// ==========================================
+function api_addLegalEntity(name, color, userEmail) {
+  try {
+    const res = legalEntityService.addEntity(name, color, userEmail);
+    return ResponseFactory.success(res, "تم إضافة الكيان القانوني");
+  } catch (error) { return ResponseFactory.error(error.message); }
+}
+
+function api_updateLegalEntity(entityId, name, color, userEmail) {
+  try {
+    const res = legalEntityService.updateEntity(entityId, name, color, userEmail);
+    return ResponseFactory.success(res, "تم تعديل الكيان بنجاح");
+  } catch (error) { return ResponseFactory.error(error.message); }
+}
+
+function api_deleteLegalEntity(entityId, name, userEmail) {
+  try {
+    const res = legalEntityService.deleteEntity(entityId, name, userEmail);
+    return ResponseFactory.success(res, "تم مسح الكيان القانوني");
+  } catch (error) { return ResponseFactory.error(error.message); }
+}
+
+// ==========================================
+// 10. Task Templates API
+// ==========================================
+function api_getAllTaskTemplates() {
+  try {
+    const templates = taskTemplateService.getAllTemplates();
+    return ResponseFactory.success(templates, "تم جلب القوالب");
+  } catch (error) { return ResponseFactory.error(error.message); }
+}
+
+function api_addTaskTemplate(title, description, warningDays, criticalDays, userEmail) {
+  try {
+    const res = taskTemplateService.addTemplate(title, description, warningDays, criticalDays, userEmail);
+    return ResponseFactory.success(res, "تم إضافة القالب");
+  } catch (error) { return ResponseFactory.error(error.message); }
+}
+
+function api_updateTaskTemplate(templateId, updateData, userEmail) {
+  try {
+    const res = taskTemplateService.updateTemplate(templateId, updateData, userEmail);
+    return ResponseFactory.success(res, "تم تعديل القالب");
+  } catch (error) { return ResponseFactory.error(error.message); }
+}
+
+function api_deleteTaskTemplate(templateId, userEmail) {
+  try {
+    const res = taskTemplateService.deleteTemplate(templateId, userEmail);
+    return ResponseFactory.success(res, "تم حذف القالب");
+  } catch (error) { return ResponseFactory.error(error.message); }
+}
+
+// ==========================================
+// 11. Tasks API
+// ==========================================
+function api_getAllTasks(userEmail) {
+  try {
+    const tasks = taskService.getAllTasks(userEmail);
+    return ResponseFactory.success(tasks, "تم جلب المهام");
+  } catch (error) { return ResponseFactory.error(error.message); }
+}
+
+function api_addTask(title, description, assignedTo, clientId, deadline, warningDays, criticalDays, templateId, userEmail) {
+  try {
+    const res = taskService.addTask(title, description, assignedTo, clientId, deadline, warningDays, criticalDays, templateId, userEmail);
+    return ResponseFactory.success(res, "تم إنشاء المهمة بنجاح");
+  } catch (error) { return ResponseFactory.error(error.message); }
+}
+
+function api_completeTask(taskId, completionNote, userEmail) {
+  try {
+    const res = taskService.completeTask(taskId, completionNote, userEmail);
+    return ResponseFactory.success(res, "تم تقديم المهمة للمراجعة");
+  } catch (error) { return ResponseFactory.error(error.message); }
+}
+
+function api_approveTask(taskId, userEmail) {
+  try {
+    const res = taskService.approveTask(taskId, userEmail);
+    return ResponseFactory.success(res, "تم اعتماد المهمة بنجاح");
+  } catch (error) { return ResponseFactory.error(error.message); }
+}
+
+function api_rejectTask(taskId, reason, userEmail) {
+  try {
+    const res = taskService.rejectTask(taskId, reason, userEmail);
+    return ResponseFactory.success(res, "تم رفض المهمة");
+  } catch (error) { return ResponseFactory.error(error.message); }
+}
+
+function api_updateTask(taskId, updateData, userEmail) {
+  try {
+    const res = taskService.updateTask(taskId, updateData, userEmail);
+    return ResponseFactory.success(res, "تم تعديل المهمة");
+  } catch (error) { return ResponseFactory.error(error.message); }
+}
+
+function api_deleteTask(taskId, userEmail) {
+  try {
+    const res = taskService.deleteTask(taskId, userEmail);
+    return ResponseFactory.success(res, "تم حذف المهمة");
   } catch (error) { return ResponseFactory.error(error.message); }
 }

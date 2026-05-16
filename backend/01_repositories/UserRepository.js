@@ -32,7 +32,10 @@ class UserRepository extends BaseRepository {
       records: { add: false, edit: false, delete: false },
       attachments: { upload: false, download: false, print: false, delete: false },
       recycleBin: { view: false, restoreOwn: false, restoreAll: false, empty: false },
-      admin: { manageUsers: false, viewLogs: false }
+      admin: { manageUsers: false, viewLogs: false },
+      tags: { add: false, edit: false, delete: false },
+      legalEntities: { add: false, edit: false, delete: false },
+      tasks: { manageTasks: false, myTasks: false }
     };
 
     if (obj.Permissions) {

@@ -49,13 +49,38 @@
             
             <div class="mb-4">
               <label class="form-label fw-bold">الكيان القانوني (اختياري)</label>
-              <select id="newClientLegalEntitySelect" class="form-select" onchange="ClientController.handleLegalEntityChange()">
+              <div class="d-flex align-items-center gap-2">
+                <select id="newClientLegalEntitySelect" class="form-select flex-grow-1">
                 </select>
-              <input type="text" id="newClientLegalEntityCustom" class="form-control mt-2 d-none fade-in" placeholder="اكتب الكيان القانوني الجديد هنا...">
+                <button type="button" class="btn btn-outline-primary manage-le-btn" onclick="ClientController.openManageLegalEntities()" style="display:none;">
+                  <i class="fas fa-cog"></i>
+                </button>
+              </div>
             </div>
 
             <button type="submit" class="btn btn-primary btn-lg w-100 shadow-sm"><i class="fas fa-save me-2"></i> حفظ بيانات العميل</button>
           </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Manage Legal Entities Modal -->
+  <div class="modal fade" id="manageLegalEntitiesModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header bg-dark text-white">
+          <h5 class="modal-title">إدارة الكيانات القانونية</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="addLegalEntityForm" onsubmit="event.preventDefault(); ClientController.addNewLegalEntity();" class="mb-3 d-flex gap-2" style="display:none;">
+            <input type="text" id="newLegalEntityName" class="form-control form-control-sm" placeholder="اسم الكيان" required>
+            <input type="color" id="newLegalEntityColor" class="form-control form-control-color form-control-sm" value="#198754" title="اختر لون">
+            <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i></button>
+          </form>
+          <div id="manageLegalEntitiesList" class="list-group list-group-flush" style="max-height: 300px; overflow-y: auto;">
+          </div>
         </div>
       </div>
     </div>
@@ -65,49 +90,119 @@
 <script>
 class ClientController {
   
-  // دالة إظهار أو إخفاء مربع الإدخال حسب الاختيار
-  static handleLegalEntityChange() {
-    const select = document.getElementById('newClientLegalEntitySelect');
-    const customInput = document.getElementById('newClientLegalEntityCustom');
-    if (select.value === 'other') {
-      customInput.classList.remove('d-none');
-      customInput.required = true;
+  static applyPermissionsLocal() {
+    const state = GlobalStore.getState();
+    const role = state.currentUser?.role;
+    let perms = {};
+    if (state.currentUser?.permissions) {
+      try { perms = typeof state.currentUser.permissions === 'string' ? JSON.parse(state.currentUser.permissions) : state.currentUser.permissions; } catch(e) {}
+    }
+    
+    const canManage = role === 'Admin' || (perms.legalEntities && (perms.legalEntities.add || perms.legalEntities.edit || perms.legalEntities.delete));
+    
+    if (canManage) {
+      document.querySelectorAll('.manage-le-btn').forEach(b => b.style.display = 'block');
     } else {
-      customInput.classList.add('d-none');
-      customInput.required = false;
-      customInput.value = ''; // تفريغ المربع
+      document.querySelectorAll('.manage-le-btn').forEach(b => b.style.display = 'none');
     }
   }
 
-  // دالة لتجميع الكيانات القانونية وعرضها في القائمة
   static populateLegalEntities() {
     const select = document.getElementById('newClientLegalEntitySelect');
-    
-    // القائمة الأساسية اللي في الصور بتاعتك
-    const defaultEntities = [
-      'منشأة فردية', 
-      'شركة مساهمة', 
-      'شركة ذات مسئولية محدودة', 
-      'شركة تضامن', 
-      'شركة توصية بسيطة', 
-      'شركة الشخص الواحد',
-      'قطاع عام',
-      'قطاع أعمال'
-    ];
-    
-    // السحر هنا: استخراج أي كيان قانوني موجود بالفعل في النظام ومش موجود في القائمة الأساسية
     const state = GlobalStore.getState();
-    const existingEntities = (state.clients || [])
-      .map(c => c.Legal_Entity)
-      .filter(e => e && e.trim() !== ''); // تصفية الفوارغ
+    const entities = state.legalEntities || [];
+    const activeEntities = entities.filter(e => String(e.Is_Deleted).toUpperCase() !== 'TRUE');
     
-    // دمج القائمتين وحذف التكرار
-    const allEntities = [...new Set([...defaultEntities, ...existingEntities])];
-    
-    // رسم القائمة
     select.innerHTML = '<option value="">-- اختر الكيان القانوني --</option>' + 
-      allEntities.map(e => `<option value="${e}">${e}</option>`).join('') +
-      '<option value="other" class="text-primary fw-bold">➕ أخرى (إضافة كيان جديد)...</option>';
+      activeEntities.map(e => `<option value="${e.Name}">${e.Name}</option>`).join('');
+  }
+
+  static openManageLegalEntities() {
+    this.renderManageLegalEntitiesList();
+    new bootstrap.Modal(document.getElementById('manageLegalEntitiesModal')).show();
+  }
+
+  static renderManageLegalEntitiesList() {
+    const list = document.getElementById('manageLegalEntitiesList');
+    const entities = GlobalStore.getState().legalEntities || [];
+    const activeEntities = entities.filter(e => String(e.Is_Deleted).toUpperCase() !== 'TRUE');
+    
+    const state = GlobalStore.getState();
+    const role = state.currentUser?.role;
+    let perms = {};
+    if (state.currentUser?.permissions) {
+      try { perms = typeof state.currentUser.permissions === 'string' ? JSON.parse(state.currentUser.permissions) : state.currentUser.permissions; } catch(e) {}
+    }
+    
+    const canAdd = role === 'Admin' || (perms.legalEntities && perms.legalEntities.add);
+    const canEdit = role === 'Admin' || (perms.legalEntities && perms.legalEntities.edit);
+    const canDelete = role === 'Admin' || (perms.legalEntities && perms.legalEntities.delete);
+    
+    document.getElementById('addLegalEntityForm').style.display = canAdd ? 'flex' : 'none';
+    
+    list.innerHTML = activeEntities.map(entity => `
+      <div class="list-group-item d-flex justify-content-between align-items-center px-1">
+        <div>
+          ${canEdit ? `<input type="color" class="form-control form-control-color form-control-sm d-inline-block p-0 me-2" 
+                 style="width: 20px; height: 20px;" value="${entity.Color}" onchange="ClientController.updateLegalEntityColor('${entity.Entity_ID}', this.value)">` 
+                 : `<span class="d-inline-block me-2 rounded-circle" style="width:15px; height:15px; background-color:${entity.Color};"></span>`}
+          <span class="fw-bold small">${entity.Name}</span>
+        </div>
+        ${canDelete ? `<button class="btn btn-sm btn-link text-danger p-0 m-0" onclick="ClientController.deleteLegalEntity('${entity.Entity_ID}', '${entity.Name}')"><i class="fas fa-trash"></i></button>` : ''}
+      </div>
+    `).join('');
+  }
+
+  static async addNewLegalEntity() {
+    const name = document.getElementById('newLegalEntityName').value.trim();
+    const color = document.getElementById('newLegalEntityColor').value;
+    if (!name) return;
+    
+    const userEmail = GlobalStore.getState().currentUser?.username;
+    UIManager.showLoader("جاري إضافة الكيان...");
+    try {
+      const newEntity = await ApiClient.call('api_addLegalEntity', name, color, userEmail);
+      GlobalStore.setState({ legalEntities: [...(GlobalStore.getState().legalEntities || []), newEntity] });
+      document.getElementById('addLegalEntityForm').reset();
+      this.renderManageLegalEntitiesList();
+      this.populateLegalEntities();
+      UIManager.hideLoader();
+    } catch (e) {
+      UIManager.showError(e.message);
+    }
+  }
+
+  static async updateLegalEntityColor(entityId, newColor) {
+    const entity = GlobalStore.getState().legalEntities.find(e => e.Entity_ID === entityId);
+    if(!entity) return;
+    const userEmail = GlobalStore.getState().currentUser?.username;
+    try {
+      await ApiClient.call('api_updateLegalEntity', entityId, entity.Name, newColor, userEmail);
+      const updatedEntities = GlobalStore.getState().legalEntities.map(e => e.Entity_ID === entityId ? { ...e, Color: newColor } : e);
+      GlobalStore.setState({ legalEntities: updatedEntities });
+      this.renderTable();
+    } catch (e) {
+      UIManager.showError(e.message);
+    }
+  }
+
+  static async deleteLegalEntity(entityId, name) {
+    const ok = await UIManager.confirmAction(`هل أنت متأكد من حذف الكيان القانوني ${name}؟`);
+    if(!ok) return;
+    
+    const userEmail = GlobalStore.getState().currentUser?.username;
+    UIManager.showLoader("جاري المسح...");
+    try {
+      await ApiClient.call('api_deleteLegalEntity', entityId, name, userEmail);
+      const entities = GlobalStore.getState().legalEntities.map(e => e.Entity_ID === entityId ? {...e, Is_Deleted: true} : e);
+      GlobalStore.setState({ legalEntities: entities });
+      
+      this.renderManageLegalEntitiesList();
+      this.populateLegalEntities();
+      UIManager.hideLoader();
+    } catch (e) {
+      UIManager.showError(e.message);
+    }
   }
 
   static renderTable() {
@@ -131,11 +226,21 @@ class ClientController {
       return;
     }
 
+    const renderLegalEntityBadge = (entityName) => {
+      if(!entityName || entityName === '-') return '-';
+      const entities = state.legalEntities || [];
+      const entity = entities.find(e => e.Name === entityName);
+      if(entity) {
+        return `<span class="badge" style="background-color: ${entity.Color};">${entity.Name}</span>`;
+      }
+      return `<span class="badge bg-secondary">${entityName}</span>`;
+    };
+
     tbody.innerHTML = visibleClients.map(client => `
       <tr>
         <td class="fw-bold text-primary">${client.Name}</td>
         <td><span class="badge bg-secondary">${client.Tax_ID || '-'}</span></td>
-        <td>${client.Legal_Entity || '-'}</td>
+        <td>${renderLegalEntityBadge(client.Legal_Entity)}</td>
         <td class="text-muted small">${client.Created_At.split(',')[0]}</td>
         <td>
           <button class="btn btn-sm text-primary me-1 shadow-sm fw-bold" style="background: rgba(79, 70, 229, 0.1);" onclick="App.navigate('groups', '${client.Client_ID}')"><i class="fas fa-folder-open me-1"></i> المجموعات</button>
@@ -144,12 +249,12 @@ class ClientController {
       </tr>
     `).join('');
     App.applyPermissions(); 
+    this.applyPermissionsLocal();
   }
 
   static showAddModal() {
     document.getElementById('addClientForm').reset();
     this.populateLegalEntities(); // تحديث القائمة قبل الفتح
-    this.handleLegalEntityChange(); // إعادة ضبط مربع "أخرى"
     new bootstrap.Modal(document.getElementById('addClientModal')).show();
   }
 
@@ -157,10 +262,8 @@ class ClientController {
     const name = document.getElementById('newClientName').value.trim();
     const taxId = document.getElementById('newClientTaxId').value.trim();
     
-    // ⚡ تحديد الكيان القانوني (من القائمة أو من مربع "أخرى") ⚡
-    const selectVal = document.getElementById('newClientLegalEntitySelect').value;
-    const customVal = document.getElementById('newClientLegalEntityCustom').value.trim();
-    const legalEntity = selectVal === 'other' ? customVal : selectVal;
+    // ⚡ تحديد الكيان القانوني ⚡
+    const legalEntity = document.getElementById('newClientLegalEntitySelect').value;
 
     const state = GlobalStore.getState();
     const userEmail = state.currentUser ? state.currentUser.username : 'System';

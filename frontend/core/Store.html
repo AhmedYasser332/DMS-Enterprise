@@ -11,7 +11,9 @@ class AppStore {
       currentUser: null,
       clients: [],
       groups: [],
-      records: []
+      records: [],
+      tasks: [],
+      taskTemplates: []
     };
     
     // قائمة المراقبين (الدوال التي سيتم تحديثها عند تغير البيانات)
@@ -49,7 +51,13 @@ class AppStore {
       currentUser: null,
       clients: [],
       groups: [],
-      records: []
+      records: [],
+      attachments: [],
+      users: [],
+      tags: [],
+      legalEntities: [],
+      tasks: [],
+      taskTemplates: []
     };
     this._notify();
   }

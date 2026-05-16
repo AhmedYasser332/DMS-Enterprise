@@ -1,80 +1,110 @@
 {
-
-"Users": [
-"User_ID",
-"Name",
-"Username",
-"Password",
-"Role",
-"Allowed_Clients",
-"Created_At",
-"Created_By",
-"Is_Deleted",
-"Permissions",
-"Avatar",
-"Job_Title",
-"Phone_Number"
-],
-
-"Clients": [
-"Client_ID",
-"Name",
-"Tax_ID",
-"Legal_Entity",
-"Created_By",
-"Created_At",
-"Is_Deleted",
-"Username (Tax Return)",
-"Password(Tax Return)",
-"Username (Invoice)",
-"Password (Invoice)"
-],
-
-"Groups": [
-"Group_ID",
-"Client_ID",
-"Name",
-"Created_By",
-"Created_At",
-"Is_Deleted"
-],
-
-"Records": [
-"Record_ID",
-"Group_ID",
-"Title",
-"Description",
-"Tags",
-"Created_By",
-"Created_At",
-"Is_Deleted"
-],
-
-"Attachments": [
-"Attachment_ID",
-"Record_ID",
-"File_Name",
-"Drive_File_ID",
-"Drive_URL",
-"Uploaded_By",
-"Uploaded_At",
-"Is_Deleted"
-],
-
-"Activity_Log": [
-"Log_ID",
-"User_ID",
-"Action",
-"Details",
-"Timestamp"
-],
-
-"Tags": [
-"Tag_ID",
-"Name",
-"Color",
-"Created_By",
-"Is_Deleted"
-]
-
+  "Users": [
+    "User_ID",
+    "Name",
+    "Username",
+    "Password",
+    "Role",
+    "Allowed_Clients",
+    "Is_Active",
+    "Created_At",
+    "Created_By",
+    "Is_Deleted",
+    "Permissions",
+    "Avatar",
+    "Job_Title",
+    "Phone_Number"
+  ],
+  "Legal_Entities": [
+    "Entity_ID",
+    "Name",
+    "Color",
+    "Created_By",
+    "Is_Deleted"
+  ],
+  "Tags": [
+    "Tag_ID",
+    "Name",
+    "Color",
+    "Created_By",
+    "Is_Deleted"
+  ],
+  "Clients": [
+    "Client_ID",
+    "Name",
+    "Tax_ID",
+    "Legal_Entity",
+    "Created_By",
+    "Created_At",
+    "Is_Deleted",
+    "Username (Tax Return)",
+    "Password(Tax Return)",
+    "Username (Invoice)",
+    "Password (Invoice)"
+  ],
+  "Groups": [
+    "Group_ID",
+    "Client_ID",
+    "Name",
+    "Created_By",
+    "Created_At",
+    "Is_Deleted"
+  ],
+  "Records": [
+    "Record_ID",
+    "Group_ID",
+    "Title",
+    "Description",
+    "Tags",
+    "Created_By",
+    "Created_At",
+    "Is_Deleted"
+  ],
+  "Attachments": [
+    "Attachment_ID",
+    "Record_ID",
+    "File_Name",
+    "Drive_File_ID",
+    "Uploaded_By",
+    "Uploaded_At",
+    "Is_Deleted",
+    "Mime_Type",
+    "Size",
+    "View_Link"
+  ],
+  "Activity_Log": [
+    "Log_ID",
+    "User_ID",
+    "Action",
+    "Details",
+    "Timestamp"
+  ],
+  "Task_Templates": [
+    "Template_ID",
+    "Title",
+    "Description",
+    "Warning_Days",
+    "Critical_Days",
+    "Created_By",
+    "Created_At",
+    "Is_Deleted"
+  ],
+  "Tasks": [
+    "Task_ID",
+    "Template_ID",
+    "Title",
+    "Description",
+    "Assigned_To",
+    "Client_ID",
+    "Deadline",
+    "Warning_Days",
+    "Critical_Days",
+    "Status",
+    "Completion_Note",
+    "Completed_At",
+    "Rejection_Reason",
+    "Created_By",
+    "Created_At",
+    "Is_Deleted"
+  ]
 }

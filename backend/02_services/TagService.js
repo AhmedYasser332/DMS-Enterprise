@@ -5,22 +5,20 @@ class TagService {
     this.userRepo = userRepository;
   }
 
-  _checkPermission(userEmail, action) {
+  _checkPermission(userEmail, actionType) {
     if(!userEmail || userEmail === 'System') return; // Bypass for system calls
     const user = this.userRepo.findByUsername(userEmail);
-    if(!user) throw new Error("مستخدم غير صالح لعملية " + action);
+    if(!user) throw new Error("مستخدم غير صالح لعملية إدارة الوسوم");
     if(user.Role === 'Admin') return; // Admins can do everything
     
-    // Check specific permissions if needed (e.g., manageTags)
     let perms = {};
     if(user.Permissions) {
-      try { perms = JSON.parse(user.Permissions); } catch(e) {}
+      try { perms = typeof user.Permissions === 'string' ? JSON.parse(user.Permissions) : user.Permissions; } catch(e) {}
     }
-    // If we have a specific manageTags permission in the future, check it here:
-    // if(!perms.admin?.manageTags) throw new Error("صلاحيات غير كافية لـ " + action);
     
-    // For now, any non-viewer could add tags if they have edit permissions, but let's restrict to Admin/Managers
-    if(user.Role === 'Viewer') throw new Error("صلاحيات القراءة فقط. لا يمكنك " + action);
+    if(!perms.tags || !perms.tags[actionType]) {
+      throw new Error(`ليس لديك صلاحية لـ ${actionType === 'add' ? 'إضافة' : (actionType === 'edit' ? 'تعديل' : 'حذف')} الوسوم (Tags)`);
+    }
   }
 
   getAllTags() {
@@ -28,7 +26,7 @@ class TagService {
   }
 
   addTag(name, color, userEmail) {
-    this._checkPermission(userEmail, 'إضافة وسوم');
+    this._checkPermission(userEmail, 'add');
     if (!name || name.trim() === "") throw new Error("اسم التاج مطلوب.");
     
     const allTags = this.tagRepo.findAll(true);
@@ -49,7 +47,7 @@ class TagService {
   }
 
   updateTag(tagId, name, color, userEmail) {
-    this._checkPermission(userEmail, 'تعديل وسوم');
+    this._checkPermission(userEmail, 'edit');
     if (!name || name.trim() === "") throw new Error("اسم التاج مطلوب.");
     
     this.tagRepo.update(tagId, { "Name": name.trim(), "Color": color });
@@ -58,7 +56,7 @@ class TagService {
   }
 
   deleteTag(tagId, name, userEmail) {
-    this._checkPermission(userEmail, 'حذف وسوم');
+    this._checkPermission(userEmail, 'delete');
     const success = this.tagRepo.softDelete(tagId);
     if (!success) throw new Error("تعذر مسح التاج.");
     

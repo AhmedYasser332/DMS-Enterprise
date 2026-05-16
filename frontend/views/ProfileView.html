@@ -117,11 +117,10 @@ class ProfileController {
       const user = GlobalStore.getState().currentUser;
       UIManager.showLoader("جاري رفع الصورة إلى Google Drive...");
       try {
-        const driveUrl = await ApiClient.call('api_uploadAvatar', user.id, base64Data, file.type, user.username);
+        const driveUrl = await ApiClient.call('api_uploadAvatar', user.userId, base64Data, file.type, user.username);
         
         document.getElementById('profileAvatar').src = driveUrl;
-        user.avatar = driveUrl;
-        GlobalStore.setState({ currentUser: user });
+        GlobalStore.setState({ currentUser: { ...user, avatar: driveUrl } });
         UIManager.showSuccess("تم تغيير الصورة بنجاح");
       } catch (err) {
         UIManager.showError(err.message);
@@ -165,13 +164,11 @@ class ProfileController {
 
     UIManager.showLoader("جاري حفظ التعديلات...");
     try {
-      await ApiClient.call('api_updateUser', user.id, payload, user.username);
+      await ApiClient.call('api_updateUser', user.userId, payload, user.username);
       
-      user.name = name;
-      user.jobTitle = jobTitle;
-      user.phoneNumber = phone;
-      if(newPwd) user.password = newPwd; // Update stored password
-      GlobalStore.setState({ currentUser: user });
+      const updatedUser = { ...user, name, jobTitle, phoneNumber: phone };
+      if(newPwd) updatedUser.password = newPwd;
+      GlobalStore.setState({ currentUser: updatedUser });
       
       document.getElementById('profileName').textContent = name;
       document.getElementById('profileOldPassword').value = '';

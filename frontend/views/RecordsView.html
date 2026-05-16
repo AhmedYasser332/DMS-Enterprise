@@ -102,7 +102,7 @@
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body">
-          <form id="addTagForm" onsubmit="event.preventDefault(); RecordController.addNewTag();" class="mb-3 d-flex gap-2">
+          <form id="addTagForm" onsubmit="event.preventDefault(); RecordController.addNewTag();" class="mb-3 d-flex gap-2" style="display:none;">
             <input type="text" id="newTagName" class="form-control form-control-sm" placeholder="اسم التاج" required>
             <input type="color" id="newTagColor" class="form-control form-control-color form-control-sm" value="#0d6efd" title="اختر لون">
             <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i></button>
@@ -126,8 +126,17 @@ class RecordController {
   static applyPermissionsLocal() {
     const state = GlobalStore.getState();
     const role = state.currentUser?.role;
-    if (role === 'Admin') {
+    let perms = {};
+    if (state.currentUser?.permissions) {
+      try { perms = typeof state.currentUser.permissions === 'string' ? JSON.parse(state.currentUser.permissions) : state.currentUser.permissions; } catch(e) {}
+    }
+    
+    const canManageTags = role === 'Admin' || (perms.tags && (perms.tags.add || perms.tags.edit || perms.tags.delete));
+    
+    if (canManageTags) {
       document.querySelectorAll('.manage-tags-btn').forEach(b => b.style.display = 'block');
+    } else {
+      document.querySelectorAll('.manage-tags-btn').forEach(b => b.style.display = 'none');
     }
   }
 
@@ -187,14 +196,28 @@ class RecordController {
     const tags = GlobalStore.getState().tags || [];
     const activeTags = tags.filter(t => String(t.Is_Deleted).toUpperCase() !== 'TRUE');
     
+    const state = GlobalStore.getState();
+    const role = state.currentUser?.role;
+    let perms = {};
+    if (state.currentUser?.permissions) {
+      try { perms = typeof state.currentUser.permissions === 'string' ? JSON.parse(state.currentUser.permissions) : state.currentUser.permissions; } catch(e) {}
+    }
+    
+    const canAdd = role === 'Admin' || (perms.tags && perms.tags.add);
+    const canEdit = role === 'Admin' || (perms.tags && perms.tags.edit);
+    const canDelete = role === 'Admin' || (perms.tags && perms.tags.delete);
+    
+    document.getElementById('addTagForm').style.display = canAdd ? 'flex' : 'none';
+    
     list.innerHTML = activeTags.map(tag => `
       <div class="list-group-item d-flex justify-content-between align-items-center px-1">
         <div>
-          <input type="color" class="form-control form-control-color form-control-sm d-inline-block p-0 me-2" 
-                 style="width: 20px; height: 20px;" value="${tag.Color}" onchange="RecordController.updateTagColor('${tag.Tag_ID}', this.value)">
+          ${canEdit ? `<input type="color" class="form-control form-control-color form-control-sm d-inline-block p-0 me-2" 
+                 style="width: 20px; height: 20px;" value="${tag.Color}" onchange="RecordController.updateTagColor('${tag.Tag_ID}', this.value)">` 
+                 : `<span class="d-inline-block me-2 rounded-circle" style="width:15px; height:15px; background-color:${tag.Color};"></span>`}
           <span class="fw-bold small">${tag.Name}</span>
         </div>
-        <button class="btn btn-sm btn-link text-danger p-0 m-0" onclick="RecordController.deleteTag('${tag.Tag_ID}', '${tag.Name}')"><i class="fas fa-trash"></i></button>
+        ${canDelete ? `<button class="btn btn-sm btn-link text-danger p-0 m-0" onclick="RecordController.deleteTag('${tag.Tag_ID}', '${tag.Name}')"><i class="fas fa-trash"></i></button>` : ''}
       </div>
     `).join('');
   }
@@ -223,8 +246,8 @@ class RecordController {
     const userEmail = GlobalStore.getState().currentUser?.username;
     try {
       await ApiClient.call('api_updateTag', tagId, tag.Name, newColor, userEmail);
-      tag.Color = newColor;
-      GlobalStore.setState({ tags: GlobalStore.getState().tags });
+      const updatedTags = GlobalStore.getState().tags.map(t => t.Tag_ID === tagId ? { ...t, Color: newColor } : t);
+      GlobalStore.setState({ tags: updatedTags });
     } catch (e) {
       UIManager.showError(e.message);
     }

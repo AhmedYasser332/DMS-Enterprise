@@ -14,7 +14,10 @@ const Config = {
     ATTACHMENTS: "Attachments",
     USERS: "Users",
     LOGS: "Activity_Log",
-    TAGS: "Tags"
+    TAGS: "Tags",
+    LEGAL_ENTITIES: "Legal_Entities",
+    TASKS: "Tasks",
+    TASK_TEMPLATES: "Task_Templates"
   },
   
   // أنواع الصلاحيات (Roles)
@@ -22,6 +25,13 @@ const Config = {
     ADMIN: "Admin",
     USER: "User",
     VIEWER: "Viewer"
+  },
+
+  // حالات المهام (Task Status)
+  TASK_STATUS: {
+    PENDING: "Pending",
+    NEEDS_REVIEW: "Needs_Review",
+    COMPLETED: "Completed"
   },
 
   // حالات الرد (Response Status)
@@ -35,4 +45,5 @@ const Config = {
 Object.freeze(Config);
 Object.freeze(Config.TABLES);
 Object.freeze(Config.ROLES);
+Object.freeze(Config.TASK_STATUS);
 Object.freeze(Config.STATUS);

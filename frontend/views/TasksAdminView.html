@@ -1,0 +1,309 @@
+<template id="tasks-admin-template">
+  <div class="fade-in">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h4 class="fw-bold mb-0"><i class="fas fa-clipboard-list me-2 text-primary"></i> إدارة المهام والقوالب</h4>
+    </div>
+
+    <!-- Bootstrap 5 Nav Tabs -->
+    <ul class="nav nav-tabs mb-4" id="adminTasksTabs" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active d-flex align-items-center gap-2" id="adminTasks-tab-active" data-bs-toggle="tab" data-bs-target="#adminTasks-pane-active" type="button" role="tab">
+          <i class="fas fa-bolt"></i> المهام النشطة وإدارة القوالب
+          <span class="badge rounded-pill bg-primary" id="totalTasksBadge">0</span>
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link d-flex align-items-center gap-2" id="adminTasks-tab-archive" data-bs-toggle="tab" data-bs-target="#adminTasks-pane-archive" type="button" role="tab" onclick="TaskAdminController._applyArchiveFilters()">
+          <i class="fas fa-archive"></i> أرشيف وسجل المهام
+          <span class="badge rounded-pill bg-success" id="archiveTasksBadge">0</span>
+        </button>
+      </li>
+    </ul>
+
+    <div class="tab-content" id="adminTasksTabContent">
+
+      <!-- ═══ PANE 1: Active Tasks + Templates + Form ═══ -->
+      <div class="tab-pane fade show active" id="adminTasks-pane-active" role="tabpanel">
+
+    <!-- Section A: Templates -->
+    <div class="card mb-4">
+      <div class="card-header d-flex justify-content-between align-items-center" style="background: linear-gradient(135deg, rgba(var(--bs-primary-rgb),0.08), rgba(var(--bs-primary-rgb),0.03)); border-bottom: 2px solid rgba(var(--bs-primary-rgb),0.15);">
+        <h5 class="mb-0 fw-bold"><i class="fas fa-layer-group me-2 text-primary"></i> قوالب المهام</h5>
+        <button class="btn btn-primary btn-sm shadow-sm" onclick="TaskAdminController.openTemplateModal()"><i class="fas fa-plus me-1"></i> إضافة قالب</button>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover mb-0"><thead><tr><th>العنوان</th><th>الوصف</th><th class="text-center">تحذير</th><th class="text-center">خطر</th><th class="text-center">إجراءات</th></tr></thead>
+            <tbody id="templateTableBody"><tr><td colspan="5" class="text-center text-muted p-4">جاري التحميل...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section B: Task Form -->
+    <div class="card mb-4">
+      <div class="card-header" style="background: linear-gradient(135deg, rgba(16,185,129,0.08), rgba(16,185,129,0.03)); border-bottom: 2px solid rgba(16,185,129,0.15);">
+        <h5 class="mb-0 fw-bold"><i class="fas fa-paper-plane me-2" style="color:#10b981;"></i> تعيين مهمة جديدة</h5>
+      </div>
+      <div class="card-body">
+        <form id="addTaskForm" onsubmit="event.preventDefault(); TaskAdminController.addTask();">
+          <div class="row g-3">
+            <div class="col-md-12"><label class="form-label fw-bold">اختر قالب (اختياري)</label><select class="form-select" id="taskTemplateSelect" onchange="TaskAdminController.onTemplateChange(this.value)"><option value="">-- بدون قالب --</option></select></div>
+            <div class="col-md-6"><label class="form-label fw-bold">عنوان المهمة <span class="text-danger">*</span></label><input type="text" class="form-control" id="taskTitle" required></div>
+            <div class="col-md-6"><label class="form-label fw-bold">تعيين إلى <span class="text-danger">*</span></label><select class="form-select" id="taskAssignedTo" required><option value="">-- اختر مستخدم --</option></select></div>
+            <div class="col-md-12"><label class="form-label fw-bold">وصف المهمة</label><textarea class="form-control" id="taskDescription" rows="2"></textarea></div>
+            <div class="col-md-4"><label class="form-label fw-bold">ربط بعميل</label><select class="form-select" id="taskClientId"><option value="">-- بدون عميل --</option></select></div>
+            <div class="col-md-3"><label class="form-label fw-bold">الموعد النهائي <span class="text-danger">*</span></label><input type="date" class="form-control" id="taskDeadline" required></div>
+            <div class="col-md-2"><label class="form-label fw-bold">تحذير</label><input type="number" class="form-control" id="taskWarningDays" value="3" min="1"></div>
+            <div class="col-md-2"><label class="form-label fw-bold">خطر</label><input type="number" class="form-control" id="taskCriticalDays" value="1" min="1"></div>
+            <div class="col-md-1 d-flex align-items-end"><button type="submit" class="btn btn-success w-100 shadow-sm" id="addTaskBtn" title="إنشاء"><i class="fas fa-plus"></i></button></div>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Section C: Active Tasks Table -->
+      <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center" style="background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(99,102,241,0.03)); border-bottom: 2px solid rgba(99,102,241,0.15);">
+          <h5 class="mb-0 fw-bold"><i class="fas fa-list-check me-2" style="color:#6366f1;"></i> المهام النشطة</h5>
+          <span class="badge bg-primary rounded-pill" id="totalTasksBadge">0</span>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover mb-0"><thead><tr><th>العنوان</th><th>المسؤول</th><th>العميل</th><th class="text-center">الموعد</th><th class="text-center">الحالة</th><th class="text-center">إجراءات</th></tr></thead>
+              <tbody id="allTasksTableBody"><tr><td colspan="6" class="text-center text-muted p-4">جاري التحميل...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      </div><!-- /pane-active -->
+
+      <!-- ═══ PANE 2: Archive + Filters ═══ -->
+      <div class="tab-pane fade" id="adminTasks-pane-archive" role="tabpanel">
+
+        <!-- Advanced Filters Card -->
+        <div class="card mb-4">
+          <div class="card-header" style="background: linear-gradient(135deg, rgba(245,158,11,0.08), rgba(245,158,11,0.03)); border-bottom: 2px solid rgba(245,158,11,0.15);">
+            <h5 class="mb-0 fw-bold"><i class="fas fa-filter me-2" style="color:#f59e0b;"></i> فلترة الأرشيف</h5>
+          </div>
+          <div class="card-body">
+            <div class="row g-3 align-items-end">
+              <div class="col-md-2"><label class="form-label fw-bold small">من تاريخ</label><input type="date" class="form-control form-control-sm" id="archiveFilterDateFrom" oninput="TaskAdminController._applyArchiveFilters()"></div>
+              <div class="col-md-2"><label class="form-label fw-bold small">إلى تاريخ</label><input type="date" class="form-control form-control-sm" id="archiveFilterDateTo" oninput="TaskAdminController._applyArchiveFilters()"></div>
+              <div class="col-md-3"><label class="form-label fw-bold small">المستخدم</label><select class="form-select form-select-sm" id="archiveFilterUser" onchange="TaskAdminController._applyArchiveFilters()"><option value="">-- الكل --</option></select></div>
+              <div class="col-md-2"><label class="form-label fw-bold small">العميل</label><select class="form-select form-select-sm" id="archiveFilterClient" onchange="TaskAdminController._applyArchiveFilters()"><option value="">-- الكل --</option></select></div>
+              <div class="col-md-2"><label class="form-label fw-bold small">الحالة</label><select class="form-select form-select-sm" id="archiveFilterStatus" onchange="TaskAdminController._applyArchiveFilters()"><option value="">مكتملة (افتراضي)</option><option value="Completed">Completed</option><option value="Pending">Pending</option><option value="Needs_Review">Needs Review</option><option value="Overdue">Overdue</option></select></div>
+              <div class="col-md-1"><button class="btn btn-outline-secondary btn-sm w-100" id="archiveFilterReset" onclick="TaskAdminController._resetArchiveFilters()" title="إعادة تعيين"><i class="fas fa-undo"></i></button></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Archive Table Card -->
+        <div class="card">
+          <div class="card-header d-flex justify-content-between align-items-center" style="background: linear-gradient(135deg, rgba(16,185,129,0.08), rgba(16,185,129,0.03)); border-bottom: 2px solid rgba(16,185,129,0.15);">
+            <h5 class="mb-0 fw-bold"><i class="fas fa-history me-2" style="color:#10b981;"></i> سجل المهام المؤرشفة</h5>
+            <span class="badge bg-success rounded-pill" id="archiveTasksBadge">0</span>
+          </div>
+          <div class="card-body p-0">
+            <div class="table-responsive">
+              <table class="table table-hover mb-0">
+                <thead><tr><th>العنوان</th><th>المسؤول</th><th>العميل</th><th class="text-center">الموعد</th><th class="text-center">تاريخ الإكمال</th><th class="text-center">الحالة</th><th>ملاحظة الإنجاز</th></tr></thead>
+                <tbody id="archiveTasksTableBody"><tr><td colspan="7" class="text-center text-muted p-4">اختر فلتر أو انتقل لهذا التبويب لعرض الأرشيف</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /pane-archive -->
+    </div><!-- /tab-content -->
+  </div>
+</template>
+
+<div class="modal fade" id="templateModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content border-0 shadow-lg">
+  <div class="modal-header" style="background:var(--primary-color);color:white;"><h5 class="modal-title"><i class="fas fa-layer-group me-2"></i> قالب مهمة</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+  <div class="modal-body p-4"><form id="templateForm" onsubmit="event.preventDefault(); TaskAdminController.saveTemplate();">
+    <div class="mb-3"><label class="form-label fw-bold">العنوان <span class="text-danger">*</span></label><input type="text" class="form-control" id="templateTitle" required></div>
+    <div class="mb-3"><label class="form-label fw-bold">الوصف</label><textarea class="form-control" id="templateDescription" rows="2"></textarea></div>
+    <div class="row g-3 mb-3"><div class="col-6"><label class="form-label fw-bold">أيام التحذير</label><input type="number" class="form-control" id="templateWarningDays" value="3" min="1" required></div><div class="col-6"><label class="form-label fw-bold">أيام الخطر</label><input type="number" class="form-control" id="templateCriticalDays" value="1" min="1" required></div></div>
+    <button type="submit" class="btn btn-primary w-100" id="saveTemplateBtn"><i class="fas fa-save me-2"></i>حفظ</button>
+  </form></div>
+</div></div></div>
+
+<script>
+class TaskAdminController {
+  // getTaskUrgency() removed — use TaskUtils.getUrgency() instead (DRY fix)
+
+  static renderView() { this._renderTemplateTable(); this._populateDropdowns(); this._renderAllTasksTable(); this._applyArchiveFilters(); }
+
+  static _renderTemplateTable() {
+    const templates = GlobalStore.getState().taskTemplates || [];
+    const tbody = document.getElementById('templateTableBody');
+    if (!templates.length) { tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted p-4"><i class="fas fa-inbox fa-2x mb-2 d-block"></i>لا توجد قوالب</td></tr>'; return; }
+    tbody.innerHTML = templates.map(t => `<tr><td class="fw-bold">${UIManager.escapeHTML(t.Title)}</td><td class="text-muted">${UIManager.escapeHTML(t.Description)||'—'}</td><td class="text-center"><span class="badge bg-warning text-dark">${t.Warning_Days} يوم</span></td><td class="text-center"><span class="badge bg-danger">${t.Critical_Days} يوم</span></td><td class="text-center"><button class="btn btn-sm btn-outline-danger" onclick="TaskAdminController.deleteTemplate('${t.Template_ID}')"><i class="fas fa-trash-alt"></i></button></td></tr>`).join('');
+  }
+
+  static _populateDropdowns() {
+    const s = GlobalStore.getState();
+    const activeUsers = (s.users||[]).filter(u => String(u.Is_Deleted).toUpperCase() !== 'TRUE');
+    const clients = s.clients || [];
+    // Task assignment form dropdowns
+    const ts = document.getElementById('taskTemplateSelect');
+    if (ts) ts.innerHTML = '<option value="">-- بدون قالب --</option>' + (s.taskTemplates||[]).map(t=>`<option value="${t.Template_ID}">${UIManager.escapeHTML(t.Title)}</option>`).join('');
+    const us = document.getElementById('taskAssignedTo');
+    if (us) us.innerHTML = '<option value="">-- اختر مستخدم --</option>' + activeUsers.map(u=>`<option value="${u.User_ID}">${UIManager.escapeHTML(u.Name)} (${u.Role})</option>`).join('');
+    const cs = document.getElementById('taskClientId');
+    if (cs) cs.innerHTML = '<option value="">-- بدون عميل --</option>' + clients.map(c=>`<option value="${c.Client_ID}">${UIManager.escapeHTML(c.Name)}</option>`).join('');
+    // Archive filter dropdowns
+    const fu = document.getElementById('archiveFilterUser');
+    if (fu) fu.innerHTML = '<option value="">-- الكل --</option>' + activeUsers.map(u=>`<option value="${u.User_ID}">${UIManager.escapeHTML(u.Name)}</option>`).join('');
+    const fc = document.getElementById('archiveFilterClient');
+    if (fc) fc.innerHTML = '<option value="">-- الكل --</option>' + clients.map(c=>`<option value="${c.Client_ID}">${UIManager.escapeHTML(c.Name)}</option>`).join('');
+  }
+
+  static onTemplateChange(id) {
+    if (!id) { document.getElementById('taskTitle').value=''; document.getElementById('taskDescription').value=''; document.getElementById('taskWarningDays').value='3'; document.getElementById('taskCriticalDays').value='1'; return; }
+    const t = (GlobalStore.getState().taskTemplates||[]).find(x=>x.Template_ID===id);
+    if (t) { document.getElementById('taskTitle').value=t.Title||''; document.getElementById('taskDescription').value=t.Description||''; document.getElementById('taskWarningDays').value=t.Warning_Days||'3'; document.getElementById('taskCriticalDays').value=t.Critical_Days||'1'; }
+  }
+
+  static _renderAllTasksTable() {
+    const s = GlobalStore.getState();
+    const activeTasks = (s.tasks||[]).filter(t => TaskUtils.isActive(t));
+    const users = s.users||[]; const clients = s.clients||[];
+    const badge = document.getElementById('totalTasksBadge');
+    if (badge) badge.textContent = activeTasks.length;
+    const tbody = document.getElementById('allTasksTableBody');
+    if (!tbody) return;
+    if (!activeTasks.length) { tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted p-4"><i class="fas fa-check-circle fa-2x mb-2 d-block text-success"></i>لا توجد مهام نشطة</td></tr>'; return; }
+    const sorted = [...activeTasks].sort((a,b) => new Date(a.Deadline) - new Date(b.Deadline));
+    tbody.innerHTML = sorted.map(task => {
+      const u = TaskUtils.getUrgency(task);
+      const usr = users.find(x => x.User_ID === task.Assigned_To);
+      const cl  = clients.find(x => x.Client_ID === task.Client_ID);
+      const un = usr ? UIManager.escapeHTML(usr.Name) : '—';
+      const cn = cl  ? UIManager.escapeHTML(cl.Name)  : '—';
+      let actions = '';
+      if (task.Status === 'Needs_Review') {
+        actions = `<button class="btn btn-sm btn-success me-1" onclick="TaskAdminController.approveTask('${task.Task_ID}')" title="اعتماد"><i class="fas fa-check"></i></button><button class="btn btn-sm btn-danger" onclick="TaskAdminController.rejectTask('${task.Task_ID}')" title="رفض"><i class="fas fa-times"></i></button>`;
+      } else {
+        actions = `<button class="btn btn-sm btn-outline-danger" onclick="TaskAdminController.deleteTask('${task.Task_ID}')"><i class="fas fa-trash-alt"></i></button>`;
+      }
+      return `<tr><td class="fw-bold">${UIManager.escapeHTML(task.Title)}</td><td>${un}</td><td>${cn}</td><td class="text-center">${task.Deadline||'—'}</td><td class="text-center"><span class="badge ${u.cssClass} rounded-pill px-3 py-2"><i class="fas ${u.icon} me-1"></i>${u.label}</span></td><td class="text-center">${actions}</td></tr>`;
+    }).join('');
+  }
+
+  /**
+   * Zero-Latency archive filter pipeline.
+   * Reads all tasks from GlobalStore, chains .filter() calls based on DOM inputs,
+   * and re-renders the archive table. No API calls made.
+   */
+  static _applyArchiveFilters() {
+    const s = GlobalStore.getState();
+    const allTasks = s.tasks || [];
+    const dateFrom = document.getElementById('archiveFilterDateFrom')?.value || '';
+    const dateTo   = document.getElementById('archiveFilterDateTo')?.value   || '';
+    const userId   = document.getElementById('archiveFilterUser')?.value     || '';
+    const clientId = document.getElementById('archiveFilterClient')?.value   || '';
+    const status   = document.getElementById('archiveFilterStatus')?.value   || '';
+
+    let filtered = allTasks;
+    // Default: show only Completed when no status filter is selected
+    filtered = filtered.filter(t => status ? t.Status === status : t.Status === 'Completed');
+    if (dateFrom) filtered = filtered.filter(t => t.Deadline && new Date(t.Deadline) >= new Date(dateFrom));
+    if (dateTo)   filtered = filtered.filter(t => t.Deadline && new Date(t.Deadline) <= new Date(dateTo));
+    if (userId)   filtered = filtered.filter(t => t.Assigned_To === userId);
+    if (clientId) filtered = filtered.filter(t => t.Client_ID   === clientId);
+
+    this._renderArchiveTable(filtered, s.users || [], s.clients || []);
+  }
+
+  static _renderArchiveTable(tasks, users, clients) {
+    const badge = document.getElementById('archiveTasksBadge');
+    if (badge) badge.textContent = tasks.length;
+    const tbody = document.getElementById('archiveTasksTableBody');
+    if (!tbody) return;
+    if (!tasks.length) { tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted p-4"><i class="fas fa-inbox fa-2x mb-2 d-block"></i>لا توجد نتائج للفلتر المحدد</td></tr>'; return; }
+    const sorted = [...tasks].sort((a,b) => new Date(b.Completed_At||b.Deadline) - new Date(a.Completed_At||a.Deadline));
+    tbody.innerHTML = sorted.map(task => {
+      const u   = TaskUtils.getUrgency(task);
+      const usr = users.find(x => x.User_ID   === task.Assigned_To);
+      const cl  = clients.find(x => x.Client_ID === task.Client_ID);
+      const un  = usr ? UIManager.escapeHTML(usr.Name) : '—';
+      const cn  = cl  ? UIManager.escapeHTML(cl.Name)  : '—';
+      const note = task.Completion_Note ? UIManager.escapeHTML(task.Completion_Note) : '—';
+      return `<tr><td class="fw-bold">${UIManager.escapeHTML(task.Title)}</td><td>${un}</td><td>${cn}</td><td class="text-center">${task.Deadline||'—'}</td><td class="text-center">${task.Completed_At||'—'}</td><td class="text-center"><span class="badge ${u.cssClass} rounded-pill px-2 py-1"><i class="fas ${u.icon} me-1"></i>${u.label}</span></td><td class="text-muted small" style="max-width:200px;white-space:normal">${note}</td></tr>`;
+    }).join('');
+  }
+
+  static _resetArchiveFilters() {
+    ['archiveFilterDateFrom','archiveFilterDateTo','archiveFilterUser','archiveFilterClient','archiveFilterStatus']
+      .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+    this._applyArchiveFilters();
+  }
+
+  static openTemplateModal() { document.getElementById('templateForm').reset(); new bootstrap.Modal(document.getElementById('templateModal')).show(); }
+
+  static async saveTemplate() {
+    const btn = document.getElementById('saveTemplateBtn'); btn.disabled=true; btn.innerHTML='<span class="spinner-border spinner-border-sm me-2"></span>حفظ...';
+    try {
+      const res = await ApiClient.call('api_addTaskTemplate', document.getElementById('templateTitle').value.trim(), document.getElementById('templateDescription').value.trim(), parseInt(document.getElementById('templateWarningDays').value), parseInt(document.getElementById('templateCriticalDays').value), GlobalStore.getState().currentUser.username);
+      const st = GlobalStore.getState(); GlobalStore.setState({ taskTemplates: [...st.taskTemplates, res] });
+      bootstrap.Modal.getInstance(document.getElementById('templateModal')).hide(); UIManager.showSuccess('تم إضافة القالب'); this.renderView();
+    } catch(e) { UIManager.showError(e.message); } finally { btn.disabled=false; btn.innerHTML='<i class="fas fa-save me-2"></i>حفظ'; }
+  }
+
+  static async deleteTemplate(id) {
+    if (!await UIManager.confirmAction('حذف القالب؟','تأكيد')) return;
+    UIManager.showLoader('جاري الحذف...');
+    try { await ApiClient.call('api_deleteTaskTemplate', id, GlobalStore.getState().currentUser.username); const st=GlobalStore.getState(); GlobalStore.setState({taskTemplates:st.taskTemplates.filter(t=>t.Template_ID!==id)}); UIManager.showSuccess('تم الحذف'); this.renderView(); } catch(e){ UIManager.showError(e.message); }
+  }
+
+  static async addTask() {
+    const btn = document.getElementById('addTaskBtn'); btn.disabled=true; btn.innerHTML='<span class="spinner-border spinner-border-sm"></span>';
+    try {
+      const res = await ApiClient.call('api_addTask', document.getElementById('taskTitle').value.trim(), document.getElementById('taskDescription').value.trim(), document.getElementById('taskAssignedTo').value, document.getElementById('taskClientId').value, document.getElementById('taskDeadline').value, parseInt(document.getElementById('taskWarningDays').value), parseInt(document.getElementById('taskCriticalDays').value), document.getElementById('taskTemplateSelect').value, GlobalStore.getState().currentUser.username);
+      const st=GlobalStore.getState(); GlobalStore.setState({tasks:[...st.tasks,res]}); document.getElementById('addTaskForm').reset(); document.getElementById('taskWarningDays').value='3'; document.getElementById('taskCriticalDays').value='1'; UIManager.showSuccess('تم إنشاء المهمة'); this.renderView();
+    } catch(e){ UIManager.showError(e.message); } finally { btn.disabled=false; btn.innerHTML='<i class="fas fa-plus"></i>'; }
+  }
+
+  static async deleteTask(id) {
+    if (!await UIManager.confirmAction('حذف المهمة؟','تأكيد')) return;
+    UIManager.showLoader('جاري الحذف...');
+    try { await ApiClient.call('api_deleteTask', id, GlobalStore.getState().currentUser.username); const st=GlobalStore.getState(); GlobalStore.setState({tasks:st.tasks.filter(t=>t.Task_ID!==id)}); UIManager.showSuccess('تم الحذف'); this.renderView(); } catch(e){ UIManager.showError(e.message); }
+  }
+
+  static async approveTask(taskId) {
+    if (!await UIManager.confirmAction('هل تريد اعتماد هذه المهمة؟','تأكيد الاعتماد')) return;
+    UIManager.showLoader('جاري الاعتماد...');
+    try {
+      await ApiClient.call('api_approveTask', taskId, GlobalStore.getState().currentUser.username);
+      const st = GlobalStore.getState();
+      GlobalStore.setState({ tasks: st.tasks.map(t => t.Task_ID === taskId ? { ...t, Status: 'Completed' } : t) });
+      UIManager.showSuccess('تم اعتماد المهمة بنجاح');
+      this.renderView();
+    } catch(e) { UIManager.showError(e.message); }
+  }
+
+  static async rejectTask(taskId) {
+    const { value: reason } = await Swal.fire({
+      title: '<i class="fas fa-times-circle text-danger me-2"></i> رفض المهمة',
+      html: '<p class="text-muted mb-0">اكتب سبب الرفض (إجباري)</p>',
+      input: 'textarea', inputPlaceholder: 'مثال: المرفقات ناقصة، يرجى إعادة الرفع',
+      showCancelButton: true, confirmButtonText: '<i class="fas fa-times me-1"></i> تأكيد الرفض', cancelButtonText: 'إلغاء',
+      background: 'var(--card-bg)', color: 'var(--text-main)',
+      customClass: { popup:'rounded-4 shadow-lg border-0', confirmButton:'btn btn-danger rounded-3 px-4 shadow-sm me-2', cancelButton:'btn btn-secondary rounded-3 px-4 shadow-sm' },
+      buttonsStyling: false,
+      inputValidator: (val) => { if (!val || !val.trim()) return 'يجب كتابة سبب الرفض!'; }
+    });
+    if (!reason) return;
+    UIManager.showLoader('جاري الرفض...');
+    try {
+      await ApiClient.call('api_rejectTask', taskId, reason.trim(), GlobalStore.getState().currentUser.username);
+      const st = GlobalStore.getState();
+      GlobalStore.setState({ tasks: st.tasks.map(t => t.Task_ID === taskId ? { ...t, Status: 'Pending', Rejection_Reason: reason.trim(), Completion_Note: '', Completed_At: '' } : t) });
+      UIManager.showSuccess('تم رفض المهمة');
+      this.renderView();
+    } catch(e) { UIManager.showError(e.message); }
+  }
+}
+</script>

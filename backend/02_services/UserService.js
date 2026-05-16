@@ -9,6 +9,17 @@ class UserService {
   }
 
   addUser(userData, adminEmail) {
+    // Authorization: Only Admins or users with manageUsers permission can add users
+    const requester = this.userRepo.findByUsername(adminEmail);
+    if (!requester) throw new Error("المستخدم المنفذ للعملية غير موجود!");
+    if (requester.Role !== 'Admin') {
+      let perms = {};
+      if (requester.Permissions) {
+        try { perms = typeof requester.Permissions === 'string' ? JSON.parse(requester.Permissions) : requester.Permissions; } catch(e) {}
+      }
+      if (!perms.admin?.manageUsers) throw new Error("غير مصرح لك بإضافة مستخدمين!");
+    }
+
     // Validation: التأكد من عدم تكرار Username
     if (this.userRepo.findByUsername(userData.Username)) {
       throw new Error("اسم المستخدم موجود بالفعل!");
@@ -81,6 +92,17 @@ class UserService {
   }
 
   deleteUser(userId, adminEmail) {
+    // Authorization: Only Admins or users with manageUsers permission can delete users
+    const requester = this.userRepo.findByUsername(adminEmail);
+    if (!requester) throw new Error("المستخدم المنفذ للعملية غير موجود!");
+    if (requester.Role !== 'Admin') {
+      let perms = {};
+      if (requester.Permissions) {
+        try { perms = typeof requester.Permissions === 'string' ? JSON.parse(requester.Permissions) : requester.Permissions; } catch(e) {}
+      }
+      if (!perms.admin?.manageUsers) throw new Error("غير مصرح لك بحذف أو إيقاف مستخدمين!");
+    }
+
     // Soft delete: set Is_Deleted = true using softDelete method
     this.userRepo.softDelete(userId);
     this.logRepo.logAction("إدارة مستخدمين", `تم إيقاف/حذف المستخدم ID: ${userId}`, adminEmail);

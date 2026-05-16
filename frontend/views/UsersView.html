@@ -99,6 +99,23 @@
                     <div class="form-check"><input class="form-check-input nu-perm text-warning" type="checkbox" data-cat="admin" data-act="manageUsers" id="nu_p_ad_mu"><label class="form-check-label text-warning fw-bold">إدارة المستخدمين</label></div>
                     <div class="form-check"><input class="form-check-input nu-perm text-warning" type="checkbox" data-cat="admin" data-act="viewLogs" id="nu_p_ad_vl"><label class="form-check-label text-warning fw-bold">رؤية سجل النظام (Logs)</label></div>
                   </div>
+                  <div class="col-md-4 mb-3">
+                    <h6 class="fw-bold">الوسوم (Tags)</h6>
+                    <div class="form-check"><input class="form-check-input nu-perm" type="checkbox" data-cat="tags" data-act="add" id="nu_p_tg_add"><label class="form-check-label">إضافة</label></div>
+                    <div class="form-check"><input class="form-check-input nu-perm" type="checkbox" data-cat="tags" data-act="edit" id="nu_p_tg_edit"><label class="form-check-label">تعديل</label></div>
+                    <div class="form-check"><input class="form-check-input nu-perm text-danger" type="checkbox" data-cat="tags" data-act="delete" id="nu_p_tg_del"><label class="form-check-label text-danger">حذف</label></div>
+                  </div>
+                  <div class="col-md-4 mb-3">
+                    <h6 class="fw-bold">الكيانات القانونية</h6>
+                    <div class="form-check"><input class="form-check-input nu-perm" type="checkbox" data-cat="legalEntities" data-act="add" id="nu_p_le_add"><label class="form-check-label">إضافة</label></div>
+                    <div class="form-check"><input class="form-check-input nu-perm" type="checkbox" data-cat="legalEntities" data-act="edit" id="nu_p_le_edit"><label class="form-check-label">تعديل</label></div>
+                    <div class="form-check"><input class="form-check-input nu-perm text-danger" type="checkbox" data-cat="legalEntities" data-act="delete" id="nu_p_le_del"><label class="form-check-label text-danger">حذف</label></div>
+                  </div>
+                  <div class="col-md-4 mb-3">
+                    <h6 class="fw-bold">المهام</h6>
+                    <div class="form-check"><input class="form-check-input nu-perm text-info" type="checkbox" data-cat="tasks" data-act="manageTasks" id="nu_p_tk_mt"><label class="form-check-label text-info fw-bold">إدارة المهام (Admin)</label></div>
+                    <div class="form-check"><input class="form-check-input nu-perm" type="checkbox" data-cat="tasks" data-act="myTasks" id="nu_p_tk_my"><label class="form-check-label">مهامي الشخصية</label></div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -188,6 +205,23 @@
                     <div class="form-check"><input class="form-check-input eu-perm text-warning" type="checkbox" data-cat="admin" data-act="manageUsers"><label class="form-check-label text-warning fw-bold">إدارة المستخدمين</label></div>
                     <div class="form-check"><input class="form-check-input eu-perm text-warning" type="checkbox" data-cat="admin" data-act="viewLogs"><label class="form-check-label text-warning fw-bold">رؤية سجل النظام (Logs)</label></div>
                   </div>
+                  <div class="col-md-4 mb-3">
+                    <h6 class="fw-bold">الوسوم (Tags)</h6>
+                    <div class="form-check"><input class="form-check-input eu-perm" type="checkbox" data-cat="tags" data-act="add"><label class="form-check-label">إضافة</label></div>
+                    <div class="form-check"><input class="form-check-input eu-perm" type="checkbox" data-cat="tags" data-act="edit"><label class="form-check-label">تعديل</label></div>
+                    <div class="form-check"><input class="form-check-input eu-perm text-danger" type="checkbox" data-cat="tags" data-act="delete"><label class="form-check-label text-danger">حذف</label></div>
+                  </div>
+                  <div class="col-md-4 mb-3">
+                    <h6 class="fw-bold">الكيانات القانونية</h6>
+                    <div class="form-check"><input class="form-check-input eu-perm" type="checkbox" data-cat="legalEntities" data-act="add"><label class="form-check-label">إضافة</label></div>
+                    <div class="form-check"><input class="form-check-input eu-perm" type="checkbox" data-cat="legalEntities" data-act="edit"><label class="form-check-label">تعديل</label></div>
+                    <div class="form-check"><input class="form-check-input eu-perm text-danger" type="checkbox" data-cat="legalEntities" data-act="delete"><label class="form-check-label text-danger">حذف</label></div>
+                  </div>
+                  <div class="col-md-4 mb-3">
+                    <h6 class="fw-bold">المهام</h6>
+                    <div class="form-check"><input class="form-check-input eu-perm text-info" type="checkbox" data-cat="tasks" data-act="manageTasks"><label class="form-check-label text-info fw-bold">إدارة المهام (Admin)</label></div>
+                    <div class="form-check"><input class="form-check-input eu-perm" type="checkbox" data-cat="tasks" data-act="myTasks"><label class="form-check-label">مهامي الشخصية</label></div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -208,21 +242,30 @@ class UserController {
       records: { add: true, edit: true, delete: true },
       attachments: { upload: true, download: true, print: true, delete: true },
       recycleBin: { view: true, restoreOwn: true, restoreAll: true, empty: true },
-      admin: { manageUsers: true, viewLogs: true }
+      admin: { manageUsers: true, viewLogs: true },
+      tags: { add: true, edit: true, delete: true },
+      legalEntities: { add: true, edit: true, delete: true },
+      tasks: { manageTasks: true, myTasks: true }
     },
     User: {
       clients: { add: true, edit: true, delete: false },
       records: { add: true, edit: true, delete: false },
       attachments: { upload: true, download: true, print: true, delete: false },
       recycleBin: { view: false, restoreOwn: true, restoreAll: false, empty: false },
-      admin: { manageUsers: false, viewLogs: false }
+      admin: { manageUsers: false, viewLogs: false },
+      tags: { add: true, edit: true, delete: false },
+      legalEntities: { add: true, edit: false, delete: false },
+      tasks: { manageTasks: false, myTasks: true }
     },
     Viewer: {
       clients: { add: false, edit: false, delete: false },
       records: { add: false, edit: false, delete: false },
       attachments: { upload: false, download: true, print: true, delete: false },
       recycleBin: { view: false, restoreOwn: false, restoreAll: false, empty: false },
-      admin: { manageUsers: false, viewLogs: false }
+      admin: { manageUsers: false, viewLogs: false },
+      tags: { add: false, edit: false, delete: false },
+      legalEntities: { add: false, edit: false, delete: false },
+      tasks: { manageTasks: false, myTasks: false }
     }
   };
 
@@ -273,7 +316,10 @@ class UserController {
       records: { add: false, edit: false, delete: false },
       attachments: { upload: false, download: false, print: false, delete: false },
       recycleBin: { view: false, restoreOwn: false, restoreAll: false, empty: false },
-      admin: { manageUsers: false, viewLogs: false }
+      admin: { manageUsers: false, viewLogs: false },
+      tags: { add: false, edit: false, delete: false },
+      legalEntities: { add: false, edit: false, delete: false },
+      tasks: { manageTasks: false, myTasks: false }
     };
     const checkboxes = document.querySelectorAll(`.${prefix}-perm`);
     checkboxes.forEach(cb => {

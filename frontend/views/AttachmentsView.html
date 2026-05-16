@@ -96,7 +96,7 @@ class AttachmentController {
       const safeName = AttachmentController.escapeHtml(a.File_Name || 'بدون اسم');
       const size = a.Size ? AttachmentController.formatSize(a.Size) : 'غير معروف';
       const date = a.Uploaded_At ? String(a.Uploaded_At).split(',')[0] : '-';
-      const viewLink = a.View_Link || a.Drive_URL || '#';
+      const viewLink = a.View_Link || '#';
       
       const jsSafeId = String(a.Attachment_ID || '').replace(/'/g, "\\'").replace(/"/g, '\\"');
       const jsSafeName = String(a.File_Name || '').replace(/'/g, "\\'").replace(/"/g, '\\"');

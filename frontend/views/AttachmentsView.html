@@ -134,63 +134,119 @@ class AttachmentController {
       if (typeof UIManager !== 'undefined') UIManager.showLoader('جاري تجهيز الملف للطباعة...');
       
       const state = GlobalStore.getState();
-      const attachments = state.attachments || [];
-      const attachment = attachments.find(a => a.Attachment_ID === attachmentId);
+      const attachment = (state.attachments || []).find(a => a.Attachment_ID === attachmentId);
       if (!attachment) throw new Error('لم يتم العثور على بيانات المرفق.');
 
       const mimeType = String(attachment.Mime_Type || '').toLowerCase();
-      if (!mimeType.includes('pdf') && !mimeType.includes('image')) {
-        throw new Error('نوع الملف غير مدعوم للطباعة المباشرة.');
-      }
+      const isImage = mimeType.includes('image');
+      const isPdf = mimeType.includes('pdf');
 
-      // طلب الملف كـ Base64 من الباك-إند لتخطي حظر جوجل درايف للطباعة المباشرة
+      if (!isPdf && !isImage) throw new Error('نوع الملف غير مدعوم للطباعة المباشرة.');
+
       const fileData = await ApiClient.call('api_getFileBase64', attachment.Drive_File_ID);
-      if (!fileData || !fileData.base64) {
-        throw new Error('فشل جلب بيانات الملف للطباعة.');
-      }
+      if (!fileData || !fileData.base64) throw new Error('فشل جلب بيانات الملف للطباعة.');
 
-      // تحويل الـ Base64 إلى Blob محلي
       const byteCharacters = atob(fileData.base64);
       const byteNumbers = new Array(byteCharacters.length);
       for (let i = 0; i < byteCharacters.length; i++) {
         byteNumbers[i] = byteCharacters.charCodeAt(i);
       }
       const byteArray = new Uint8Array(byteNumbers);
-      const blob = new Blob([byteArray], { type: fileData.mimeType || mimeType });
-      const localUrl = URL.createObjectURL(blob);
+      const fileBlob = new Blob([byteArray], { type: fileData.mimeType || mimeType });
+      const fileUrl = URL.createObjectURL(fileBlob);
 
-      if (mimeType.includes('image')) {
-        const pWin = window.open('', '_blank', 'width=800,height=600');
-        if (!pWin) throw new Error('يرجى السماح بالنوافذ المنبثقة (Pop-ups) للطباعة.');
-        pWin.document.write(`
+      // استراتيجية Viewport Ghost: الـ iframe داخل الشاشة لكن شفاف لتجنب إهمال المتصفح (Optimization)
+      const iframe = document.createElement('iframe');
+      iframe.style.position = 'fixed';
+      iframe.style.top = '0';
+      iframe.style.left = '0';
+      iframe.style.width = '100vw';
+      iframe.style.height = '100vh';
+      iframe.style.zIndex = '-9999';
+      iframe.style.opacity = '0.01';
+      iframe.style.pointerEvents = 'none';
+      iframe.style.border = 'none';
+      document.body.appendChild(iframe);
+
+      const cleanup = () => {
+        setTimeout(() => {
+          if (document.body.contains(iframe)) document.body.removeChild(iframe);
+          URL.revokeObjectURL(fileUrl);
+        }, 10000);
+      };
+
+      if (isImage) {
+        const doc = iframe.contentDocument || iframe.contentWindow.document;
+        doc.open();
+        doc.write(`
           <html>
-            <head><title>طباعة المرفق</title></head>
-            <body style="margin:0; display:flex; align-items:center; justify-content:center;">
-              <img src="${localUrl}" style="max-width:100%; max-height:100%;" onload="window.print(); window.close();" onerror="window.close();">
+            <head>
+              <style>
+                @media print {
+                  body, html, img { width: 100% !important; height: 100% !important; margin: 0 !important; padding: 0 !important; }
+                }
+              </style>
+            </head>
+            <body style="margin:0; padding:0; display:flex; align-items:center; justify-content:center;">
+              <img src="${fileUrl}" style="max-width:100%; max-height:100%;" onload="window.print();" />
             </body>
           </html>
         `);
-        pWin.document.close();
-      } else if (mimeType.includes('pdf')) {
-        const iframe = document.createElement('iframe');
-        iframe.style.display = 'none';
-        iframe.src = localUrl;
+        doc.close();
+        cleanup();
+      } else if (isPdf) {
+        if (typeof UIManager !== 'undefined') UIManager.showLoader('جاري معالجة صفحات الـ PDF للطباعة...');
         
-        iframe.onload = () => {
-          try {
-            iframe.contentWindow.focus();
-            iframe.contentWindow.print();
-            setTimeout(() => {
-              if (document.body.contains(iframe)) document.body.removeChild(iframe);
-              URL.revokeObjectURL(localUrl);
-            }, 10000); // إعطاء وقت كاف للطباعة قبل الحذف
-          } catch (e) {
-            window.open(localUrl, '_blank');
-            if (document.body.contains(iframe)) document.body.removeChild(iframe);
-          }
-        };
-        document.body.appendChild(iframe);
+        // استخدام مكتبة PDF.js لتحويل الصفحات إلى صور صالحة للطباعة داخل HTML
+        const loadingTask = pdfjsLib.getDocument({ data: atob(fileData.base64) });
+        const pdf = await loadingTask.promise;
+        
+        let htmlContent = `
+          <html>
+            <head>
+              <style>
+                @media print {
+                  body, html { margin:0; padding:0; width: 100%; }
+                  img { width: 100%; display: block; page-break-after: always; }
+                  img:last-child { page-break-after: auto; }
+                }
+              </style>
+            </head>
+            <body style="margin:0; padding:0;">
+        `;
+        
+        for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+          const page = await pdf.getPage(pageNum);
+          const viewport = page.getViewport({ scale: 2.0 }); // دقة عالية للطباعة
+          const canvas = document.createElement('canvas');
+          const context = canvas.getContext('2d');
+          canvas.height = viewport.height;
+          canvas.width = viewport.width;
+          
+          await page.render({ canvasContext: context, viewport: viewport }).promise;
+          const imgData = canvas.toDataURL('image/jpeg', 0.95);
+          htmlContent += `<img src="${imgData}" />`;
+        }
+        
+        htmlContent += `
+              <script>
+                window.onload = function() {
+                  setTimeout(function() {
+                    window.print();
+                  }, 500);
+                };
+              <\/script>
+            </body>
+          </html>
+        `;
+
+        const doc = iframe.contentDocument || iframe.contentWindow.document;
+        doc.open();
+        doc.write(htmlContent);
+        doc.close();
+        cleanup();
       }
+
     } catch (error) {
       console.error("Print Error:", error);
       if (typeof UIManager !== 'undefined') UIManager.showError(error.message || 'حدث خطأ أثناء محاولة الطباعة.');

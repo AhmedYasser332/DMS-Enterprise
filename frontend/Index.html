@@ -1,14 +1,21 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl" data-bs-theme="light">
+
 <head>
   <meta charset="UTF-8">
   <title>نظام الأرشيف الإلكتروني</title>
-  
-  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&family=Cairo:wght@400;600;700&display=swap"
+    rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+  <script>
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+  </script>
+
   <style>
     /* ========================================= */
     /* 🎨 Enterprise SaaS & Modern UI System */
@@ -20,7 +27,7 @@
       --card-bg: #FFFFFF;
       --glass-bg: rgba(255, 255, 255, 0.75);
       --glass-border: rgba(255, 255, 255, 0.4);
-      --glass-shadow: 0 10px 40px -10px rgba(0,0,0,0.08);
+      --glass-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.08);
       --text-main: #1e293b;
       --text-muted: #64748b;
       --bs-primary: #2563EB;
@@ -34,7 +41,7 @@
       --card-bg: #1E293B;
       --glass-bg: rgba(30, 41, 59, 0.75);
       --glass-border: rgba(255, 255, 255, 0.05);
-      --glass-shadow: 0 10px 40px -10px rgba(0,0,0,0.4);
+      --glass-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.4);
       --text-main: #f8fafc;
       --text-muted: #94a3b8;
       --bs-body-color: var(--text-main);
@@ -51,13 +58,39 @@
       transition: background-color 0.4s ease, color 0.4s ease;
     }
 
-    .text-primary { color: var(--primary-color) !important; }
-    .bg-primary { background-color: var(--primary-color) !important; }
-    .btn-primary { background-color: var(--primary-color); border-color: var(--primary-color); }
-    .btn-primary:hover { background-color: var(--primary-hover); border-color: var(--primary-hover); }
+    .text-primary {
+      color: var(--primary-color) !important;
+    }
 
-    .fade-in { animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(20px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+    .bg-primary {
+      background-color: var(--primary-color) !important;
+    }
+
+    .btn-primary {
+      background-color: var(--primary-color);
+      border-color: var(--primary-color);
+    }
+
+    .btn-primary:hover {
+      background-color: var(--primary-hover);
+      border-color: var(--primary-hover);
+    }
+
+    .fade-in {
+      animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.98);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
 
     /* Navbar */
     .navbar {
@@ -69,16 +102,18 @@
     }
 
     /* Cards */
-    .card, .modal-content {
+    .card,
+    .modal-content {
       background: var(--card-bg);
       border-radius: 12px;
       border: 1px solid var(--glass-border);
       box-shadow: var(--glass-shadow);
       transition: all 0.3s ease;
     }
-    .card:hover { 
-      transform: translateY(-4px); 
-      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1); 
+
+    .card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
     }
 
     /* Sidebar */
@@ -89,6 +124,7 @@
       border: 1px solid var(--glass-border);
       box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
     }
+
     .list-group-item {
       border: none;
       margin-bottom: 8px;
@@ -101,11 +137,13 @@
       overflow: hidden;
       padding: 12px 15px;
     }
-    .list-group-item:hover { 
-      transform: translateX(-4px); 
+
+    .list-group-item:hover {
+      transform: translateX(-4px);
       background-color: rgba(var(--bs-primary-rgb), 0.08);
       color: var(--primary-color);
     }
+
     .list-group-item.active {
       background-color: var(--primary-color) !important;
       color: white !important;
@@ -113,42 +151,67 @@
     }
 
     /* Tables */
-    .table { border-collapse: collapse; margin-top: 0; }
-    .table thead th { 
-      border: none; 
-      font-weight: 700; 
-      color: var(--text-muted); 
-      font-size: 0.85rem; 
+    .table {
+      border-collapse: collapse;
+      margin-top: 0;
+    }
+
+    .table thead th {
+      border: none;
+      font-weight: 700;
+      color: var(--text-muted);
+      font-size: 0.85rem;
       padding: 12px 16px;
-      background-color: rgba(0,0,0,0.02);
+      background-color: rgba(0, 0, 0, 0.02);
       border-bottom: 2px solid var(--glass-border);
     }
-    [data-bs-theme="dark"] .table thead th { background-color: rgba(255,255,255,0.02); }
+
+    [data-bs-theme="dark"] .table thead th {
+      background-color: rgba(255, 255, 255, 0.02);
+    }
+
     .table tbody tr {
       background: transparent;
       transition: all 0.2s ease;
       border-bottom: 1px solid var(--glass-border);
     }
-    .table tbody tr:hover { 
-      background-color: rgba(var(--bs-primary-rgb), 0.04); 
+
+    .table tbody tr:hover {
+      background-color: rgba(var(--bs-primary-rgb), 0.04);
     }
-    [data-bs-theme="dark"] .table tbody tr:hover { 
-      background-color: rgba(var(--bs-primary-rgb), 0.1); 
+
+    [data-bs-theme="dark"] .table tbody tr:hover {
+      background-color: rgba(var(--bs-primary-rgb), 0.1);
     }
-    .table tbody td { border: none; vertical-align: middle; padding: 16px; color: var(--text-main); }
-    
+
+    .table tbody td {
+      border: none;
+      vertical-align: middle;
+      padding: 16px;
+      color: var(--text-main);
+    }
+
     /* Buttons */
-    .btn { 
-      border-radius: 12px; 
-      font-weight: 600; 
-      transition: all 0.3s ease; 
+    .btn {
+      border-radius: 12px;
+      font-weight: 600;
+      transition: all 0.3s ease;
       padding: 0.5rem 1.25rem;
     }
-    .btn-sm { border-radius: 8px; padding: 0.4rem 0.8rem; }
-    .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(var(--bs-primary-rgb), 0.2); }
-    
+
+    .btn-sm {
+      border-radius: 8px;
+      padding: 0.4rem 0.8rem;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(var(--bs-primary-rgb), 0.2);
+    }
+
     /* Input Fields */
-    .form-control, .form-select {
+    .form-control,
+    .form-select {
       border-radius: 12px;
       border: 1px solid var(--glass-border);
       padding: 0.75rem 1rem;
@@ -156,32 +219,42 @@
       color: var(--text-main);
       transition: all 0.3s ease;
     }
-    .form-control:focus, .form-select:focus {
+
+    .form-control:focus,
+    .form-select:focus {
       border-color: var(--primary-color);
       box-shadow: 0 0 0 0.25rem rgba(var(--bs-primary-rgb), 0.25);
     }
   </style>
 </head>
+
 <body>
 
   <div id="app-wrapper" style="display: none;">
     <nav class="navbar navbar-expand-lg shadow-sm mb-4">
       <div class="container-fluid">
-        <span class="navbar-brand mb-0 h1 text-primary fw-bold"><i class="fas fa-archive me-2"></i> الأرشيف الرقمي</span>
+        <span class="navbar-brand mb-0 h1 text-primary fw-bold"><i class="fas fa-archive me-2"></i> الأرشيف
+          الرقمي</span>
         <div class="d-flex align-items-center">
           <span id="userDisplayName" class="me-3 fw-bold" style="color: var(--text-main);"></span>
 
-          <button class="btn btn-sm btn-light me-2 border-0 rounded-circle text-primary d-flex align-items-center justify-content-center" id="refreshBtn" onclick="App.refreshData()" style="width: 35px; height: 35px; background: rgba(var(--bs-primary-rgb), 0.1);" title="تحديث البيانات">
+          <button
+            class="btn btn-sm btn-light me-2 border-0 rounded-circle text-primary d-flex align-items-center justify-content-center"
+            id="refreshBtn" onclick="App.refreshData()"
+            style="width: 35px; height: 35px; background: rgba(var(--bs-primary-rgb), 0.1);" title="تحديث البيانات">
             <i class="fas fa-sync-alt fs-6"></i>
           </button>
 
-          <button class="btn btn-sm btn-light me-3 border-0 rounded-circle text-primary d-flex align-items-center justify-content-center" id="darkModeToggle" onclick="toggleTheme()" style="width: 35px; height: 35px; background: rgba(var(--bs-primary-rgb), 0.1);" title="تغيير المظهر">
+          <button
+            class="btn btn-sm btn-light me-3 border-0 rounded-circle text-primary d-flex align-items-center justify-content-center"
+            id="darkModeToggle" onclick="toggleTheme()"
+            style="width: 35px; height: 35px; background: rgba(var(--bs-primary-rgb), 0.1);" title="تغيير المظهر">
             <i class="fas fa-moon fs-6"></i>
           </button>
 
           <button class="btn btn-primary btn-sm rounded-3 px-3 fw-bold" onclick="App.logout()">
             <i class="fas fa-sign-out-alt me-1"></i> خروج
-          </button>          
+          </button>
         </div>
       </div>
     </nav>
@@ -190,23 +263,34 @@
       <div class="row">
         <div class="col-md-3 col-lg-2 mb-4">
           <div class="list-group">
-            <a href="#" class="list-group-item list-group-item-action" onclick="App.navigate('dashboard')"><i class="fas fa-tachometer-alt fa-fw me-2"></i> الرئيسية</a>
-            <a href="#" class="list-group-item list-group-item-action" onclick="App.navigate('clients')"><i class="fas fa-users fa-fw me-2"></i> العملاء (الأقسام)</a>
-            <a href="#" class="list-group-item list-group-item-action" onclick="App.navigate('my-tasks')"><i class="fas fa-tasks fa-fw me-2"></i> مهامي</a>
-            <a href="#" class="list-group-item list-group-item-action" onclick="App.navigate('search')"><i class="fas fa-search fa-fw me-2"></i> البحث الشامل</a>
-            <a href="#" class="list-group-item list-group-item-action" onclick="App.navigate('profile')"><i class="fas fa-user-circle fa-fw me-2 text-primary"></i> الملف الشخصي</a>
+            <a href="#" class="list-group-item list-group-item-action" onclick="App.navigate('dashboard')"><i
+                class="fas fa-tachometer-alt fa-fw me-2"></i> الرئيسية</a>
+            <a href="#" class="list-group-item list-group-item-action" onclick="App.navigate('clients')"><i
+                class="fas fa-users fa-fw me-2"></i> العملاء (الأقسام)</a>
+            <a href="#" class="list-group-item list-group-item-action" onclick="App.navigate('my-tasks')"><i
+                class="fas fa-tasks fa-fw me-2"></i> مهامي</a>
+            <a href="#" class="list-group-item list-group-item-action" onclick="App.navigate('search')"><i
+                class="fas fa-search fa-fw me-2"></i> البحث الشامل</a>
+            <a href="#" class="list-group-item list-group-item-action" onclick="App.navigate('profile')"><i
+                class="fas fa-user-circle fa-fw me-2 text-primary"></i> الملف الشخصي</a>
 
             <!-- Admin Tools Dropdown -->
             <div id="adminToolsWrapper">
-              <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#adminToolsMenu" role="button">
+              <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+                data-bs-toggle="collapse" href="#adminToolsMenu" role="button">
                 <span><i class="fas fa-user-shield fa-fw me-2"></i> أدوات الإدارة</span>
                 <i class="fas fa-chevron-down small"></i>
               </a>
               <div class="collapse" id="adminToolsMenu">
-                <a href="#" class="list-group-item list-group-item-action ps-4 text-info" onclick="App.navigate('users')"><i class="fas fa-user-shield fa-fw me-2"></i> إدارة المستخدمين</a>
-                <a href="#" class="list-group-item list-group-item-action ps-4 text-info" onclick="App.navigate('tasks-admin')"><i class="fas fa-clipboard-list fa-fw me-2"></i> إدارة المهام</a>
-                <a href="#" class="list-group-item list-group-item-action ps-4 text-warning" onclick="App.navigate('logs')"><i class="fas fa-list-alt fa-fw me-2"></i> سجل النظام</a>
-                <a href="#" class="list-group-item list-group-item-action ps-4 text-danger" onclick="App.navigate('trash')"><i class="fas fa-trash-alt fa-fw me-2"></i> سلة المهملات</a>
+                <a href="#" class="list-group-item list-group-item-action ps-4 text-info"
+                  onclick="App.navigate('users')"><i class="fas fa-user-shield fa-fw me-2"></i> إدارة المستخدمين</a>
+                <a href="#" class="list-group-item list-group-item-action ps-4 text-info"
+                  onclick="App.navigate('tasks-admin')"><i class="fas fa-clipboard-list fa-fw me-2"></i> إدارة
+                  المهام</a>
+                <a href="#" class="list-group-item list-group-item-action ps-4 text-warning"
+                  onclick="App.navigate('logs')"><i class="fas fa-list-alt fa-fw me-2"></i> سجل النظام</a>
+                <a href="#" class="list-group-item list-group-item-action ps-4 text-danger"
+                  onclick="App.navigate('trash')"><i class="fas fa-trash-alt fa-fw me-2"></i> سلة المهملات</a>
               </div>
             </div>
           </div>
@@ -231,9 +315,11 @@
           <form id="accountSettingsForm" onsubmit="event.preventDefault(); App.updateAccountSettings();">
             <div class="mb-3">
               <label class="form-label fw-bold">كلمة المرور الجديدة</label>
-              <input type="password" id="myNewPassword" class="form-control" placeholder="أدخل كلمة المرور الجديدة" required>
+              <input type="password" id="myNewPassword" class="form-control" placeholder="أدخل كلمة المرور الجديدة"
+                required>
             </div>
-            <button type="submit" class="btn btn-secondary w-100 shadow-sm"><i class="fas fa-save me-2"></i>حفظ التعديلات</button>
+            <button type="submit" class="btn btn-secondary w-100 shadow-sm"><i class="fas fa-save me-2"></i>حفظ
+              التعديلات</button>
           </form>
         </div>
       </div>
@@ -267,10 +353,10 @@
       const html = document.documentElement;
       const currentTheme = html.getAttribute('data-bs-theme');
       const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-      
+
       html.setAttribute('data-bs-theme', newTheme);
       localStorage.setItem('dms_theme', newTheme);
-      
+
       const icon = document.querySelector('#darkModeToggle i');
       if (newTheme === 'dark') {
         icon.classList.replace('fa-moon', 'fa-sun');
@@ -290,4 +376,5 @@
     });
   </script>
 </body>
+
 </html>

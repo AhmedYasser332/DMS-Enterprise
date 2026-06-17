@@ -1,0 +1,25 @@
+# Exclude package manager folders
+**/node_modules/**
+**/bower_components/**
+
+# Exclude build and cache directories
+**/dist/**
+**/out/**
+**/build/**
+**/.next/**
+**/.nuxt/**
+**/bin/**
+**/obj/**
+
+# Exclude VCS and IDE configs
+**/.git/**
+**/.svn/**
+**/.idea/**
+**/.vscode/**
+
+# Exclude lockfiles and minified files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+*.min.js
+*.map

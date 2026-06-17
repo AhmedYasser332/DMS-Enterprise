@@ -1,6 +1,12 @@
 **/**
 !backend/**/*.js
+backend/node_modules/**
 !frontend/**/*.html
 !appsscript.json
 !notes.txt
 !schema.txt
+backend/__mocks__/**
+backend/__tests__/**
+backend/jest.config.js
+backend/e2e/**
+backend/playwright.config.js

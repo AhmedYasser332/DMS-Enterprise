@@ -29,3 +29,9 @@ ehthumbs.db
 logs/
 tmp/
 temp/
+
+# 🧪 Testing Artifacts
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/

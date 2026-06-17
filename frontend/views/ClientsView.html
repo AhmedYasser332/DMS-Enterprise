@@ -261,41 +261,64 @@ class ClientController {
   static async addClient() {
     const name = document.getElementById('newClientName').value.trim();
     const taxId = document.getElementById('newClientTaxId').value.trim();
-    
-    // ⚡ تحديد الكيان القانوني ⚡
     const legalEntity = document.getElementById('newClientLegalEntitySelect').value;
 
     const state = GlobalStore.getState();
     const userEmail = state.currentUser ? state.currentUser.username : 'System';
 
-    UIManager.showLoader("جاري حفظ العميل...");
+    // 1. Optimistic Update (Zero-Latency)
+    const tempId = 'TEMP_' + Date.now();
+    const optimisticClient = {
+      Client_ID: tempId,
+      Name: name,
+      Tax_ID: taxId,
+      Legal_Entity: legalEntity,
+      Created_By: userEmail,
+      Created_At: new Date().toISOString(),
+      Is_Deleted: "FALSE"
+    };
+    
+    GlobalStore.setState({ clients: [...state.clients, optimisticClient] });
+    bootstrap.Modal.getInstance(document.getElementById('addClientModal')).hide();
+    this.renderTable();
+    
+    // 2. Background API Call
     try {
-      const newClient = await ApiClient.call('api_addClient', name, taxId, legalEntity, userEmail);
-      const updatedClients = [...state.clients, newClient];
+      const realClient = await ApiClient.call('api_addClient', name, taxId, legalEntity, userEmail);
+      // Replace temp with real
+      const updatedClients = GlobalStore.getState().clients.map(c => c.Client_ID === tempId ? realClient : c);
       GlobalStore.setState({ clients: updatedClients });
-      
-      bootstrap.Modal.getInstance(document.getElementById('addClientModal')).hide();
-      this.renderTable();
-      UIManager.showSuccess("تم الحفظ بنجاح!");
     } catch (error) {
-      UIManager.showError(error.message);
+      // Rollback
+      const rolledBackClients = GlobalStore.getState().clients.filter(c => c.Client_ID !== tempId);
+      GlobalStore.setState({ clients: rolledBackClients });
+      this.renderTable();
+      UIManager.showError(error.message || "فشل في الحفظ، تم التراجع عن التغييرات.");
     }
   }
 
   static async deleteClient(clientId, clientName) {
     const isConfirmed = await UIManager.confirmAction(`هل أنت متأكد من مسح العميل "${clientName}"؟`);
     if (!isConfirmed) return;
-    UIManager.showLoader("جاري الحذف...");
+    
+    const state = GlobalStore.getState();
+    const userEmail = state.currentUser ? state.currentUser.username : 'System';
+    
+    // 1. Optimistic Update
+    const originalClients = [...state.clients];
+    const updatedClients = originalClients.map(c => c.Client_ID === clientId ? { ...c, Is_Deleted: true } : c);
+    GlobalStore.setState({ clients: updatedClients });
+    this.renderTable();
+
+    // 2. Background API Call
     try {
-      const state = GlobalStore.getState();
-      const userEmail = state.currentUser ? state.currentUser.username : 'System';
       await ApiClient.call('api_deleteClient', clientId, clientName, userEmail);
-      const updatedClients = state.clients.map(c => c.Client_ID === clientId ? { ...c, Is_Deleted: true } : c);
-      GlobalStore.setState({ clients: updatedClients });
-      this.renderTable();
       UIManager.showSuccess("تم الحذف.");
     } catch (error) {
-      UIManager.showError(error.message);
+      // Rollback
+      GlobalStore.setState({ clients: originalClients });
+      this.renderTable();
+      UIManager.showError(error.message || "فشل في الحذف، تم التراجع.");
     }
   }
 }

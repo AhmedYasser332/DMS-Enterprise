@@ -90,23 +90,39 @@
     }
 
     static async loadInitialData() {
-      UIManager.showLoader("جاري تحميل بيانات النظام المركزية...");
-      try {
-        const currentUser = GlobalStore.getState().currentUser;
-        const dbData = await ApiClient.call('api_getInitialAppData', currentUser.username);
-        GlobalStore.setState({
-          clients: dbData.clients, groups: dbData.groups,
-          records: dbData.records, attachments: dbData.attachments, users: dbData.users || [],
-          tags: dbData.tags || [], legalEntities: dbData.legalEntities || [],
-          tasks: dbData.tasks || [], taskTemplates: dbData.taskTemplates || []
-        });
-        UIManager.hideLoader();
-        // Role-based default page: Users land on My Tasks, Admins on Dashboard
+      const currentUser = GlobalStore.getState().currentUser;
+      
+      const savedPage = sessionStorage.getItem('dms_current_page');
+      const savedParamRaw = sessionStorage.getItem('dms_current_param');
+      let savedParam = null;
+      if (savedParamRaw) {
+        try { savedParam = JSON.parse(savedParamRaw); } catch(e) { savedParam = savedParamRaw; }
+      }
+      
+      // Navigate immediately to show Skeleton Screens
+      if (savedPage && this.ROUTES[savedPage]) {
+        this.navigate(savedPage, savedParam);
+      } else {
         if (currentUser.role === this.ROLES.ADMIN) {
           this.navigate('dashboard');
         } else {
           this.navigate('my-tasks');
         }
+      }
+
+      // Fetch data in the background
+      try {
+        const dbData = await ApiClient.call('api_getInitialAppData', currentUser.username);
+        GlobalStore.setState({
+          isLoadingInitialData: false, // Turn off skeletons
+          clients: dbData.clients, groups: dbData.groups,
+          records: dbData.records, attachments: dbData.attachments, users: dbData.users || [],
+          tags: dbData.tags || [], legalEntities: dbData.legalEntities || [],
+          tasks: dbData.tasks || [], taskTemplates: dbData.taskTemplates || []
+        });
+        
+        // Re-navigate to replace skeletons with actual data
+        this.navigate(this.currentPage, this.currentParam);
       } catch (error) {
         UIManager.showError(error.message, "فشل في تحميل البيانات");
       }
@@ -117,6 +133,13 @@
     static navigate(pageId, param = null) {
       this.currentPage = pageId;
       this.currentParam = param;
+      
+      sessionStorage.setItem('dms_current_page', pageId);
+      if (param !== null && param !== undefined) {
+        sessionStorage.setItem('dms_current_param', JSON.stringify(param));
+      } else {
+        sessionStorage.removeItem('dms_current_param');
+      }
 
       const state = GlobalStore.getState();
       const currentUser = state.currentUser;
@@ -146,13 +169,31 @@
       if (!mainContent) return;
 
       if (route) {
-        mainContent.innerHTML = document.getElementById(route.template).innerHTML;
-        // ⚡ الإصلاح السحري: استدعاء الكنترولر من نافذة المتصفح الحالية وقت التشغيل
-        if (route.controllerName) {
-          try {
-            new Function('param', `return ${route.controllerName}.${route.method}(param)`)(param);
-          } catch (e) {
-            console.error("Routing error:", e);
+        if (state.isLoadingInitialData) {
+          mainContent.innerHTML = `
+            <div class="p-4 fade-in">
+               <div class="skeleton-box skeleton-header"></div>
+               <div class="row">
+                 <div class="col-md-4"><div class="skeleton-box skeleton-card"></div></div>
+                 <div class="col-md-4"><div class="skeleton-box skeleton-card"></div></div>
+                 <div class="col-md-4"><div class="skeleton-box skeleton-card"></div></div>
+               </div>
+               <div class="skeleton-box skeleton-row mt-4"></div>
+               <div class="skeleton-box skeleton-row"></div>
+               <div class="skeleton-box skeleton-row"></div>
+               <div class="skeleton-box skeleton-row"></div>
+               <div class="skeleton-box skeleton-row"></div>
+            </div>
+          `;
+        } else {
+          mainContent.innerHTML = document.getElementById(route.template).innerHTML;
+          // ⚡ الإصلاح السحري: استدعاء الكنترولر من نافذة المتصفح الحالية وقت التشغيل
+          if (route.controllerName) {
+            try {
+              new Function('param', `return ${route.controllerName}.${route.method}(param)`)(param);
+            } catch (e) {
+              console.error("Routing error:", e);
+            }
           }
         }
       } else {
@@ -202,6 +243,8 @@
 
     static logout() {
       localStorage.removeItem('dms_session');
+      sessionStorage.removeItem('dms_current_page');
+      sessionStorage.removeItem('dms_current_param');
       GlobalStore.clearState();
       document.getElementById('app-wrapper').style.display = 'none';
       document.getElementById('login-screen').style.display = 'flex';

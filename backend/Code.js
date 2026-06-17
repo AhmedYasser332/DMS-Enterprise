@@ -1,5 +1,5 @@
 /**
- * Main Entry Point
+ * Entry Point for Google Apps Script Web App
  */
 function doGet(e) {
   // ⚡ التعديل هنا: ضفنا مسار الفولدر لاسم الملف ⚡

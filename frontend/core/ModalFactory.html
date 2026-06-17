@@ -1,0 +1,44 @@
+<script>
+/**
+ * ModalFactory (Factory Pattern)
+ * مسؤول عن توليد النوافذ المنبثقة (Modals) لمنع تكرار كود الـ HTML (DRY Principle).
+ */
+class ModalFactory {
+  /**
+   * إنشاء نافذة منبثقة (Modal) بشكل ديناميكي
+   * @param {Object} config - إعدادات النافذة
+   * @param {string} config.id - معرف النافذة (ID)
+   * @param {string} config.title - عنوان النافذة
+   * @param {string} config.icon - أيقونة العنوان (FontAwesome) e.g., 'fas fa-plus'
+   * @param {string} config.bodyHtml - محتوى النافذة (HTML string)
+   * @param {string} [config.theme='primary'] - لون الثيم (primary, dark, success...)
+   * @param {string} [config.size=''] - الحجم (modal-lg, modal-sm, modal-xl)
+   */
+  static createModal({ id, title, icon = '', bodyHtml, theme = 'primary', size = '' }) {
+    // إزالة النافذة القديمة إذا كانت موجودة
+    const existingModal = document.getElementById(id);
+    if (existingModal) {
+      existingModal.remove();
+    }
+
+    const modalHtml = `
+      <div class="modal fade" id="${id}" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered ${size}">
+          <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-${theme} text-white">
+              <h5 class="modal-title">${icon ? `<i class="${icon} me-2"></i>` : ''}${title}</h5>
+              <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+              ${bodyHtml}
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    return new bootstrap.Modal(document.getElementById(id));
+  }
+}
+</script>

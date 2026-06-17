@@ -18,4 +18,19 @@ class ResponseFactory {
       details: details
     });
   }
+
+  /**
+   * Higher Order Function to eliminate try/catch boilerplate across controllers
+   * @param {Function} actionFn - Service function to execute
+   * @param {string|Function} successMessage - Static string or dynamic message function (takes data as arg)
+   */
+  static execute(actionFn, successMessage = "تمت العملية بنجاح") {
+    try {
+      const data = actionFn();
+      const message = typeof successMessage === 'function' ? successMessage(data) : successMessage;
+      return ResponseFactory.success(data, message);
+    } catch (error) {
+      return ResponseFactory.error(error.message);
+    }
+  }
 }

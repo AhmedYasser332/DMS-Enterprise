@@ -3,10 +3,13 @@
  * مسؤولة عن معالجة الملفات ورفعها إلى Google Drive وربطها بقاعدة البيانات
  */
 class AttachmentService {
-  constructor(attachmentRepository, logRepository, userRepository) {
+  constructor(attachmentRepository, logRepository, userRepository, recordRepository, groupRepository, clientRepository) {
     this.attachmentRepo = attachmentRepository;
     this.logRepo = logRepository;
     this.userRepo = userRepository;
+    this.recordRepo = recordRepository;
+    this.groupRepo = groupRepository;
+    this.clientRepo = clientRepository;
     this.DRIVE_FOLDER_NAME = "DMS_Archive_System";
   }
 
@@ -18,13 +21,20 @@ class AttachmentService {
     if(user.Role === 'Viewer') throw new Error("صلاحيات القراءة فقط. لا يمكنك " + action);
   }
 
-  // دالة مساعدة خاصة للتأكد من وجود الفولدر في جوجل درايف
+  // دالة مساعدة خاصة للتأكد من وجود الفولدر الرئيسي
   _getOrCreateFolder() {
-    let folderIter = DriveApp.getFoldersByName(this.DRIVE_FOLDER_NAME);
+    return this._getOrCreateSubFolder(DriveApp, this.DRIVE_FOLDER_NAME);
+  }
+
+  // دالة مساعدة لإنشاء أو جلب المجلدات الفرعية ديناميكياً
+  _getOrCreateSubFolder(parentFolder, folderName) {
+    // تنظيف اسم الفولدر من الحروف الممنوعة في أسماء الملفات/المجلدات
+    const safeName = String(folderName).replace(/[\\/:*?"<>|]/g, '-').trim() || "Unknown";
+    let folderIter = parentFolder.getFoldersByName(safeName);
     if (folderIter.hasNext()) {
       return folderIter.next();
     }
-    return DriveApp.createFolder(this.DRIVE_FOLDER_NAME);
+    return parentFolder.createFolder(safeName);
   }
 
   getAllAttachments() {
@@ -34,12 +44,28 @@ class AttachmentService {
   uploadAttachment(recordId, fileName, base64Data, mimeType, userEmail) {
     this._checkPermission(userEmail, 'رفع مرفق');
     try {
-      const folder = this._getOrCreateFolder();
+      // جلب بيانات السجل والمجموعة والعميل لتكوين الهيكل الهرمي
+      const record = this.recordRepo.findById(recordId);
+      if (!record) throw new Error("السجل غير موجود. لا يمكن إنشاء مسار الحفظ.");
+      
+      const group = this.groupRepo.findById(record.Group_ID);
+      if (!group) throw new Error("المجموعة غير موجودة.");
+
+      const client = this.clientRepo.findById(group.Client_ID);
+      if (!client) throw new Error("العميل غير موجود.");
+
+      // بناء هيكل المجلدات: Root -> Client -> Group -> Record
+      const rootFolder = this._getOrCreateFolder();
+      const clientFolder = this._getOrCreateSubFolder(rootFolder, client.Name);
+      const groupFolder = this._getOrCreateSubFolder(clientFolder, group.Name);
+      const recordFolderName = record.Title || 'بدون عنوان';
+      const recordFolder = this._getOrCreateSubFolder(groupFolder, recordFolderName);
+
       const decodedData = Utilities.base64Decode(base64Data);
       const blob = Utilities.newBlob(decodedData, mimeType, fileName);
       
-      // الرفع لجوجل درايف
-      const file = folder.createFile(blob);
+      // الرفع لجوجل درايف بداخل مجلد السجل
+      const file = recordFolder.createFile(blob);
       file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
       const driveFileId = file.getId();
       const driveUrl = file.getUrl();
@@ -90,4 +116,4 @@ class AttachmentService {
   }
 }
 
-const attachmentService = new AttachmentService(attachmentRepo, logRepo, userRepo);
+const attachmentService = new AttachmentService(attachmentRepo, logRepo, userRepo, recordRepo, groupRepo, clientRepo);

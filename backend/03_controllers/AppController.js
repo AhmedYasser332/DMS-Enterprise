@@ -7,150 +7,106 @@
 // 1. Auth Controllers (تسجيل الدخول)
 // ==========================================
 function api_login(username, password) {
-  try {
-    const userData = authService.login(username, password);
-    return ResponseFactory.success(userData, `أهلاً بك يا ${userData.name}`);
-  } catch (error) {
-    return ResponseFactory.error(error.message);
-  }
+  return ResponseFactory.execute(
+    () => authService.login(username, password),
+    data => `أهلاً بك يا ${data.name}`
+  );
 }
 
 // ==========================================
 // 2. Client Controllers (العملاء)
 // ==========================================
 function api_getAllClients() {
-  try {
-    const clients = clientService.getAllClients();
-    return ResponseFactory.success(clients, "تم جلب العملاء بنجاح");
-  } catch (error) {
-    return ResponseFactory.error(error.message);
-  }
+  return ResponseFactory.execute(() => clientService.getAllClients(), "تم جلب العملاء بنجاح");
 }
 
 function api_addClient(name, taxId, legalEntity, userEmail) {
-  try {
-
-    const newClient = clientService.addClient(name, taxId, legalEntity, userEmail);
-    return ResponseFactory.success(newClient, "تم إضافة العميل بنجاح");
-  } catch (error) {
-    return ResponseFactory.error(error.message);
-  }
+  return ResponseFactory.execute(
+    () => clientService.addClient(name, taxId, legalEntity, userEmail),
+    "تم إضافة العميل بنجاح"
+  );
 }
 
 function api_deleteClient(clientId, clientName, userEmail) {
-  try {
-
-    clientService.deleteClient(clientId, clientName, userEmail);
-    return ResponseFactory.success(null, "تم نقل العميل لسلة المهملات");
-  } catch (error) {
-    return ResponseFactory.error(error.message);
-  }
+  return ResponseFactory.execute(
+    () => clientService.deleteClient(clientId, clientName, userEmail),
+    "تم نقل العميل لسلة المهملات"
+  );
 }
 
 // ==========================================
 // 3. Group Controllers (الأقسام/المجموعات)
 // ==========================================
 function api_getGroupsByClient(clientId) {
-  try {
-    const groups = groupService.getGroupsByClient(clientId);
-    return ResponseFactory.success(groups);
-  } catch (error) {
-    return ResponseFactory.error(error.message);
-  }
+  return ResponseFactory.execute(() => groupService.getGroupsByClient(clientId));
 }
 
 function api_addGroup(clientId, groupName, userEmail) {
-  try {
-
-    const newGroup = groupService.addGroup(clientId, groupName, userEmail);
-    return ResponseFactory.success(newGroup, "تم إضافة المجموعة بنجاح");
-  } catch (error) {
-    return ResponseFactory.error(error.message);
-  }
+  return ResponseFactory.execute(
+    () => groupService.addGroup(clientId, groupName, userEmail),
+    "تم إضافة المجموعة بنجاح"
+  );
 }
 
 function api_deleteGroup(groupId, groupName, userEmail) {
-  try {
-
-    groupService.deleteGroup(groupId, groupName, userEmail);
-    return ResponseFactory.success(null, "تم حذف المجموعة");
-  } catch (error) {
-    return ResponseFactory.error(error.message);
-  }
+  return ResponseFactory.execute(
+    () => groupService.deleteGroup(groupId, groupName, userEmail),
+    "تم حذف المجموعة"
+  );
 }
 
 // ==========================================
 // 4. Record Controllers (السجلات)
 // ==========================================
 function api_getRecordsByGroup(groupId) {
-  try {
-    const records = recordService.getRecordsByGroup(groupId);
-    return ResponseFactory.success(records);
-  } catch (error) {
-    return ResponseFactory.error(error.message);
-  }
+  return ResponseFactory.execute(() => recordService.getRecordsByGroup(groupId));
 }
 
 function api_addRecord(groupId, title, description, tags, userEmail) {
-  try {
-
-    const newRecord = recordService.addRecord(groupId, title, description, tags, userEmail);
-    return ResponseFactory.success(newRecord, "تمت إضافة السجل بنجاح");
-  } catch (error) {
-    return ResponseFactory.error(error.message);
-  }
+  return ResponseFactory.execute(
+    () => recordService.addRecord(groupId, title, description, tags, userEmail),
+    "تمت إضافة السجل بنجاح"
+  );
 }
 
 function api_deleteRecord(recordId, title, userEmail) {
-  try {
-
-    recordService.deleteRecord(recordId, title, userEmail);
-    return ResponseFactory.success(null, "تم حذف السجل");
-  } catch (error) {
-    return ResponseFactory.error(error.message);
-  }
+  return ResponseFactory.execute(
+    () => recordService.deleteRecord(recordId, title, userEmail),
+    "تم حذف السجل"
+  );
 }
 
 // ==========================================
 // 5. Attachment Controllers (المرفقات)
 // ==========================================
 function api_uploadAttachment(recordId, fileName, base64Data, mimeType, userEmail) {
-  try {
-
-    const newAttachment = attachmentService.uploadAttachment(recordId, fileName, base64Data, mimeType, userEmail);
-    return ResponseFactory.success(newAttachment, "تم رفع الملف بنجاح!");
-  } catch (error) {
-    return ResponseFactory.error(error.message);
-  }
+  return ResponseFactory.execute(
+    () => attachmentService.uploadAttachment(recordId, fileName, base64Data, mimeType, userEmail),
+    "تم رفع الملف بنجاح!"
+  );
 }
 
 function api_deleteAttachment(fileId, fileName, userEmail) {
-  try {
-
-    attachmentService.deleteAttachment(fileId, fileName, userEmail);
-    return ResponseFactory.success(null, "تم حذف المرفق بنجاح");
-  } catch (error) {
-    return ResponseFactory.error(error.message);
-  }
+  return ResponseFactory.execute(
+    () => attachmentService.deleteAttachment(fileId, fileName, userEmail),
+    "تم حذف المرفق بنجاح"
+  );
 }
 
 function api_getFileBase64(driveFileId) {
-  try {
-    const data = attachmentService.getFileBase64(driveFileId);
-    return ResponseFactory.success(data, "تم جلب بيانات الملف للطباعة");
-  } catch (error) {
-    return ResponseFactory.error(error.message);
-  }
+  return ResponseFactory.execute(
+    () => attachmentService.getFileBase64(driveFileId),
+    "تم جلب بيانات الملف للطباعة"
+  );
 }
-
 
 // ==========================================
 // 6. System Boot Controller (تحميل أولي)
 // ==========================================
 function api_getInitialAppData(userEmail) {
-  try {
+  return ResponseFactory.execute(() => {
     // نقوم بجلب كل البيانات المطلوبة للذاكرة المركزية عبر طبقة الخدمات (Services) للحفاظ على المعمارية النظيفة
-    const data = {
+    return {
       clients: clientService.getAllClients(),
       groups: groupService.getAllGroups(),
       records: recordService.getAllRecords(),
@@ -161,201 +117,132 @@ function api_getInitialAppData(userEmail) {
       tasks: taskService.getAllTasks(userEmail),
       taskTemplates: taskTemplateService.getAllTemplates()
     };
-    return ResponseFactory.success(data, "تم تحميل النظام");
-  } catch (error) {
-    return ResponseFactory.error(error.message);
-  }
+  }, "تم تحميل النظام");
 }
-
 
 // ==========================================
 // 7. Trash & Users API
 // ==========================================
 function api_getTrashData() {
-  try {
-    return ResponseFactory.success(trashService.getDeletedItems());
-  } catch (error) { return ResponseFactory.error(error.message); }
+  return ResponseFactory.execute(() => trashService.getDeletedItems());
 }
 
 function api_restoreItem(type, id, name, userEmail) {
-  try {
+  return ResponseFactory.execute(() => {
     trashService.restoreItem(type, id, name, userEmail);
-    return ResponseFactory.success(null, "تمت الاستعادة");
-  } catch (error) { return ResponseFactory.error(error.message); }
+    return null;
+  }, "تمت الاستعادة");
 }
 
 function api_permanentDelete(type, id, name, userEmail) {
-  try {
+  return ResponseFactory.execute(() => {
     trashService.permanentDelete(type, id, name, userEmail);
-    return ResponseFactory.success(null, "تم الحذف النهائي");
-  } catch (error) { return ResponseFactory.error(error.message); }
+    return null;
+  }, "تم الحذف النهائي");
 }
 
 function api_addUser(userData, adminEmail) {
-  try {
-    const res = userService.addUser(userData, adminEmail);
-    return ResponseFactory.success(res, "تم إضافة المستخدم");
-  } catch (error) { return ResponseFactory.error(error.message); }
+  return ResponseFactory.execute(() => userService.addUser(userData, adminEmail), "تم إضافة المستخدم");
 }
 
 function api_updateUser(userId, userData, adminEmail) {
-  try {
-    const res = userService.updateUser(userId, userData, adminEmail);
-    return ResponseFactory.success(res, "تم التعديل بنجاح");
-  } catch (error) { return ResponseFactory.error(error.message); }
+  return ResponseFactory.execute(() => userService.updateUser(userId, userData, adminEmail), "تم التعديل بنجاح");
 }
 
 function api_uploadAvatar(userId, base64Data, mimeType, adminEmail) {
-  try {
-    const url = userService.uploadAvatar(userId, base64Data, mimeType, adminEmail);
-    return ResponseFactory.success(url, "تم رفع الصورة بنجاح");
-  } catch (error) { return ResponseFactory.error(error.message); }
+  return ResponseFactory.execute(() => userService.uploadAvatar(userId, base64Data, mimeType, adminEmail), "تم رفع الصورة بنجاح");
 }
 
 function api_deleteUser(userId, adminEmail) {
-  try {
-    const res = userService.deleteUser(userId, adminEmail);
-    return ResponseFactory.success(res, "تم الإيقاف بنجاح");
-  } catch (error) { return ResponseFactory.error(error.message); }
+  return ResponseFactory.execute(() => userService.deleteUser(userId, adminEmail), "تم الإيقاف بنجاح");
 }
 
 function api_getLogs() {
-  try {
-    const logs = logService.getAllLogs();
-    return ResponseFactory.success(logs, "تم جلب السجلات");
-  } catch (error) { return ResponseFactory.error(error.message); }
+  return ResponseFactory.execute(() => logService.getAllLogs(), "تم جلب السجلات");
 }
 
 // ==========================================
 // 8. Tags API
 // ==========================================
 function api_addTag(name, color, userEmail) {
-  try {
-
-    const res = tagService.addTag(name, color, userEmail);
-    return ResponseFactory.success(res, "تم إضافة التاج");
-  } catch (error) { return ResponseFactory.error(error.message); }
+  return ResponseFactory.execute(() => tagService.addTag(name, color, userEmail), "تم إضافة التاج");
 }
 
 function api_updateTag(tagId, name, color, userEmail) {
-  try {
-
-    const res = tagService.updateTag(tagId, name, color, userEmail);
-    return ResponseFactory.success(res, "تم التعديل بنجاح");
-  } catch (error) { return ResponseFactory.error(error.message); }
+  return ResponseFactory.execute(() => tagService.updateTag(tagId, name, color, userEmail), "تم التعديل بنجاح");
 }
 
 function api_deleteTag(tagId, name, userEmail) {
-  try {
-
-    const res = tagService.deleteTag(tagId, name, userEmail);
-    return ResponseFactory.success(res, "تم مسح التاج");
-  } catch (error) { return ResponseFactory.error(error.message); }
+  return ResponseFactory.execute(() => tagService.deleteTag(tagId, name, userEmail), "تم مسح التاج");
 }
 
 // ==========================================
 // 9. Legal Entities API
 // ==========================================
 function api_addLegalEntity(name, color, userEmail) {
-  try {
-    const res = legalEntityService.addEntity(name, color, userEmail);
-    return ResponseFactory.success(res, "تم إضافة الكيان القانوني");
-  } catch (error) { return ResponseFactory.error(error.message); }
+  return ResponseFactory.execute(() => legalEntityService.addEntity(name, color, userEmail), "تم إضافة الكيان القانوني");
 }
 
 function api_updateLegalEntity(entityId, name, color, userEmail) {
-  try {
-    const res = legalEntityService.updateEntity(entityId, name, color, userEmail);
-    return ResponseFactory.success(res, "تم تعديل الكيان بنجاح");
-  } catch (error) { return ResponseFactory.error(error.message); }
+  return ResponseFactory.execute(() => legalEntityService.updateEntity(entityId, name, color, userEmail), "تم تعديل الكيان بنجاح");
 }
 
 function api_deleteLegalEntity(entityId, name, userEmail) {
-  try {
-    const res = legalEntityService.deleteEntity(entityId, name, userEmail);
-    return ResponseFactory.success(res, "تم مسح الكيان القانوني");
-  } catch (error) { return ResponseFactory.error(error.message); }
+  return ResponseFactory.execute(() => legalEntityService.deleteEntity(entityId, name, userEmail), "تم مسح الكيان القانوني");
 }
 
 // ==========================================
 // 10. Task Templates API
 // ==========================================
 function api_getAllTaskTemplates() {
-  try {
-    const templates = taskTemplateService.getAllTemplates();
-    return ResponseFactory.success(templates, "تم جلب القوالب");
-  } catch (error) { return ResponseFactory.error(error.message); }
+  return ResponseFactory.execute(() => taskTemplateService.getAllTemplates(), "تم جلب القوالب");
 }
 
 function api_addTaskTemplate(title, description, warningDays, criticalDays, userEmail) {
-  try {
-    const res = taskTemplateService.addTemplate(title, description, warningDays, criticalDays, userEmail);
-    return ResponseFactory.success(res, "تم إضافة القالب");
-  } catch (error) { return ResponseFactory.error(error.message); }
+  return ResponseFactory.execute(
+    () => taskTemplateService.addTemplate(title, description, warningDays, criticalDays, userEmail),
+    "تم إضافة القالب"
+  );
 }
 
 function api_updateTaskTemplate(templateId, updateData, userEmail) {
-  try {
-    const res = taskTemplateService.updateTemplate(templateId, updateData, userEmail);
-    return ResponseFactory.success(res, "تم تعديل القالب");
-  } catch (error) { return ResponseFactory.error(error.message); }
+  return ResponseFactory.execute(() => taskTemplateService.updateTemplate(templateId, updateData, userEmail), "تم تعديل القالب");
 }
 
 function api_deleteTaskTemplate(templateId, userEmail) {
-  try {
-    const res = taskTemplateService.deleteTemplate(templateId, userEmail);
-    return ResponseFactory.success(res, "تم حذف القالب");
-  } catch (error) { return ResponseFactory.error(error.message); }
+  return ResponseFactory.execute(() => taskTemplateService.deleteTemplate(templateId, userEmail), "تم حذف القالب");
 }
 
 // ==========================================
 // 11. Tasks API
 // ==========================================
 function api_getAllTasks(userEmail) {
-  try {
-    const tasks = taskService.getAllTasks(userEmail);
-    return ResponseFactory.success(tasks, "تم جلب المهام");
-  } catch (error) { return ResponseFactory.error(error.message); }
+  return ResponseFactory.execute(() => taskService.getAllTasks(userEmail), "تم جلب المهام");
 }
 
 function api_addTask(title, description, assignedTo, clientId, deadline, warningDays, criticalDays, templateId, userEmail) {
-  try {
-    const res = taskService.addTask(title, description, assignedTo, clientId, deadline, warningDays, criticalDays, templateId, userEmail);
-    return ResponseFactory.success(res, "تم إنشاء المهمة بنجاح");
-  } catch (error) { return ResponseFactory.error(error.message); }
+  return ResponseFactory.execute(
+    () => taskService.addTask(title, description, assignedTo, clientId, deadline, warningDays, criticalDays, templateId, userEmail),
+    "تم إنشاء المهمة بنجاح"
+  );
 }
 
 function api_completeTask(taskId, completionNote, userEmail) {
-  try {
-    const res = taskService.completeTask(taskId, completionNote, userEmail);
-    return ResponseFactory.success(res, "تم تقديم المهمة للمراجعة");
-  } catch (error) { return ResponseFactory.error(error.message); }
+  return ResponseFactory.execute(() => taskService.completeTask(taskId, completionNote, userEmail), "تم تقديم المهمة للمراجعة");
 }
 
 function api_approveTask(taskId, userEmail) {
-  try {
-    const res = taskService.approveTask(taskId, userEmail);
-    return ResponseFactory.success(res, "تم اعتماد المهمة بنجاح");
-  } catch (error) { return ResponseFactory.error(error.message); }
+  return ResponseFactory.execute(() => taskService.approveTask(taskId, userEmail), "تم اعتماد المهمة بنجاح");
 }
 
 function api_rejectTask(taskId, reason, userEmail) {
-  try {
-    const res = taskService.rejectTask(taskId, reason, userEmail);
-    return ResponseFactory.success(res, "تم رفض المهمة");
-  } catch (error) { return ResponseFactory.error(error.message); }
+  return ResponseFactory.execute(() => taskService.rejectTask(taskId, reason, userEmail), "تم رفض المهمة");
 }
 
 function api_updateTask(taskId, updateData, userEmail) {
-  try {
-    const res = taskService.updateTask(taskId, updateData, userEmail);
-    return ResponseFactory.success(res, "تم تعديل المهمة");
-  } catch (error) { return ResponseFactory.error(error.message); }
+  return ResponseFactory.execute(() => taskService.updateTask(taskId, updateData, userEmail), "تم تعديل المهمة");
 }
 
 function api_deleteTask(taskId, userEmail) {
-  try {
-    const res = taskService.deleteTask(taskId, userEmail);
-    return ResponseFactory.success(res, "تم حذف المهمة");
-  } catch (error) { return ResponseFactory.error(error.message); }
+  return ResponseFactory.execute(() => taskService.deleteTask(taskId, userEmail), "تم حذف المهمة");
 }

@@ -44,21 +44,8 @@ class UIManager {
 
   // 3. رسالة النجاح
   static showSuccess(message, title = "نجاح!") {
-    Swal.fire({
-      icon: 'success',
-      title: title,
-      text: message,
-      confirmButtonColor: 'var(--primary-color)',
-      background: 'var(--card-bg)',
-      color: 'var(--text-main)',
-      customClass: {
-        popup: 'rounded-4 shadow-lg border-0',
-        confirmButton: 'btn btn-primary rounded-3 px-4 shadow-sm'
-      },
-      buttonsStyling: false,
-      timer: 2000,
-      timerProgressBar: true
-    });
+    // Success notifications suppressed per user preference
+    Swal.close();
   }
 
   // 4. رسالة الخطأ

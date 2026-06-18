@@ -47,6 +47,7 @@
 
     static boot() {
       const session = localStorage.getItem('dms_session');
+      this.initKeyboardNavigation();
       if (session) this.initUserSession(JSON.parse(session));
       else this.showLoginScreen();
     }
@@ -122,6 +123,22 @@
 
 
     static navigate(pageId, param = null) {
+      // 1. History Management for Arrow Keys
+      if (!this.isNavigatingFromHistory) {
+        if (this.historyIndex < this.history.length - 1) {
+          this.history = this.history.slice(0, this.historyIndex + 1);
+        }
+        const current = this.history[this.historyIndex];
+        if (!current || current.pageId !== pageId || JSON.stringify(current.param) !== JSON.stringify(param)) {
+          this.history.push({ pageId, param });
+          if (this.history.length > 33) {
+            this.history.shift();
+          } else {
+            this.historyIndex++;
+          }
+        }
+      }
+
       this.currentPage = pageId;
       this.currentParam = param;
       
@@ -514,10 +531,44 @@
       // Execute immediately on startup instead of waiting 60s
       poll();
     }
+
+    static initKeyboardNavigation() {
+      document.addEventListener('keydown', (e) => {
+        // لا تنفذ لو المستخدم بيكتب في حقل إدخال عشان منبوظش الكتابة
+        const activeTag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
+        if (['input', 'textarea', 'select'].includes(activeTag) || document.activeElement.isContentEditable) {
+          return;
+        }
+
+        // سهم شمال -> خطوة لورا (Back)
+        if (e.key === 'ArrowLeft') {
+          if (App.historyIndex > 0) {
+            App.historyIndex--;
+            const prevState = App.history[App.historyIndex];
+            App.isNavigatingFromHistory = true;
+            App.navigate(prevState.pageId, prevState.param);
+            App.isNavigatingFromHistory = false;
+          }
+        }
+        // سهم يمين -> خطوة لقدام (Forward)
+        else if (e.key === 'ArrowRight') {
+          if (App.historyIndex < App.history.length - 1) {
+            App.historyIndex++;
+            const nextState = App.history[App.historyIndex];
+            App.isNavigatingFromHistory = true;
+            App.navigate(nextState.pageId, nextState.param);
+            App.isNavigatingFromHistory = false;
+          }
+        }
+      });
+    }
   }
 
   App.currentPage = 'dashboard';
   App.currentParam = null;
+  App.history = [];
+  App.historyIndex = -1;
+  App.isNavigatingFromHistory = false;
   App.ROLES = { ADMIN: 'Admin', USER: 'User', VIEWER: 'Viewer' };
   App.ROUTES = {
     'dashboard': { template: 'dashboard-template', controllerName: 'DashboardController', method: 'renderStats', restricted: true },

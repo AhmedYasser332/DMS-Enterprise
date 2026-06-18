@@ -133,6 +133,12 @@ class AttachmentService {
         if (group) {
           const groupFolderName = `${group.Name} - ${group.Group_ID}`;
           targetFolder = this._getOrCreateSubFolder(targetFolder, groupFolderName);
+          
+          if (record) {
+            const recordTitle = record.Title || 'بدون عنوان';
+            const recordFolderName = `${recordTitle} - ${record.Record_ID}`;
+            targetFolder = this._getOrCreateSubFolder(targetFolder, recordFolderName);
+          }
         }
       }
       

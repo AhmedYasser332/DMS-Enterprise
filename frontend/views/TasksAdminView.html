@@ -15,7 +15,7 @@
       <li class="nav-item" role="presentation">
         <button class="nav-link d-flex align-items-center gap-2" id="adminTasks-tab-archive" data-bs-toggle="tab" data-bs-target="#adminTasks-pane-archive" type="button" role="tab" onclick="TaskAdminController._applyArchiveFilters()">
           <i class="fas fa-archive"></i> أرشيف وسجل المهام
-          <span class="badge rounded-pill bg-success" id="archiveTasksBadge">0</span>
+          <span class="badge rounded-pill bg-secondary" id="archiveTasksBadge">0</span>
         </button>
       </li>
     </ul>
@@ -27,9 +27,9 @@
 
     <!-- Section A: Templates -->
     <div class="card mb-4">
-      <div class="card-header d-flex justify-content-between align-items-center" style="background: linear-gradient(135deg, rgba(var(--bs-primary-rgb),0.08), rgba(var(--bs-primary-rgb),0.03)); border-bottom: 2px solid rgba(var(--bs-primary-rgb),0.15);">
+      <div class="card-header d-flex justify-content-between align-items-center bg-transparent py-3 border-bottom">
         <h5 class="mb-0 fw-bold"><i class="fas fa-layer-group me-2 text-primary"></i> قوالب المهام</h5>
-        <button class="btn btn-primary btn-sm shadow-sm" onclick="TaskAdminController.openTemplateModal()"><i class="fas fa-plus me-1"></i> إضافة قالب</button>
+        <button class="btn btn-primary btn-sm" onclick="TaskAdminController.openTemplateModal()"><i class="fas fa-plus me-1"></i> إضافة قالب</button>
       </div>
       <div class="card-body p-0">
         <div class="table-responsive">
@@ -42,8 +42,8 @@
 
     <!-- Section B: Task Form -->
     <div class="card mb-4">
-      <div class="card-header" style="background: linear-gradient(135deg, rgba(16,185,129,0.08), rgba(16,185,129,0.03)); border-bottom: 2px solid rgba(16,185,129,0.15);">
-        <h5 class="mb-0 fw-bold"><i class="fas fa-paper-plane me-2" style="color:#10b981;"></i> تعيين مهمة جديدة</h5>
+      <div class="card-header bg-transparent py-3 border-bottom">
+        <h5 class="mb-0 fw-bold"><i class="fas fa-paper-plane me-2 text-primary"></i> تعيين مهمة جديدة</h5>
       </div>
       <div class="card-body">
         <form id="addTaskForm" onsubmit="event.preventDefault(); TaskAdminController.addTask();">
@@ -56,7 +56,7 @@
             <div class="col-md-3"><label class="form-label fw-bold">الموعد النهائي <span class="text-danger">*</span></label><input type="date" class="form-control" id="taskDeadline" required></div>
             <div class="col-md-2"><label class="form-label fw-bold">تحذير</label><input type="number" class="form-control" id="taskWarningDays" value="3" min="1"></div>
             <div class="col-md-2"><label class="form-label fw-bold">خطر</label><input type="number" class="form-control" id="taskCriticalDays" value="1" min="1"></div>
-            <div class="col-md-1 d-flex align-items-end"><button type="submit" class="btn btn-success w-100 shadow-sm" id="addTaskBtn" title="إنشاء"><i class="fas fa-plus"></i></button></div>
+            <div class="col-md-1 d-flex align-items-end"><button type="submit" class="btn btn-primary w-100" id="addTaskBtn" title="إنشاء"><i class="fas fa-plus"></i></button></div>
           </div>
         </form>
       </div>
@@ -64,8 +64,8 @@
 
     <!-- Section C: Active Tasks Table -->
       <div class="card">
-        <div class="card-header d-flex justify-content-between align-items-center" style="background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(99,102,241,0.03)); border-bottom: 2px solid rgba(99,102,241,0.15);">
-          <h5 class="mb-0 fw-bold"><i class="fas fa-list-check me-2" style="color:#6366f1;"></i> المهام النشطة</h5>
+        <div class="card-header d-flex justify-content-between align-items-center bg-transparent py-3 border-bottom">
+          <h5 class="mb-0 fw-bold"><i class="fas fa-list-check me-2 text-primary"></i> المهام النشطة</h5>
           <span class="badge bg-primary rounded-pill" id="totalTasksBadge">0</span>
         </div>
         <div class="card-body p-0">
@@ -83,8 +83,8 @@
 
         <!-- Advanced Filters Card -->
         <div class="card mb-4">
-          <div class="card-header" style="background: linear-gradient(135deg, rgba(245,158,11,0.08), rgba(245,158,11,0.03)); border-bottom: 2px solid rgba(245,158,11,0.15);">
-            <h5 class="mb-0 fw-bold"><i class="fas fa-filter me-2" style="color:#f59e0b;"></i> فلترة الأرشيف</h5>
+          <div class="card-header bg-transparent py-3 border-bottom">
+            <h5 class="mb-0 fw-bold"><i class="fas fa-filter me-2 text-primary"></i> فلترة الأرشيف</h5>
           </div>
           <div class="card-body">
             <div class="row g-3 align-items-end">
@@ -100,9 +100,9 @@
 
         <!-- Archive Table Card -->
         <div class="card">
-          <div class="card-header d-flex justify-content-between align-items-center" style="background: linear-gradient(135deg, rgba(16,185,129,0.08), rgba(16,185,129,0.03)); border-bottom: 2px solid rgba(16,185,129,0.15);">
-            <h5 class="mb-0 fw-bold"><i class="fas fa-history me-2" style="color:#10b981;"></i> سجل المهام المؤرشفة</h5>
-            <span class="badge bg-success rounded-pill" id="archiveTasksBadge">0</span>
+          <div class="card-header d-flex justify-content-between align-items-center bg-transparent py-3 border-bottom">
+            <h5 class="mb-0 fw-bold"><i class="fas fa-history me-2 text-primary"></i> سجل المهام المؤرشفة</h5>
+            <span class="badge bg-secondary rounded-pill" id="archiveTasksBadge">0</span>
           </div>
           <div class="card-body p-0">
             <div class="table-responsive">
@@ -120,7 +120,7 @@
 </template>
 
 <div class="modal fade" id="templateModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content border-0 shadow-lg">
-  <div class="modal-header" style="background:var(--primary-color);color:white;"><h5 class="modal-title"><i class="fas fa-layer-group me-2"></i> قالب مهمة</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+  <div class="modal-header border-0 pb-0"><h5 class="modal-title"><i class="fas fa-layer-group me-2 text-primary"></i> قالب مهمة</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
   <div class="modal-body p-4"><form id="templateForm" onsubmit="event.preventDefault(); TaskAdminController.saveTemplate();">
     <div class="mb-3"><label class="form-label fw-bold">العنوان <span class="text-danger">*</span></label><input type="text" class="form-control" id="templateTitle" required></div>
     <div class="mb-3"><label class="form-label fw-bold">الوصف</label><textarea class="form-control" id="templateDescription" rows="2"></textarea></div>
@@ -261,7 +261,17 @@ class TaskAdminController {
   static async addTask() {
     const btn = document.getElementById('addTaskBtn'); btn.disabled=true; btn.innerHTML='<span class="spinner-border spinner-border-sm"></span>';
     try {
-      const res = await ApiClient.call('api_addTask', document.getElementById('taskTitle').value.trim(), document.getElementById('taskDescription').value.trim(), document.getElementById('taskAssignedTo').value, document.getElementById('taskClientId').value, document.getElementById('taskDeadline').value, parseInt(document.getElementById('taskWarningDays').value), parseInt(document.getElementById('taskCriticalDays').value), document.getElementById('taskTemplateSelect').value, GlobalStore.getState().currentUser.username);
+      const taskPayload = {
+        title: document.getElementById('taskTitle').value.trim(),
+        description: document.getElementById('taskDescription').value.trim(),
+        assignedTo: document.getElementById('taskAssignedTo').value,
+        clientId: document.getElementById('taskClientId').value,
+        deadline: document.getElementById('taskDeadline').value,
+        warningDays: parseInt(document.getElementById('taskWarningDays').value),
+        criticalDays: parseInt(document.getElementById('taskCriticalDays').value),
+        templateId: document.getElementById('taskTemplateSelect').value
+      };
+      const res = await ApiClient.call('api_addTask', taskPayload, GlobalStore.getState().currentUser.username);
       const st=GlobalStore.getState(); GlobalStore.setState({tasks:[...st.tasks,res]}); document.getElementById('addTaskForm').reset(); document.getElementById('taskWarningDays').value='3'; document.getElementById('taskCriticalDays').value='1'; UIManager.showSuccess('تم إنشاء المهمة'); this.renderView();
     } catch(e){ UIManager.showError(e.message); } finally { btn.disabled=false; btn.innerHTML='<i class="fas fa-plus"></i>'; }
   }

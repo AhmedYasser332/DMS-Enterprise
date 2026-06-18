@@ -17,7 +17,10 @@ const Config = {
     TAGS: "Tags",
     LEGAL_ENTITIES: "Legal_Entities",
     TASKS: "Tasks",
-    TASK_TEMPLATES: "Task_Templates"
+    TASK_TEMPLATES: "Task_Templates",
+    TAX_CONFIG: "TaxConfig",
+    CREDENTIALS: "Credentials",
+    NOTIFICATIONS: "Notifications"
   },
   
   // أنواع الصلاحيات (Roles)

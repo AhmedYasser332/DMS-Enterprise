@@ -1,96 +1,425 @@
 <template id="dashboard-template">
   <div class="row fade-in">
-    <div class="col-12 mb-4 border-bottom pb-2">
-      <h3 class="text-primary m-0"><i class="fas fa-tachometer-alt me-2"></i> لوحة التحكم والإحصائيات</h3>
-      <p class="text-muted small m-0 mt-1">نظرة عامة على البيانات المصرح لك برؤيتها</p>
+    <div class="col-12 mb-4 border-bottom pb-2 d-flex justify-content-between align-items-center">
+      <div>
+        <h3 class="text-primary m-0"><i class="fas fa-tachometer-alt me-2"></i> لوحة التحكم والإحصائيات</h3>
+        <p class="text-muted small m-0 mt-1" id="dashboard-subtitle">نظرة عامة على المهام والمخاطر التشغيلية</p>
+      </div>
     </div>
     
+    <!-- KPI 1: Overdue -->
     <div class="col-md-3 col-sm-6 mb-4">
-      <div class="card text-white bg-primary shadow-sm border-0 h-100">
-        <div class="card-body d-flex align-items-center justify-content-between p-4">
-          <div>
-            <h6 class="text-uppercase mb-2">العملاء</h6>
-            <h2 class="m-0 fw-bold" id="stat-clients">0</h2>
+      <div class="card border-0 h-100 shadow-sm border-start border-danger border-4">
+        <div class="card-body p-3">
+          <div class="d-flex justify-content-between align-items-start">
+            <h6 class="text-uppercase text-muted fw-bold small m-0">متأخرة (غرامات محتملة)</h6>
+            <i class="fas fa-exclamation-circle text-danger fs-4"></i>
           </div>
-          <i class="fas fa-users fa-3x opacity-50"></i>
+          <h2 class="mt-2 mb-1 fw-bold text-danger" id="stat-overdue-count">0</h2>
+          <p class="text-muted small m-0">تعرض للغرامة: <span id="stat-overdue-penalty" class="fw-bold text-dark">EGP 0</span></p>
         </div>
       </div>
     </div>
 
+    <!-- KPI 2: Due Soon -->
     <div class="col-md-3 col-sm-6 mb-4">
-      <div class="card text-white bg-success shadow-sm border-0 h-100">
-        <div class="card-body d-flex align-items-center justify-content-between p-4">
-          <div>
-            <h6 class="text-uppercase mb-2">مجموعات البيانات</h6>
-            <h2 class="m-0 fw-bold" id="stat-groups">0</h2>
+      <div class="card border-0 h-100 shadow-sm border-start border-warning border-4">
+        <div class="card-body p-3">
+          <div class="d-flex justify-content-between align-items-start">
+            <h6 class="text-uppercase text-muted fw-bold small m-0">مهام حرجة / قريبة</h6>
+            <i class="fas fa-fire text-warning fs-4"></i>
           </div>
-          <i class="fas fa-folder-open fa-3x opacity-50"></i>
+          <h2 class="mt-2 mb-1 fw-bold" id="stat-duesoon-count">0</h2>
+          <p class="text-muted small m-0">
+            <span id="stat-duesoon-crit" class="text-danger fw-bold">0</span> حرجة · 
+            <span id="stat-duesoon-warn" class="text-warning fw-bold" style="color: #d39e00 !important;">0</span> تحذير
+          </p>
         </div>
       </div>
     </div>
 
+    <!-- KPI 3: Needs Review -->
     <div class="col-md-3 col-sm-6 mb-4">
-      <div class="card text-white bg-warning shadow-sm border-0 h-100">
-        <div class="card-body d-flex align-items-center justify-content-between p-4">
-          <div>
-            <h6 class="text-uppercase mb-2 text-dark">السجلات</h6>
-            <h2 class="m-0 fw-bold text-dark" id="stat-records">0</h2>
+      <div class="card border-0 h-100 shadow-sm border-start border-info border-4">
+        <div class="card-body p-3">
+          <div class="d-flex justify-content-between align-items-start">
+            <h6 class="text-uppercase text-muted fw-bold small m-0" id="stat-review-label">بانتظار المراجعة</h6>
+            <i class="fas fa-check-double text-info fs-4"></i>
           </div>
-          <i class="fas fa-file-alt fa-3x opacity-50 text-dark"></i>
+          <h2 class="mt-2 mb-1 fw-bold text-info" id="stat-review-count">0</h2>
+          <p class="text-muted small m-0">مهام تحتاج اعتماد</p>
         </div>
       </div>
     </div>
 
+    <!-- KPI 4: Credential Health -->
     <div class="col-md-3 col-sm-6 mb-4">
-      <div class="card text-white bg-danger shadow-sm border-0 h-100">
-        <div class="card-body d-flex align-items-center justify-content-between p-4">
-          <div>
-            <h6 class="text-uppercase mb-2">المرفقات</h6>
-            <h2 class="m-0 fw-bold" id="stat-attachments">0</h2>
+      <div class="card border-0 h-100 shadow-sm border-start border-success border-4" id="cred-health-card">
+        <div class="card-body p-3">
+          <div class="d-flex justify-content-between align-items-start">
+            <h6 class="text-uppercase text-muted fw-bold small m-0">صحة بيانات الدخول</h6>
+            <i class="fas fa-shield-alt text-success fs-4"></i>
           </div>
-          <i class="fas fa-paperclip fa-3x opacity-50"></i>
+          <h2 class="mt-2 mb-1 fw-bold text-success" id="stat-cred-pct">0%</h2>
+          <p class="text-muted small m-0"><span id="stat-cred-valid">0</span> / <span id="stat-cred-total">0</span> عميل جاهز</p>
         </div>
       </div>
     </div>
   </div>
+
+  <!-- Role-Based Tables -->
+  <div class="row">
+    <div class="col-12" id="role-tables-container">
+      <!-- Injected by Controller based on Role -->
+    </div>
+  </div>
+
+
 </template>
 
 <script>
 class DashboardController {
+  static getRole() {
+    return GlobalStore.getState().currentUser.role;
+  }
+
+  static getUserId() {
+    return GlobalStore.getState().currentUser.username;
+  }
+
+  static daysUntil(dueDateStr) {
+    if (!dueDateStr) return 9999;
+    const due = new Date(dueDateStr);
+    const now = new Date();
+    due.setHours(0,0,0,0);
+    now.setHours(0,0,0,0);
+    return Math.round((due - now) / 86400000);
+  }
+
   static renderStats() {
     const state = GlobalStore.getState();
-    const role = state.currentUser.role;
-    const allowed = String(state.currentUser.allowedClients || "").toUpperCase();
+    const role = this.getRole();
+    const userId = this.getUserId();
+    const tasks = state.tasks || [];
+    const taxConfig = state.taxConfig || [];
+    const perms = state.currentUser.permissions || {};
+    
+    const canViewKPIs = role === App.ROLES.ADMIN || perms.dashboard?.viewKPIs;
 
-    // فلترة العملاء المسموح بهم
-    const activeClients = state.clients.filter(c => 
-      String(c.Is_Deleted).toUpperCase() !== "TRUE" && 
-      (role === 'Admin' || allowed === 'ALL' || allowed.includes(String(c.Client_ID).toUpperCase()))
-    );
-    const allowedClientIds = activeClients.map(c => c.Client_ID);
+    // Toggle KPIs visibility
+    const kpiRow = document.getElementById('stat-overdue-count')?.closest('.row');
+    if (kpiRow) {
+      const kpiCols = kpiRow.querySelectorAll('.col-md-3.col-sm-6');
+      kpiCols.forEach(col => col.style.display = canViewKPIs ? 'block' : 'none');
+    }
+    
+    // 1. Overdue
+    const openTasks = tasks.filter(t => t.Status !== 'Completed' && String(t.Is_Deleted).toUpperCase() !== 'TRUE');
+    let overdueCount = 0;
+    let exposure = 0;
+    
+    openTasks.forEach(t => {
+      const d = this.daysUntil(t.Deadline);
+      if (d < 0) {
+        overdueCount++;
+        // Calculate penalty
+        const cfg = taxConfig.find(c => c.Task_Type === (t.Template_ID || t.Title)) || {}; // simplified lookup
+        const flat = parseInt(cfg.Penalty_Flat) || 0;
+        const daily = parseInt(cfg.Penalty_Daily_Rate) || 0;
+        let p = flat + (daily * Math.abs(d));
+        if (cfg.Penalty_Cap && p > parseInt(cfg.Penalty_Cap)) p = parseInt(cfg.Penalty_Cap);
+        exposure += p;
+      }
+    });
 
-    const activeGroups = state.groups.filter(g => 
-      String(g.Is_Deleted).toUpperCase() !== "TRUE" && 
-      allowedClientIds.includes(g.Client_ID)
-    );
-    const allowedGroupIds = activeGroups.map(g => g.Group_ID);
+    document.getElementById('stat-overdue-count').textContent = overdueCount;
+    document.getElementById('stat-overdue-penalty').textContent = new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP' }).format(exposure);
 
-    const activeRecords = state.records.filter(r => 
-      String(r.Is_Deleted).toUpperCase() !== "TRUE" && 
-      allowedGroupIds.includes(r.Group_ID)
-    );
-    const allowedRecordIds = activeRecords.map(r => r.Record_ID);
+    // 2. Due Soon
+    let warn = 0, crit = 0;
+    openTasks.forEach(t => {
+      const d = this.daysUntil(t.Deadline);
+      if (d >= 0) {
+        const cDays = parseInt(t.Critical_Days) || 3;
+        const wDays = parseInt(t.Warning_Days) || 7;
+        if (d <= cDays) crit++;
+        else if (d <= wDays) warn++;
+      }
+    });
+    document.getElementById('stat-duesoon-count').textContent = warn + crit;
+    document.getElementById('stat-duesoon-crit').textContent = crit;
+    document.getElementById('stat-duesoon-warn').textContent = warn;
 
-    const activeAttachments = state.attachments.filter(a => 
-      String(a.Is_Deleted).toUpperCase() !== "TRUE" && 
-      allowedRecordIds.includes(a.Record_ID)
-    );
+    // 3. Needs Review
+    let reviewCount = 0;
+    let reviewLabel = 'بانتظار المراجعة';
+    if (role === App.ROLES.USER) {
+      reviewLabel = 'مهامي قيد المراجعة';
+      reviewCount = tasks.filter(t => t.Status === 'Needs_Review' && t.Assigned_To === userId && String(t.Is_Deleted).toUpperCase() !== 'TRUE').length;
+    } else {
+      reviewLabel = 'صندوق الموافقات';
+      reviewCount = tasks.filter(t => t.Status === 'Needs_Review' && String(t.Is_Deleted).toUpperCase() !== 'TRUE').length;
+    }
+    document.getElementById('stat-review-label').textContent = reviewLabel;
+    document.getElementById('stat-review-count').textContent = reviewCount;
 
-    // تحديث الأرقام في الشاشة فوراً (بدون تحميل)
-    if(document.getElementById('stat-clients')) document.getElementById('stat-clients').textContent = activeClients.length;
-    if(document.getElementById('stat-groups')) document.getElementById('stat-groups').textContent = activeGroups.length;
-    if(document.getElementById('stat-records')) document.getElementById('stat-records').textContent = activeRecords.length;
-    if(document.getElementById('stat-attachments')) document.getElementById('stat-attachments').textContent = activeAttachments.length;
+    // 4. Credential Health
+    const clients = state.clients.filter(c => String(c.Is_Deleted).toUpperCase() !== 'TRUE');
+    const creds = state.credentials || [];
+    let validClients = 0;
+    clients.forEach(c => {
+      const hasTax = creds.find(cr => cr.Client_ID === c.Client_ID && cr.Portal_Type === 'TAX_PORTAL' && String(cr.Is_Deleted).toUpperCase() !== 'TRUE');
+      const hasInv = creds.find(cr => cr.Client_ID === c.Client_ID && cr.Portal_Type === 'EINVOICE' && String(cr.Is_Deleted).toUpperCase() !== 'TRUE');
+      if (hasTax || hasInv) validClients++; // Simplify: at least one portal credential is present
+    });
+    const credPct = clients.length ? Math.round((validClients / clients.length) * 100) : 0;
+    document.getElementById('stat-cred-pct').textContent = credPct + '%';
+    document.getElementById('stat-cred-valid').textContent = validClients;
+    document.getElementById('stat-cred-total').textContent = clients.length;
+
+    const healthCard = document.getElementById('cred-health-card');
+    if (credPct < 75) {
+      healthCard.className = 'card border-0 h-100 shadow-sm border-start border-danger border-4';
+      document.getElementById('stat-cred-pct').className = 'mt-2 mb-1 fw-bold text-danger';
+    } else if (credPct < 90) {
+      healthCard.className = 'card border-0 h-100 shadow-sm border-start border-warning border-4';
+      document.getElementById('stat-cred-pct').className = 'mt-2 mb-1 fw-bold text-warning';
+    } else {
+      healthCard.className = 'card border-0 h-100 shadow-sm border-start border-success border-4';
+      document.getElementById('stat-cred-pct').className = 'mt-2 mb-1 fw-bold text-success';
+    }
+
+    this.renderTables(tasks, role, userId);
+  }
+
+  static renderTables(tasks, role, userId) {
+    const container = document.getElementById('role-tables-container');
+    if (role === App.ROLES.USER) {
+      // Accountant: Urgent and Rejected
+      const urgent = tasks.filter(t => t.Assigned_To === userId && t.Status !== 'Completed' && String(t.Is_Deleted).toUpperCase() !== 'TRUE' && this.daysUntil(t.Deadline) <= 3)
+                          .sort((a,b) => this.daysUntil(a.Deadline) - this.daysUntil(b.Deadline));
+      
+      const rejected = tasks.filter(t => t.Assigned_To === userId && t.Rejection_Reason && String(t.Is_Deleted).toUpperCase() !== 'TRUE');
+
+      container.innerHTML = `
+        <div class="row">
+          <div class="col-md-6 mb-4">
+            <div class="card border-0 shadow-sm h-100">
+              <div class="card-header bg-white border-bottom border-danger">
+                <h6 class="m-0 text-danger fw-bold"><i class="fas fa-fire me-2"></i> مهامي العاجلة (3 أيام أو أقل)</h6>
+              </div>
+              <div class="card-body p-0">
+                <div class="table-responsive">
+                  <table class="table table-hover mb-0">
+                    <tbody>
+                      ${urgent.length ? urgent.map(t => `
+                        <tr>
+                          <td class="ps-3">
+                            <span class="d-block fw-bold">${t.Title}</span>
+                            <span class="small text-muted">${t.Client_ID}</span>
+                          </td>
+                          <td class="text-end pe-3 align-middle">
+                            <span class="badge bg-danger">بعد ${this.daysUntil(t.Deadline)} يوم</span>
+                            <button class="btn btn-sm btn-outline-primary ms-2" onclick="App.navigate('my-tasks')">عرض</button>
+                          </td>
+                        </tr>
+                      `).join('') : `<tr><td colspan="2" class="text-center text-muted p-4">لا توجد مهام عاجلة.</td></tr>`}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6 mb-4">
+            <div class="card border-0 shadow-sm h-100">
+              <div class="card-header bg-white border-bottom border-warning">
+                <h6 class="m-0 text-warning text-dark fw-bold" style="color: #d39e00 !important;"><i class="fas fa-undo me-2"></i> مهام مرفوضة (تحتاج تعديل)</h6>
+              </div>
+              <div class="card-body p-0">
+                <div class="table-responsive">
+                  <table class="table table-hover mb-0">
+                    <tbody>
+                      ${rejected.length ? rejected.map(t => `
+                        <tr>
+                          <td class="ps-3">
+                            <span class="d-block fw-bold">${t.Title}</span>
+                            <span class="small text-danger"><i class="fas fa-comment-dots"></i> ${t.Rejection_Reason}</span>
+                          </td>
+                          <td class="text-end pe-3 align-middle">
+                            <button class="btn btn-sm btn-outline-primary" onclick="App.navigate('my-tasks')">تعديل</button>
+                          </td>
+                        </tr>
+                      `).join('') : `<tr><td colspan="2" class="text-center text-muted p-4">لا توجد مهام مرفوضة. أحسنت!</td></tr>`}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    } else {
+      // Manager/Admin: Approval Inbox
+      const inbox = tasks.filter(t => t.Status === 'Needs_Review' && String(t.Is_Deleted).toUpperCase() !== 'TRUE')
+                         .sort((a,b) => this.daysUntil(a.Deadline) - this.daysUntil(b.Deadline));
+      
+      container.innerHTML = `
+        <div class="card border-0 shadow-sm mb-4">
+          <div class="card-header bg-white border-bottom border-info">
+            <h6 class="m-0 text-info fw-bold"><i class="fas fa-inbox me-2"></i> صندوق الموافقات (بانتظار مراجعتك)</h6>
+          </div>
+          <div class="card-body p-0">
+            <div class="table-responsive">
+              <table class="table table-hover mb-0">
+                <thead class="table-light">
+                  <tr>
+                    <th class="ps-4">المهمة</th>
+                    <th>العميل</th>
+                    <th>المحاسب</th>
+                    <th>باقي على التسليم</th>
+                    <th class="text-end pe-4">إجراء</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${inbox.length ? inbox.map(t => `
+                    <tr>
+                      <td class="ps-4 align-middle fw-bold">${t.Title}</td>
+                      <td class="align-middle">${t.Client_ID}</td>
+                      <td class="align-middle"><span class="badge bg-secondary">${t.Assigned_To}</span></td>
+                      <td class="align-middle"><span class="badge ${this.daysUntil(t.Deadline) < 0 ? 'bg-danger' : 'bg-primary'}">${this.daysUntil(t.Deadline)} يوم</span></td>
+                      <td class="text-end pe-4 align-middle">
+                        <button class="btn btn-sm btn-success me-1" onclick="App.navigate('tasks-admin')"><i class="fas fa-check"></i> مراجعة</button>
+                      </td>
+                    </tr>
+                  `).join('') : `<tr><td colspan="5" class="text-center text-muted p-5"><i class="fas fa-glass-cheers fs-3 mb-2 text-success"></i><br>صندوق الموافقات فارغ. لا يوجد مهام معلقة.</td></tr>`}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+  }
+
+  static openCredentialsDrawer() {
+    const creds = GlobalStore.getState().credentials || [];
+    const activeCreds = creds.filter(c => String(c.Is_Deleted).toUpperCase() !== 'TRUE');
+
+    if (activeCreds.length === 0) {
+      UIManager.showError("لا يوجد أي بيانات دخول مسجلة حالياً.", "معلومة");
+      return;
+    }
+
+    let rows = activeCreds.map(c => {
+      // Find client name
+      const client = GlobalStore.getState().clients.find(cl => cl.Client_ID === c.Client_ID);
+      const clientName = client ? client.Name : c.Client_ID;
+      
+      let portalBadge = c.Portal_Type === 'TAX_PORTAL' ? '<span class="badge bg-primary">الضرائب</span>' : '<span class="badge bg-info text-dark">الفاتورة</span>';
+
+      return `
+        <div class="card mb-2 border-0 shadow-sm cred-row" id="cred-row-${c.Cred_ID}">
+          <div class="card-body p-3 d-flex justify-content-between align-items-center">
+            <div>
+              <div class="fw-bold mb-1">${clientName} ${portalBadge}</div>
+              <div class="small text-muted font-monospace user-field"><i class="fas fa-user me-1"></i> ••••••••</div>
+              <div class="small text-muted font-monospace pass-field"><i class="fas fa-lock me-1"></i> ••••••••</div>
+            </div>
+            <div class="text-end">
+              <button class="btn btn-sm btn-outline-dark reveal-btn mb-1 w-100" onclick="DashboardController.revealCredential('${c.Cred_ID}')">
+                <i class="fas fa-eye"></i> كشف
+              </button>
+              <div class="copy-btns" style="display:none;">
+                <button class="btn btn-sm btn-outline-secondary copy-user-btn" onclick="DashboardController.copyToClipboard(this, 'user')">نسخ الاسم</button>
+                <button class="btn btn-sm btn-outline-secondary copy-pass-btn" onclick="DashboardController.copyToClipboard(this, 'pass')">نسخ الرمز</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    const bodyHtml = `
+      <div class="mb-3 text-muted small"><i class="fas fa-info-circle"></i> سيتم إخفاء بيانات الدخول تلقائياً بعد 20 ثانية من كشفها. وكل عملية كشف تُسجل في النظام.</div>
+      <div style="max-height: 400px; overflow-y: auto; padding-right: 5px;">
+        ${rows}
+      </div>
+    `;
+
+    const modal = ModalFactory.createModal({
+      id: 'credentials-drawer-modal',
+      title: 'بيانات الدخول السريعة',
+      icon: 'fas fa-key',
+      bodyHtml: bodyHtml,
+      theme: 'dark',
+      size: 'modal-lg'
+    });
+
+    modal.show();
+  }
+
+  static async revealCredential(credId) {
+    const row = document.getElementById(`cred-row-${credId}`);
+    if (!row) return;
+
+    const revealBtn = row.querySelector('.reveal-btn');
+    const copyBtns = row.querySelector('.copy-btns');
+    const userField = row.querySelector('.user-field');
+    const passField = row.querySelector('.pass-field');
+
+    // Show loading
+    revealBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    revealBtn.disabled = true;
+
+    try {
+      const email = GlobalStore.getState().currentUser.username;
+      const data = await ApiClient.call('api_revealCredential', credId, email);
+      
+      // Reveal
+      userField.innerHTML = `<i class="fas fa-user me-1"></i> <span class="raw-data">${data.Username}</span>`;
+      passField.innerHTML = `<i class="fas fa-lock me-1"></i> <span class="raw-data">${data.Password}</span>`;
+      
+      revealBtn.style.display = 'none';
+      copyBtns.style.display = 'block';
+
+      // Auto mask after 20 seconds
+      setTimeout(() => {
+        if (!document.getElementById(`cred-row-${credId}`)) return; // Modal closed
+        userField.innerHTML = '<i class="fas fa-user me-1"></i> ••••••••';
+        passField.innerHTML = '<i class="fas fa-lock me-1"></i> ••••••••';
+        revealBtn.style.display = 'block';
+        revealBtn.disabled = false;
+        revealBtn.innerHTML = '<i class="fas fa-eye"></i> كشف';
+        copyBtns.style.display = 'none';
+      }, 20000);
+
+    } catch (error) {
+      UIManager.showError(error.message, "فشل الكشف");
+      revealBtn.innerHTML = '<i class="fas fa-eye"></i> كشف';
+      revealBtn.disabled = false;
+    }
+  }
+
+  static copyToClipboard(btnElement, type) {
+    const row = btnElement.closest('.cred-row');
+    const fieldClass = type === 'user' ? '.user-field .raw-data' : '.pass-field .raw-data';
+    const rawDataElement = row.querySelector(fieldClass);
+    
+    if (rawDataElement && rawDataElement.textContent) {
+      navigator.clipboard.writeText(rawDataElement.textContent)
+        .then(() => {
+          const originalText = btnElement.textContent;
+          btnElement.textContent = 'تم النسخ!';
+          btnElement.classList.replace('btn-outline-secondary', 'btn-success');
+          setTimeout(() => {
+            btnElement.textContent = originalText;
+            btnElement.classList.replace('btn-success', 'btn-outline-secondary');
+          }, 2000);
+        })
+        .catch(err => {
+          UIManager.showError("لم نتمكن من النسخ للحافظة.", "خطأ متصفح");
+        });
+    }
   }
 }
 </script>

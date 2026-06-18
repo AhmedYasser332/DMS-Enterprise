@@ -56,9 +56,15 @@ class AttachmentService {
 
       // بناء هيكل المجلدات: Root -> Client -> Group -> Record
       const rootFolder = this._getOrCreateFolder();
-      const clientFolder = this._getOrCreateSubFolder(rootFolder, client.Name);
-      const groupFolder = this._getOrCreateSubFolder(clientFolder, group.Name);
-      const recordFolderName = record.Title || 'بدون عنوان';
+      
+      const clientFolderName = `${client.Name} - ${client.Client_ID}`;
+      const clientFolder = this._getOrCreateSubFolder(rootFolder, clientFolderName);
+      
+      const groupFolderName = `${group.Name} - ${group.Group_ID}`;
+      const groupFolder = this._getOrCreateSubFolder(clientFolder, groupFolderName);
+      
+      const recordTitle = record.Title || 'بدون عنوان';
+      const recordFolderName = `${recordTitle} - ${record.Record_ID}`;
       const recordFolder = this._getOrCreateSubFolder(groupFolder, recordFolderName);
 
       const decodedData = Utilities.base64Decode(base64Data);

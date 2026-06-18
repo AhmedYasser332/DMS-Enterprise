@@ -21,34 +21,50 @@
     /* 🎨 Enterprise SaaS & Modern UI System */
     /* ========================================= */
     :root {
-      --primary-color: #2563EB;
-      --primary-hover: #1D4ED8;
-      --app-bg: #F8FAFC;
+      /* OKLCH Restrained Brand Palette */
+      --primary-color: oklch(0.52 0.14 250);
+      --primary-hover: oklch(0.45 0.14 250);
+      --app-bg: oklch(0.99 0.005 250);
       --card-bg: #FFFFFF;
-      --glass-bg: rgba(255, 255, 255, 0.75);
-      --glass-border: rgba(255, 255, 255, 0.4);
-      --glass-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.08);
-      --text-main: #1e293b;
-      --text-muted: #64748b;
-      --bs-primary: #2563EB;
-      --bs-primary-rgb: 37, 99, 235;
+      --glass-bg: rgba(255, 255, 255, 0.95);
+      --glass-border: rgba(0, 0, 0, 0.06);
+      --glass-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+      --text-main: oklch(0.20 0.03 250);
+      --text-muted: oklch(0.48 0.03 250);
+      --bs-primary: var(--primary-color);
+      --bs-primary-rgb: 43, 90, 199;
     }
 
     [data-bs-theme="dark"] {
-      --primary-color: #3B82F6;
-      --primary-hover: #60A5FA;
-      --app-bg: #0F172A;
-      --card-bg: #1E293B;
-      --glass-bg: rgba(30, 41, 59, 0.75);
-      --glass-border: rgba(255, 255, 255, 0.05);
-      --glass-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.4);
-      --text-main: #f8fafc;
-      --text-muted: #94a3b8;
+      --primary-color: oklch(0.65 0.11 250);
+      --primary-hover: oklch(0.70 0.11 250);
+      --app-bg: oklch(0.20 0.01 250);
+      --card-bg: oklch(0.25 0.01 250);
+      --glass-bg: rgba(45, 52, 64, 0.95);
+      --glass-border: rgba(255, 255, 255, 0.06);
+      --glass-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+      --text-main: oklch(0.86 0.01 250);
+      --text-muted: oklch(0.65 0.02 250);
       --bs-body-color: var(--text-main);
       --bs-secondary-color: var(--text-muted);
-      --bs-primary: #3B82F6;
-      --bs-primary-rgb: 59, 130, 246;
-      --bs-body-bg: #0F172A;
+      --bs-primary: var(--primary-color);
+      --bs-primary-rgb: 87, 138, 245;
+      --bs-body-bg: var(--app-bg);
+      --bs-border-color: var(--glass-border);
+      --bs-border-color-translucent: var(--glass-border);
+    }
+
+    /* 🌙 Dark Mode Global Overrides for Hardcoded Light Classes */
+    [data-bs-theme="dark"] .bg-white {
+      background-color: var(--card-bg) !important;
+      color: var(--text-main) !important;
+    }
+    [data-bs-theme="dark"] .bg-light {
+      background-color: rgba(255, 255, 255, 0.04) !important;
+      color: var(--text-main) !important;
+    }
+    [data-bs-theme="dark"] .text-dark {
+      color: var(--text-main) !important;
     }
 
     body {
@@ -92,6 +108,31 @@
       }
     }
 
+    /* Notification Animations */
+    @keyframes pulseGlow {
+      0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.6); }
+      70% { box-shadow: 0 0 0 10px rgba(220, 53, 69, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
+    }
+    
+    @keyframes bellRing {
+      0% { transform: rotate(0); }
+      10% { transform: rotate(15deg); }
+      20% { transform: rotate(-10deg); }
+      30% { transform: rotate(10deg); }
+      40% { transform: rotate(-10deg); }
+      50% { transform: rotate(0); }
+      100% { transform: rotate(0); }
+    }
+    
+    .has-notifications {
+      animation: pulseGlow 2s infinite;
+    }
+    .has-notifications i {
+      animation: bellRing 3s infinite;
+      color: #dc3545 !important;
+    }
+
     /* Navbar */
     .navbar {
       background: var(--card-bg) !important;
@@ -105,58 +146,57 @@
     .card,
     .modal-content {
       background: var(--card-bg);
-      border-radius: 12px;
+      border-radius: 8px;
       border: 1px solid var(--glass-border);
-      box-shadow: var(--glass-shadow);
-      transition: all 0.3s ease;
+      box-shadow: none; /* No ghost cards */
+      transition: box-shadow 0.2s ease-out;
     }
 
     .card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+      box-shadow: var(--glass-shadow);
     }
 
     /* Sidebar */
     .list-group {
       background: var(--card-bg);
-      border-radius: 16px;
-      padding: 12px;
+      border-radius: 8px;
+      padding: 8px;
       border: 1px solid var(--glass-border);
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
     }
 
     .list-group-item {
       border: none;
-      margin-bottom: 8px;
-      border-radius: 12px !important;
+      margin-bottom: 4px;
+      border-radius: 6px !important;
       font-weight: 600;
       color: var(--text-muted);
       background-color: transparent;
-      transition: all 0.3s ease;
+      transition: background-color 0.2s ease-out, color 0.2s ease-out;
       position: relative;
       overflow: hidden;
-      padding: 12px 15px;
+      padding: 10px 14px;
     }
 
     .list-group-item:hover {
-      transform: translateX(-4px);
-      background-color: rgba(var(--bs-primary-rgb), 0.08);
+      background-color: rgba(var(--bs-primary-rgb), 0.05);
       color: var(--primary-color);
     }
 
     .list-group-item.active {
       background-color: var(--primary-color) !important;
-      color: white !important;
-      box-shadow: 0 8px 20px rgba(var(--bs-primary-rgb), 0.3);
+      color: #ffffff !important;
     }
 
       /* --- Skeleton Loaders --- */
       .skeleton-box {
-        background: linear-gradient(90deg, var(--card-bg) 25%, var(--app-bg) 50%, var(--card-bg) 75%);
+        background: linear-gradient(90deg, var(--card-bg) 25%, rgba(0, 0, 0, 0.04) 50%, var(--card-bg) 75%);
         background-size: 200% 100%;
         animation: skeleton-loading 1.5s infinite;
         border-radius: 8px;
-        opacity: 0.8;
+        opacity: 0.9;
+      }
+      [data-bs-theme="dark"] .skeleton-box {
+        background: linear-gradient(90deg, var(--card-bg) 25%, rgba(255, 255, 255, 0.04) 50%, var(--card-bg) 75%);
       }
       @keyframes skeleton-loading {
         0% { background-position: 200% 0; }
@@ -210,37 +250,47 @@
 
     /* Buttons */
     .btn {
-      border-radius: 12px;
+      border-radius: 6px;
       font-weight: 600;
-      transition: all 0.3s ease;
-      padding: 0.5rem 1.25rem;
+      transition: background-color 0.2s ease-out, border-color 0.2s ease-out;
+      padding: 0.5rem 1rem;
     }
 
     .btn-sm {
-      border-radius: 8px;
-      padding: 0.4rem 0.8rem;
+      border-radius: 4px;
+      padding: 0.35rem 0.75rem;
     }
 
     .btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(var(--bs-primary-rgb), 0.2);
+      /* Color handled by Bootstrap/CSS vars, removed bouncy translate and shadow */
     }
 
     /* Input Fields */
     .form-control,
     .form-select {
-      border-radius: 12px;
+      border-radius: 6px;
       border: 1px solid var(--glass-border);
-      padding: 0.75rem 1rem;
+      padding: 0.6rem 0.8rem;
       background-color: var(--app-bg);
       color: var(--text-main);
-      transition: all 0.3s ease;
+      transition: border-color 0.2s ease-out;
     }
 
     .form-control:focus,
     .form-select:focus {
       border-color: var(--primary-color);
       box-shadow: 0 0 0 0.25rem rgba(var(--bs-primary-rgb), 0.25);
+    }
+
+    /* Impeccable Global Utility Overrides */
+    .shadow-sm, .shadow, .shadow-lg {
+      box-shadow: none !important;
+    }
+    .rounded-lg, .rounded-4, .rounded-3, .rounded-5 {
+      border-radius: 8px !important;
+    }
+    .rounded-pill {
+      border-radius: 12px !important;
     }
 
     /* Impeccable Micro-Animations */
@@ -257,6 +307,114 @@
     .fade-in-delay-1 { animation-delay: 0.1s; opacity: 0; }
     .fade-in-delay-2 { animation-delay: 0.2s; opacity: 0; }
     .fade-in-delay-3 { animation-delay: 0.3s; opacity: 0; }
+
+    /* Softer Restrained Badges & Alert Overrides */
+    .badge.bg-primary {
+      background-color: rgba(43, 90, 199, 0.15) !important;
+      color: oklch(0.52 0.14 250) !important;
+    }
+    .badge.bg-success {
+      background-color: rgba(16, 185, 129, 0.15) !important;
+      color: oklch(0.60 0.15 150) !important;
+    }
+    .badge.bg-warning {
+      background-color: rgba(245, 158, 11, 0.15) !important;
+      color: oklch(0.65 0.15 80) !important;
+    }
+    .badge.bg-danger {
+      background-color: rgba(239, 68, 68, 0.15) !important;
+      color: oklch(0.60 0.18 20) !important;
+    }
+    .badge.bg-info {
+      background-color: rgba(6, 182, 212, 0.15) !important;
+      color: oklch(0.60 0.14 200) !important;
+    }
+    .badge.bg-secondary {
+      background-color: rgba(100, 116, 139, 0.15) !important;
+      color: oklch(0.50 0.05 250) !important;
+    }
+
+    .alert-danger {
+      background-color: rgba(239, 68, 68, 0.08) !important;
+      border-color: rgba(239, 68, 68, 0.15) !important;
+      color: oklch(0.60 0.18 20) !important;
+    }
+    .alert-info {
+      background-color: rgba(6, 182, 212, 0.08) !important;
+      border-color: rgba(6, 182, 212, 0.15) !important;
+      color: oklch(0.60 0.14 200) !important;
+    }
+
+    .btn-success {
+      background-color: oklch(0.60 0.15 150) !important;
+      border-color: oklch(0.60 0.15 150) !important;
+      color: #ffffff !important;
+    }
+    .btn-success:hover {
+      background-color: oklch(0.53 0.15 150) !important;
+      border-color: oklch(0.53 0.15 150) !important;
+    }
+    .btn-danger {
+      background-color: oklch(0.60 0.18 20) !important;
+      border-color: oklch(0.60 0.18 20) !important;
+      color: #ffffff !important;
+    }
+    .btn-danger:hover {
+      background-color: oklch(0.53 0.18 20) !important;
+      border-color: oklch(0.53 0.18 20) !important;
+    }
+    .btn-outline-danger {
+      color: oklch(0.60 0.18 20) !important;
+      border-color: oklch(0.60 0.18 20) !important;
+    }
+    .btn-outline-danger:hover {
+      background-color: oklch(0.60 0.18 20) !important;
+      color: #ffffff !important;
+    }
+
+    /* Modern Premium Stat Icons */
+    .stat-icon-wrapper {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+    }
+    .stat-clients {
+      background: rgba(43, 90, 199, 0.08);
+      color: oklch(0.52 0.14 250);
+    }
+    .stat-groups {
+      background: rgba(16, 185, 129, 0.08);
+      color: oklch(0.60 0.15 150);
+    }
+    .stat-records {
+      background: rgba(245, 158, 11, 0.08);
+      color: oklch(0.65 0.15 80);
+    }
+    .stat-attachments {
+      background: rgba(239, 68, 68, 0.08);
+      color: oklch(0.60 0.18 20);
+    }
+
+    [data-bs-theme="dark"] .stat-clients {
+      background: rgba(87, 138, 245, 0.15);
+      color: oklch(0.65 0.14 250);
+    }
+    [data-bs-theme="dark"] .stat-groups {
+      background: rgba(16, 185, 129, 0.15);
+      color: oklch(0.70 0.15 150);
+    }
+    [data-bs-theme="dark"] .stat-records {
+      background: rgba(245, 158, 11, 0.15);
+      color: oklch(0.75 0.15 80);
+    }
+    [data-bs-theme="dark"] .stat-attachments {
+      background: rgba(239, 68, 68, 0.15);
+      color: oklch(0.70 0.18 20);
+    }
   </style>
 </head>
 
@@ -265,23 +423,43 @@
   <div id="app-wrapper" style="display: none;">
     <nav class="navbar navbar-expand-lg shadow-sm mb-4">
       <div class="container-fluid">
-        <span class="navbar-brand mb-0 h1 text-primary fw-bold"><i class="fas fa-archive me-2"></i> الأرشيف
-          الرقمي</span>
-        <div class="d-flex align-items-center">
-          <span id="userDisplayName" class="me-3 fw-bold" style="color: var(--text-main);"></span>
+        <span class="navbar-brand mb-0 h1 text-primary fw-bold d-flex align-items-center"><div class="d-inline-flex align-items-center justify-content-center bg-primary text-white rounded-3 me-2" style="width: 36px; height: 36px; font-size: 1.2rem;"><i class="fas fa-layer-group"></i></div>مكتب رضا</span>
+        <div class="d-flex align-items-center gap-2">
+          <span id="userDisplayName" class="fw-bold me-1" style="color: var(--text-main);"></span>
+
+          <!-- Notification Bell -->
+          <button
+            class="btn btn-sm btn-light border-0 rounded-circle text-primary d-flex align-items-center justify-content-center position-relative"
+            id="notificationBtn" onclick="App.openNotifications()"
+            style="width: 35px; height: 35px; background: rgba(var(--bs-primary-rgb), 0.1);" title="الإشعارات"
+            data-bs-toggle="offcanvas" data-bs-target="#notificationOffcanvas">
+            <i class="fas fa-bell fs-6"></i>
+            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="notificationBadge" style="display: none; font-size: 0.6rem;">
+              0
+            </span>
+          </button>
 
           <button
-            class="btn btn-sm btn-light me-2 border-0 rounded-circle text-primary d-flex align-items-center justify-content-center"
+            class="btn btn-sm btn-light border-0 rounded-circle text-primary d-flex align-items-center justify-content-center"
             id="refreshBtn" onclick="App.refreshData()"
             style="width: 35px; height: 35px; background: rgba(var(--bs-primary-rgb), 0.1);" title="تحديث البيانات">
             <i class="fas fa-sync-alt fs-6"></i>
           </button>
 
           <button
-            class="btn btn-sm btn-light me-3 border-0 rounded-circle text-primary d-flex align-items-center justify-content-center"
+            class="btn btn-sm btn-light border-0 rounded-circle text-primary d-flex align-items-center justify-content-center"
             id="darkModeToggle" onclick="toggleTheme()"
             style="width: 35px; height: 35px; background: rgba(var(--bs-primary-rgb), 0.1);" title="تغيير المظهر">
             <i class="fas fa-moon fs-6"></i>
+          </button>
+
+          <!-- Feedback Button: icon-only, matches icon row style, uses warning tone -->
+          <button
+            class="btn btn-sm btn-light border-0 rounded-circle d-flex align-items-center justify-content-center"
+            onclick="App.openFeedbackModal()"
+            style="width: 35px; height: 35px; background: rgba(220, 53, 69, 0.1); color: #dc3545;"
+            title="إبلاغ عن مشكلة / اقتراح">
+            <i class="fas fa-comment-dots fs-6"></i>
           </button>
 
           <button class="btn btn-primary btn-sm rounded-3 px-3 fw-bold" onclick="App.logout()">
@@ -296,7 +474,7 @@
         <div class="col-md-3 col-lg-2 mb-4">
           <div class="list-group">
             <a href="#" class="list-group-item list-group-item-action" onclick="App.navigate('dashboard')"><i
-                class="fas fa-tachometer-alt fa-fw me-2"></i> الرئيسية</a>
+                class="fas fa-tachometer-alt fa-fw me-2"></i> لوحة التحكم والإحصائيات</a>
             <a href="#" class="list-group-item list-group-item-action" onclick="App.navigate('clients')"><i
                 class="fas fa-users fa-fw me-2"></i> العملاء (الأقسام)</a>
             <a href="#" class="list-group-item list-group-item-action" onclick="App.navigate('my-tasks')"><i
@@ -304,7 +482,7 @@
             <a href="#" class="list-group-item list-group-item-action" onclick="App.navigate('search')"><i
                 class="fas fa-search fa-fw me-2"></i> البحث الشامل</a>
             <a href="#" class="list-group-item list-group-item-action" onclick="App.navigate('profile')"><i
-                class="fas fa-user-circle fa-fw me-2 text-primary"></i> الملف الشخصي</a>
+                class="fas fa-user-circle fa-fw me-2"></i> الملف الشخصي</a>
 
             <!-- Admin Tools Dropdown -->
             <div id="adminToolsWrapper">
@@ -314,14 +492,14 @@
                 <i class="fas fa-chevron-down small"></i>
               </a>
               <div class="collapse" id="adminToolsMenu">
-                <a href="#" class="list-group-item list-group-item-action ps-4 text-info"
+                <a href="#" class="list-group-item list-group-item-action ps-4"
                   onclick="App.navigate('users')"><i class="fas fa-user-shield fa-fw me-2"></i> إدارة المستخدمين</a>
-                <a href="#" class="list-group-item list-group-item-action ps-4 text-info"
+                <a href="#" class="list-group-item list-group-item-action ps-4"
                   onclick="App.navigate('tasks-admin')"><i class="fas fa-clipboard-list fa-fw me-2"></i> إدارة
                   المهام</a>
-                <a href="#" class="list-group-item list-group-item-action ps-4 text-warning"
+                <a href="#" class="list-group-item list-group-item-action ps-4"
                   onclick="App.navigate('logs')"><i class="fas fa-list-alt fa-fw me-2"></i> سجل النظام</a>
-                <a href="#" class="list-group-item list-group-item-action ps-4 text-danger"
+                <a href="#" class="list-group-item list-group-item-action ps-4"
                   onclick="App.navigate('trash')"><i class="fas fa-trash-alt fa-fw me-2"></i> سلة المهملات</a>
               </div>
             </div>
@@ -332,6 +510,21 @@
           <h3 class="text-center text-muted mt-5">جاري التحميل...</h3>
         </div>
       </div>
+    </div>
+  </div> <!-- End of app-wrapper -->
+
+  <!-- Notification Offcanvas -->
+  <div class="offcanvas offcanvas-end" tabindex="-1" id="notificationOffcanvas" aria-labelledby="notificationOffcanvasLabel">
+    <div class="offcanvas-header border-bottom">
+      <h5 class="offcanvas-title fw-bold text-primary" id="notificationOffcanvasLabel"><i class="fas fa-bell me-2"></i> الإشعارات</h5>
+      <div class="d-flex align-items-center">
+        <button type="button" class="btn btn-sm btn-link text-decoration-none text-success me-3" onclick="App.markAllNotificationsAsRead()" title="تحديد الكل كمقروء"><i class="fas fa-check-double me-1"></i> تعيين كمقروء</button>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+      </div>
+    </div>
+    <div class="offcanvas-body p-0" id="notificationList">
+      <!-- Notifications will be loaded here dynamically -->
+      <div class="p-4 text-center text-muted">جاري تحميل الإشعارات...</div>
     </div>
   </div>
 

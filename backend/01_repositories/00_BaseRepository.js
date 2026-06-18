@@ -24,13 +24,13 @@ class BaseRepository {
 
   // دالة مساعدة لتحويل صفوف جوجل شيت العبيطة إلى كائنات (Objects) محترمة
   _mapRowToObject(row, headers) {
-    let obj = {};
+    let mappedEntity = {};
     headers.forEach((header, index) => {
       if (header) {
-        obj[String(header).trim()] = row[index];
+        mappedEntity[String(header).trim()] = row[index];
       }
     });
-    return obj;
+    return mappedEntity;
   }
 
   /**
@@ -39,12 +39,12 @@ class BaseRepository {
    */
   findAll(excludeDeleted = true) {
     const sheet = this._getSheet();
-    const data = sheet.getDataRange().getDisplayValues(); // DisplayValues لجلب التواريخ كنصوص
+    const sheetRows = sheet.getDataRange().getDisplayValues(); // DisplayValues لجلب التواريخ كنصوص
     
-    if (data.length <= 1) return [];
+    if (sheetRows.length <= 1) return [];
 
-    const headers = data[0].map(h => String(h).trim());
-    const rows = data.slice(1);
+    const headers = sheetRows[0].map(h => String(h).trim());
+    const rows = sheetRows.slice(1);
     const isDeletedIdx = headers.indexOf("Is_Deleted");
 
     return rows
@@ -99,6 +99,7 @@ class BaseRepository {
 
     sheet.appendRow(newRow);
     this.db.commit(); // حفظ فوري
+    CacheManager.bustCache(); // Invalidate cache globally
     return entityObject;
   }
 
@@ -109,16 +110,16 @@ class BaseRepository {
    */
   update(id, updatedFields) {
     const sheet = this._getSheet();
-    const data = sheet.getDataRange().getValues();
-    const headers = data[0].map(h => String(h).trim());
+    const sheetRows = sheet.getDataRange().getValues();
+    const headers = sheetRows[0].map(h => String(h).trim());
     const idColIdx = headers.indexOf(this.idColumn);
 
     if (idColIdx === -1) throw new Error(`Column ${this.idColumn} not found in ${this.tableName}`);
 
-    for (let i = 1; i < data.length; i++) {
-      if (data[i][idColIdx] == id) {
+    for (let i = 1; i < sheetRows.length; i++) {
+      if (sheetRows[i][idColIdx] == id) {
         // تحسين الأداء: تجميع التحديثات في مصفوفة وتحديث الصف بالكامل مرة واحدة (Batch Operation)
-        let rowToUpdate = [...data[i]];
+        let rowToUpdate = [...sheetRows[i]];
         let hasChanges = false;
         
         for (let key in updatedFields) {
@@ -131,9 +132,10 @@ class BaseRepository {
         
         if (hasChanges) {
           sheet.getRange(i + 1, 1, 1, headers.length).setValues([rowToUpdate]);
+          this.db.commit();
+          CacheManager.bustCache(); // Invalidate cache globally
         }
         
-        this.db.commit();
         return true;
       }
     }
@@ -159,14 +161,15 @@ class BaseRepository {
    */
   hardDelete(id) {
     const sheet = this._getSheet();
-    const data = sheet.getDataRange().getValues();
-    const headers = data[0].map(h => String(h).trim());
+    const sheetRows = sheet.getDataRange().getValues();
+    const headers = sheetRows[0].map(h => String(h).trim());
     const idColIdx = headers.indexOf(this.idColumn);
     
-    for (let i = 1; i < data.length; i++) {
-      if (data[i][idColIdx] == id) {
+    for (let i = 1; i < sheetRows.length; i++) {
+      if (sheetRows[i][idColIdx] == id) {
         sheet.deleteRow(i + 1); // +1 لأن الـ getRange بيبدأ من 1 واللوب من 0
         this.db.commit();
+        CacheManager.bustCache(); // Invalidate cache globally
         return true;
       }
     }

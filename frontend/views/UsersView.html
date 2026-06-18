@@ -63,60 +63,130 @@
               </div>
             </div>
 
-            <!-- Permissions Block -->
-            <div class="mb-3">
-              <label class="form-label fw-bold text-primary">الصلاحيات المخصصة</label>
-              <div class="card p-3 bg-light border-0">
-                <div class="row">
-                  <div class="col-md-4 mb-3">
-                    <h6 class="fw-bold">إدارة العملاء والمجموعات</h6>
-                    <div class="form-check"><input class="form-check-input nu-perm" type="checkbox" data-cat="clients" data-act="add" id="nu_p_cl_add"><label class="form-check-label">إضافة</label></div>
-                    <div class="form-check"><input class="form-check-input nu-perm" type="checkbox" data-cat="clients" data-act="edit" id="nu_p_cl_edit"><label class="form-check-label">تعديل</label></div>
-                    <div class="form-check"><input class="form-check-input nu-perm text-danger" type="checkbox" data-cat="clients" data-act="delete" id="nu_p_cl_del"><label class="form-check-label text-danger">حذف</label></div>
-                  </div>
-                  <div class="col-md-4 mb-3">
-                    <h6 class="fw-bold">إدارة السجلات</h6>
-                    <div class="form-check"><input class="form-check-input nu-perm" type="checkbox" data-cat="records" data-act="add" id="nu_p_rc_add"><label class="form-check-label">إضافة</label></div>
-                    <div class="form-check"><input class="form-check-input nu-perm" type="checkbox" data-cat="records" data-act="edit" id="nu_p_rc_edit"><label class="form-check-label">تعديل</label></div>
-                    <div class="form-check"><input class="form-check-input nu-perm text-danger" type="checkbox" data-cat="records" data-act="delete" id="nu_p_rc_del"><label class="form-check-label text-danger">حذف</label></div>
-                  </div>
-                  <div class="col-md-4 mb-3">
-                    <h6 class="fw-bold">إدارة المرفقات</h6>
-                    <div class="form-check"><input class="form-check-input nu-perm" type="checkbox" data-cat="attachments" data-act="upload" id="nu_p_at_up"><label class="form-check-label">رفع</label></div>
-                    <div class="form-check"><input class="form-check-input nu-perm" type="checkbox" data-cat="attachments" data-act="download" id="nu_p_at_dl"><label class="form-check-label">تحميل</label></div>
-                    <div class="form-check"><input class="form-check-input nu-perm" type="checkbox" data-cat="attachments" data-act="print" id="nu_p_at_pr"><label class="form-check-label">طباعة</label></div>
-                    <div class="form-check"><input class="form-check-input nu-perm text-danger" type="checkbox" data-cat="attachments" data-act="delete" id="nu_p_at_del"><label class="form-check-label text-danger">حذف</label></div>
-                  </div>
-                  <div class="col-md-4 mb-3">
-                    <h6 class="fw-bold">سلة المهملات</h6>
-                    <div class="form-check"><input class="form-check-input nu-perm" type="checkbox" data-cat="recycleBin" data-act="view" id="nu_p_rb_vw"><label class="form-check-label">عرض السلة</label></div>
-                    <div class="form-check"><input class="form-check-input nu-perm" type="checkbox" data-cat="recycleBin" data-act="restoreOwn" id="nu_p_rb_ro"><label class="form-check-label">استرجاع ملفاتي</label></div>
-                    <div class="form-check"><input class="form-check-input nu-perm" type="checkbox" data-cat="recycleBin" data-act="restoreAll" id="nu_p_rb_ra"><label class="form-check-label">استرجاع الكل</label></div>
-                    <div class="form-check"><input class="form-check-input nu-perm text-danger" type="checkbox" data-cat="recycleBin" data-act="empty" id="nu_p_rb_em"><label class="form-check-label text-danger">تفريغ السلة نهائياً</label></div>
-                  </div>
-                  <div class="col-md-4 mb-3">
-                    <h6 class="fw-bold">إدارة النظام</h6>
-                    <div class="form-check"><input class="form-check-input nu-perm text-warning" type="checkbox" data-cat="admin" data-act="manageUsers" id="nu_p_ad_mu"><label class="form-check-label text-warning fw-bold">إدارة المستخدمين</label></div>
-                    <div class="form-check"><input class="form-check-input nu-perm text-warning" type="checkbox" data-cat="admin" data-act="viewLogs" id="nu_p_ad_vl"><label class="form-check-label text-warning fw-bold">رؤية سجل النظام (Logs)</label></div>
-                  </div>
-                  <div class="col-md-4 mb-3">
-                    <h6 class="fw-bold">الوسوم (Tags)</h6>
-                    <div class="form-check"><input class="form-check-input nu-perm" type="checkbox" data-cat="tags" data-act="add" id="nu_p_tg_add"><label class="form-check-label">إضافة</label></div>
-                    <div class="form-check"><input class="form-check-input nu-perm" type="checkbox" data-cat="tags" data-act="edit" id="nu_p_tg_edit"><label class="form-check-label">تعديل</label></div>
-                    <div class="form-check"><input class="form-check-input nu-perm text-danger" type="checkbox" data-cat="tags" data-act="delete" id="nu_p_tg_del"><label class="form-check-label text-danger">حذف</label></div>
-                  </div>
-                  <div class="col-md-4 mb-3">
-                    <h6 class="fw-bold">الكيانات القانونية</h6>
-                    <div class="form-check"><input class="form-check-input nu-perm" type="checkbox" data-cat="legalEntities" data-act="add" id="nu_p_le_add"><label class="form-check-label">إضافة</label></div>
-                    <div class="form-check"><input class="form-check-input nu-perm" type="checkbox" data-cat="legalEntities" data-act="edit" id="nu_p_le_edit"><label class="form-check-label">تعديل</label></div>
-                    <div class="form-check"><input class="form-check-input nu-perm text-danger" type="checkbox" data-cat="legalEntities" data-act="delete" id="nu_p_le_del"><label class="form-check-label text-danger">حذف</label></div>
-                  </div>
-                  <div class="col-md-4 mb-3">
-                    <h6 class="fw-bold">المهام</h6>
-                    <div class="form-check"><input class="form-check-input nu-perm text-info" type="checkbox" data-cat="tasks" data-act="manageTasks" id="nu_p_tk_mt"><label class="form-check-label text-info fw-bold">إدارة المهام (Admin)</label></div>
-                    <div class="form-check"><input class="form-check-input nu-perm" type="checkbox" data-cat="tasks" data-act="myTasks" id="nu_p_tk_my"><label class="form-check-label">مهامي الشخصية</label></div>
+            <!-- Permissions Block Add -->
+            <div class="mb-4">
+              <label class="form-label fw-bold text-primary mb-3"><i class="fas fa-shield-alt me-2"></i>الصلاحيات المخصصة</label>
+              <div class="row g-3">
+                
+                <!-- لوحة التحكم -->
+                <div class="col-md-4">
+                  <div class="card bg-body-tertiary border-0 h-100 p-3 shadow-sm" style="border-radius: 12px;">
+                    <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
+                      <h6 class="fw-bold m-0" style="color: var(--text-main);"><i class="fas fa-tachometer-alt me-2 text-primary"></i>لوحة التحكم</h6>
+                      <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size: 0.75rem;" onclick="UserController.toggleCardPerms(this)">تحديد الكل</button>
+                    </div>
+                    <div class="form-check mb-2"><input class="form-check-input nu-perm" type="checkbox" data-cat="dashboard" data-act="view" id="nu_p_db_vw"><label class="form-check-label" for="nu_p_db_vw">الدخول للوحة التحكم</label></div>
+                    <div class="form-check"><input class="form-check-input nu-perm" type="checkbox" data-cat="dashboard" data-act="viewKPIs" id="nu_p_db_vk"><label class="form-check-label" for="nu_p_db_vk">رؤية الإحصائيات (KPIs)</label></div>
                   </div>
                 </div>
+
+                <!-- إدارة العملاء -->
+                <div class="col-md-4">
+                  <div class="card bg-body-tertiary border-0 h-100 p-3 shadow-sm" style="border-radius: 12px;">
+                    <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
+                      <h6 class="fw-bold m-0" style="color: var(--text-main);"><i class="fas fa-users me-2 text-primary"></i>إدارة العملاء والمجموعات</h6>
+                      <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size: 0.75rem;" onclick="UserController.toggleCardPerms(this)">تحديد الكل</button>
+                    </div>
+                    <div class="form-check mb-2"><input class="form-check-input nu-perm" type="checkbox" data-cat="clients" data-act="add" id="nu_p_cl_add"><label class="form-check-label" for="nu_p_cl_add">إضافة</label></div>
+                    <div class="form-check mb-2"><input class="form-check-input nu-perm" type="checkbox" data-cat="clients" data-act="edit" id="nu_p_cl_edit"><label class="form-check-label" for="nu_p_cl_edit">تعديل</label></div>
+                    <div class="form-check"><input class="form-check-input nu-perm text-danger" type="checkbox" data-cat="clients" data-act="delete" id="nu_p_cl_del"><label class="form-check-label text-danger" for="nu_p_cl_del">حذف</label></div>
+                  </div>
+                </div>
+
+                <!-- المهام -->
+                <div class="col-md-4">
+                  <div class="card bg-body-tertiary border-0 h-100 p-3 shadow-sm" style="border-radius: 12px;">
+                    <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
+                      <h6 class="fw-bold m-0" style="color: var(--text-main);"><i class="fas fa-tasks me-2 text-primary"></i>المهام</h6>
+                      <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size: 0.75rem;" onclick="UserController.toggleCardPerms(this)">تحديد الكل</button>
+                    </div>
+                    <div class="form-check mb-2"><input class="form-check-input nu-perm" type="checkbox" data-cat="tasks" data-act="myTasks" id="nu_p_tk_my"><label class="form-check-label" for="nu_p_tk_my">مهامي الشخصية</label></div>
+                    <div class="form-check"><input class="form-check-input nu-perm text-info" type="checkbox" data-cat="tasks" data-act="manageTasks" id="nu_p_tk_mt"><label class="form-check-label text-info fw-bold" for="nu_p_tk_mt">إدارة المهام (Admin)</label></div>
+                  </div>
+                </div>
+
+                <!-- بيانات الدخول (Credentials) -->
+                <div class="col-md-4">
+                  <div class="card bg-body-tertiary border-0 h-100 p-3 shadow-sm border-start border-warning border-3" style="border-radius: 12px;">
+                    <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
+                      <h6 class="fw-bold m-0" style="color: var(--text-main);"><i class="fas fa-key me-2 text-warning"></i>بيانات الدخول (حساس)</h6>
+                      <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size: 0.75rem;" onclick="UserController.toggleCardPerms(this)">تحديد الكل</button>
+                    </div>
+                    <div class="form-check mb-2"><input class="form-check-input nu-perm" type="checkbox" data-cat="credentials" data-act="view" id="nu_p_cr_vw"><label class="form-check-label" for="nu_p_cr_vw">رؤية الكلمات (View)</label></div>
+                    <div class="form-check mb-2"><input class="form-check-input nu-perm" type="checkbox" data-cat="credentials" data-act="add" id="nu_p_cr_add"><label class="form-check-label" for="nu_p_cr_add">إضافة</label></div>
+                    <div class="form-check mb-2"><input class="form-check-input nu-perm" type="checkbox" data-cat="credentials" data-act="edit" id="nu_p_cr_ed"><label class="form-check-label" for="nu_p_cr_ed">تعديل</label></div>
+                    <div class="form-check"><input class="form-check-input nu-perm text-danger" type="checkbox" data-cat="credentials" data-act="delete" id="nu_p_cr_del"><label class="form-check-label text-danger" for="nu_p_cr_del">حذف</label></div>
+                  </div>
+                </div>
+
+                <!-- إدارة السجلات -->
+                <div class="col-md-4">
+                  <div class="card bg-body-tertiary border-0 h-100 p-3 shadow-sm" style="border-radius: 12px;">
+                    <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
+                      <h6 class="fw-bold m-0" style="color: var(--text-main);"><i class="fas fa-folder-open me-2 text-primary"></i>إدارة السجلات</h6>
+                      <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size: 0.75rem;" onclick="UserController.toggleCardPerms(this)">تحديد الكل</button>
+                    </div>
+                    <div class="form-check mb-2"><input class="form-check-input nu-perm" type="checkbox" data-cat="records" data-act="add" id="nu_p_rc_add"><label class="form-check-label" for="nu_p_rc_add">إضافة</label></div>
+                    <div class="form-check mb-2"><input class="form-check-input nu-perm" type="checkbox" data-cat="records" data-act="edit" id="nu_p_rc_edit"><label class="form-check-label" for="nu_p_rc_edit">تعديل</label></div>
+                    <div class="form-check"><input class="form-check-input nu-perm text-danger" type="checkbox" data-cat="records" data-act="delete" id="nu_p_rc_del"><label class="form-check-label text-danger" for="nu_p_rc_del">حذف</label></div>
+                  </div>
+                </div>
+
+                <!-- إدارة المرفقات -->
+                <div class="col-md-4">
+                  <div class="card bg-body-tertiary border-0 h-100 p-3 shadow-sm" style="border-radius: 12px;">
+                    <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
+                      <h6 class="fw-bold m-0" style="color: var(--text-main);"><i class="fas fa-paperclip me-2 text-primary"></i>إدارة المرفقات</h6>
+                      <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size: 0.75rem;" onclick="UserController.toggleCardPerms(this)">تحديد الكل</button>
+                    </div>
+                    <div class="form-check mb-2"><input class="form-check-input nu-perm" type="checkbox" data-cat="attachments" data-act="upload" id="nu_p_at_up"><label class="form-check-label" for="nu_p_at_up">رفع</label></div>
+                    <div class="form-check mb-2"><input class="form-check-input nu-perm" type="checkbox" data-cat="attachments" data-act="download" id="nu_p_at_dl"><label class="form-check-label" for="nu_p_at_dl">تحميل</label></div>
+                    <div class="form-check mb-2"><input class="form-check-input nu-perm" type="checkbox" data-cat="attachments" data-act="print" id="nu_p_at_pr"><label class="form-check-label" for="nu_p_at_pr">طباعة</label></div>
+                    <div class="form-check"><input class="form-check-input nu-perm text-danger" type="checkbox" data-cat="attachments" data-act="delete" id="nu_p_at_del"><label class="form-check-label text-danger" for="nu_p_at_del">حذف</label></div>
+                  </div>
+                </div>
+
+                <!-- النظام المتقدم (Admin) -->
+                <div class="col-md-4">
+                  <div class="card bg-body-tertiary border-0 h-100 p-3 shadow-sm border-start border-danger border-3" style="border-radius: 12px;">
+                    <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
+                      <h6 class="fw-bold m-0" style="color: var(--text-main);"><i class="fas fa-cogs me-2 text-danger"></i>إدارة النظام (Admin)</h6>
+                      <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size: 0.75rem;" onclick="UserController.toggleCardPerms(this)">تحديد الكل</button>
+                    </div>
+                    <div class="form-check mb-2"><input class="form-check-input nu-perm text-danger" type="checkbox" data-cat="admin" data-act="manageUsers" id="nu_p_ad_mu"><label class="form-check-label text-danger fw-bold" for="nu_p_ad_mu">إدارة المستخدمين</label></div>
+                    <div class="form-check mb-2"><input class="form-check-input nu-perm text-danger" type="checkbox" data-cat="admin" data-act="manageTemplates" id="nu_p_ad_mt"><label class="form-check-label fw-bold" for="nu_p_ad_mt">إدارة قوالب المهام</label></div>
+                    <div class="form-check"><input class="form-check-input nu-perm text-danger" type="checkbox" data-cat="admin" data-act="viewLogs" id="nu_p_ad_vl"><label class="form-check-label fw-bold" for="nu_p_ad_vl">سجل التغييرات (Logs)</label></div>
+                  </div>
+                </div>
+
+                <!-- سلة المهملات -->
+                <div class="col-md-4">
+                  <div class="card bg-body-tertiary border-0 h-100 p-3 shadow-sm" style="border-radius: 12px;">
+                    <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
+                      <h6 class="fw-bold m-0" style="color: var(--text-main);"><i class="fas fa-trash me-2 text-primary"></i>سلة المهملات</h6>
+                      <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size: 0.75rem;" onclick="UserController.toggleCardPerms(this)">تحديد الكل</button>
+                    </div>
+                    <div class="form-check mb-2"><input class="form-check-input nu-perm" type="checkbox" data-cat="recycleBin" data-act="view" id="nu_p_rb_vw"><label class="form-check-label" for="nu_p_rb_vw">عرض السلة</label></div>
+                    <div class="form-check mb-2"><input class="form-check-input nu-perm" type="checkbox" data-cat="recycleBin" data-act="restoreOwn" id="nu_p_rb_ro"><label class="form-check-label" for="nu_p_rb_ro">استرجاع ملفاتي</label></div>
+                    <div class="form-check mb-2"><input class="form-check-input nu-perm" type="checkbox" data-cat="recycleBin" data-act="restoreAll" id="nu_p_rb_ra"><label class="form-check-label" for="nu_p_rb_ra">استرجاع الكل</label></div>
+                    <div class="form-check"><input class="form-check-input nu-perm text-danger" type="checkbox" data-cat="recycleBin" data-act="empty" id="nu_p_rb_em"><label class="form-check-label text-danger fw-bold" for="nu_p_rb_em">تفريغ السلة نهائياً</label></div>
+                  </div>
+                </div>
+
+                <!-- الوسوم والكيانات -->
+                <div class="col-md-4">
+                  <div class="card bg-body-tertiary border-0 h-100 p-3 shadow-sm" style="border-radius: 12px;">
+                    <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
+                      <h6 class="fw-bold m-0" style="color: var(--text-main);"><i class="fas fa-sliders-h me-2 text-primary"></i>الوسوم والكيانات</h6>
+                      <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size: 0.75rem;" onclick="UserController.toggleCardPerms(this)">تحديد الكل</button>
+                    </div>
+                    <div class="form-check mb-2"><input class="form-check-input nu-perm" type="checkbox" data-cat="tags" data-act="add" id="nu_p_tg_add"><label class="form-check-label" for="nu_p_tg_add">إضافة وسوم (Tags)</label></div>
+                    <div class="form-check mb-2"><input class="form-check-input nu-perm text-danger" type="checkbox" data-cat="tags" data-act="delete" id="nu_p_tg_del"><label class="form-check-label text-danger" for="nu_p_tg_del">حذف وسوم (Tags)</label></div>
+                    <div class="form-check mb-2"><input class="form-check-input nu-perm" type="checkbox" data-cat="legalEntities" data-act="add" id="nu_p_le_add"><label class="form-check-label" for="nu_p_le_add">إضافة كيانات قانونية</label></div>
+                    <div class="form-check"><input class="form-check-input nu-perm text-danger" type="checkbox" data-cat="legalEntities" data-act="delete" id="nu_p_le_del"><label class="form-check-label text-danger" for="nu_p_le_del">حذف كيانات قانونية</label></div>
+                  </div>
+                </div>
+
               </div>
             </div>
 
@@ -170,59 +240,129 @@
             </div>
 
             <!-- Permissions Block Edit -->
-            <div class="mb-3">
-              <label class="form-label fw-bold text-primary">الصلاحيات المخصصة</label>
-              <div class="card p-3 bg-light border-0">
-                <div class="row">
-                  <div class="col-md-4 mb-3">
-                    <h6 class="fw-bold">إدارة العملاء والمجموعات</h6>
-                    <div class="form-check"><input class="form-check-input eu-perm" type="checkbox" data-cat="clients" data-act="add"><label class="form-check-label">إضافة</label></div>
-                    <div class="form-check"><input class="form-check-input eu-perm" type="checkbox" data-cat="clients" data-act="edit"><label class="form-check-label">تعديل</label></div>
-                    <div class="form-check"><input class="form-check-input eu-perm text-danger" type="checkbox" data-cat="clients" data-act="delete"><label class="form-check-label text-danger">حذف</label></div>
-                  </div>
-                  <div class="col-md-4 mb-3">
-                    <h6 class="fw-bold">إدارة السجلات</h6>
-                    <div class="form-check"><input class="form-check-input eu-perm" type="checkbox" data-cat="records" data-act="add"><label class="form-check-label">إضافة</label></div>
-                    <div class="form-check"><input class="form-check-input eu-perm" type="checkbox" data-cat="records" data-act="edit"><label class="form-check-label">تعديل</label></div>
-                    <div class="form-check"><input class="form-check-input eu-perm text-danger" type="checkbox" data-cat="records" data-act="delete"><label class="form-check-label text-danger">حذف</label></div>
-                  </div>
-                  <div class="col-md-4 mb-3">
-                    <h6 class="fw-bold">إدارة المرفقات</h6>
-                    <div class="form-check"><input class="form-check-input eu-perm" type="checkbox" data-cat="attachments" data-act="upload"><label class="form-check-label">رفع</label></div>
-                    <div class="form-check"><input class="form-check-input eu-perm" type="checkbox" data-cat="attachments" data-act="download"><label class="form-check-label">تحميل</label></div>
-                    <div class="form-check"><input class="form-check-input eu-perm" type="checkbox" data-cat="attachments" data-act="print"><label class="form-check-label">طباعة</label></div>
-                    <div class="form-check"><input class="form-check-input eu-perm text-danger" type="checkbox" data-cat="attachments" data-act="delete"><label class="form-check-label text-danger">حذف</label></div>
-                  </div>
-                  <div class="col-md-4 mb-3">
-                    <h6 class="fw-bold">سلة المهملات</h6>
-                    <div class="form-check"><input class="form-check-input eu-perm" type="checkbox" data-cat="recycleBin" data-act="view"><label class="form-check-label">عرض السلة</label></div>
-                    <div class="form-check"><input class="form-check-input eu-perm" type="checkbox" data-cat="recycleBin" data-act="restoreOwn"><label class="form-check-label">استرجاع ملفاتي</label></div>
-                    <div class="form-check"><input class="form-check-input eu-perm" type="checkbox" data-cat="recycleBin" data-act="restoreAll"><label class="form-check-label">استرجاع الكل</label></div>
-                    <div class="form-check"><input class="form-check-input eu-perm text-danger" type="checkbox" data-cat="recycleBin" data-act="empty"><label class="form-check-label text-danger">تفريغ السلة نهائياً</label></div>
-                  </div>
-                  <div class="col-md-4 mb-3">
-                    <h6 class="fw-bold">إدارة النظام</h6>
-                    <div class="form-check"><input class="form-check-input eu-perm text-warning" type="checkbox" data-cat="admin" data-act="manageUsers"><label class="form-check-label text-warning fw-bold">إدارة المستخدمين</label></div>
-                    <div class="form-check"><input class="form-check-input eu-perm text-warning" type="checkbox" data-cat="admin" data-act="viewLogs"><label class="form-check-label text-warning fw-bold">رؤية سجل النظام (Logs)</label></div>
-                  </div>
-                  <div class="col-md-4 mb-3">
-                    <h6 class="fw-bold">الوسوم (Tags)</h6>
-                    <div class="form-check"><input class="form-check-input eu-perm" type="checkbox" data-cat="tags" data-act="add"><label class="form-check-label">إضافة</label></div>
-                    <div class="form-check"><input class="form-check-input eu-perm" type="checkbox" data-cat="tags" data-act="edit"><label class="form-check-label">تعديل</label></div>
-                    <div class="form-check"><input class="form-check-input eu-perm text-danger" type="checkbox" data-cat="tags" data-act="delete"><label class="form-check-label text-danger">حذف</label></div>
-                  </div>
-                  <div class="col-md-4 mb-3">
-                    <h6 class="fw-bold">الكيانات القانونية</h6>
-                    <div class="form-check"><input class="form-check-input eu-perm" type="checkbox" data-cat="legalEntities" data-act="add"><label class="form-check-label">إضافة</label></div>
-                    <div class="form-check"><input class="form-check-input eu-perm" type="checkbox" data-cat="legalEntities" data-act="edit"><label class="form-check-label">تعديل</label></div>
-                    <div class="form-check"><input class="form-check-input eu-perm text-danger" type="checkbox" data-cat="legalEntities" data-act="delete"><label class="form-check-label text-danger">حذف</label></div>
-                  </div>
-                  <div class="col-md-4 mb-3">
-                    <h6 class="fw-bold">المهام</h6>
-                    <div class="form-check"><input class="form-check-input eu-perm text-info" type="checkbox" data-cat="tasks" data-act="manageTasks"><label class="form-check-label text-info fw-bold">إدارة المهام (Admin)</label></div>
-                    <div class="form-check"><input class="form-check-input eu-perm" type="checkbox" data-cat="tasks" data-act="myTasks"><label class="form-check-label">مهامي الشخصية</label></div>
+            <div class="mb-4">
+              <label class="form-label fw-bold text-primary mb-3"><i class="fas fa-shield-alt me-2"></i>الصلاحيات المخصصة</label>
+              <div class="row g-3">
+                
+                <!-- لوحة التحكم -->
+                <div class="col-md-4">
+                  <div class="card bg-body-tertiary border-0 h-100 p-3 shadow-sm" style="border-radius: 12px;">
+                    <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
+                      <h6 class="fw-bold m-0" style="color: var(--text-main);"><i class="fas fa-tachometer-alt me-2 text-primary"></i>لوحة التحكم</h6>
+                      <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size: 0.75rem;" onclick="UserController.toggleCardPerms(this)">تحديد الكل</button>
+                    </div>
+                    <div class="form-check mb-2"><input class="form-check-input eu-perm" type="checkbox" data-cat="dashboard" data-act="view" id="eu_p_db_vw"><label class="form-check-label" for="eu_p_db_vw">الدخول للوحة التحكم</label></div>
+                    <div class="form-check"><input class="form-check-input eu-perm" type="checkbox" data-cat="dashboard" data-act="viewKPIs" id="eu_p_db_vk"><label class="form-check-label" for="eu_p_db_vk">رؤية الإحصائيات (KPIs)</label></div>
                   </div>
                 </div>
+
+                <!-- إدارة العملاء -->
+                <div class="col-md-4">
+                  <div class="card bg-body-tertiary border-0 h-100 p-3 shadow-sm" style="border-radius: 12px;">
+                    <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
+                      <h6 class="fw-bold m-0" style="color: var(--text-main);"><i class="fas fa-users me-2 text-primary"></i>إدارة العملاء والمجموعات</h6>
+                      <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size: 0.75rem;" onclick="UserController.toggleCardPerms(this)">تحديد الكل</button>
+                    </div>
+                    <div class="form-check mb-2"><input class="form-check-input eu-perm" type="checkbox" data-cat="clients" data-act="add" id="eu_p_cl_add"><label class="form-check-label" for="eu_p_cl_add">إضافة</label></div>
+                    <div class="form-check mb-2"><input class="form-check-input eu-perm" type="checkbox" data-cat="clients" data-act="edit" id="eu_p_cl_edit"><label class="form-check-label" for="eu_p_cl_edit">تعديل</label></div>
+                    <div class="form-check"><input class="form-check-input eu-perm text-danger" type="checkbox" data-cat="clients" data-act="delete" id="eu_p_cl_del"><label class="form-check-label text-danger" for="eu_p_cl_del">حذف</label></div>
+                  </div>
+                </div>
+
+                <!-- المهام -->
+                <div class="col-md-4">
+                  <div class="card bg-body-tertiary border-0 h-100 p-3 shadow-sm" style="border-radius: 12px;">
+                    <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
+                      <h6 class="fw-bold m-0" style="color: var(--text-main);"><i class="fas fa-tasks me-2 text-primary"></i>المهام</h6>
+                      <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size: 0.75rem;" onclick="UserController.toggleCardPerms(this)">تحديد الكل</button>
+                    </div>
+                    <div class="form-check mb-2"><input class="form-check-input eu-perm" type="checkbox" data-cat="tasks" data-act="myTasks" id="eu_p_tk_my"><label class="form-check-label" for="eu_p_tk_my">مهامي الشخصية</label></div>
+                    <div class="form-check"><input class="form-check-input eu-perm text-info" type="checkbox" data-cat="tasks" data-act="manageTasks" id="eu_p_tk_mt"><label class="form-check-label text-info fw-bold" for="eu_p_tk_mt">إدارة المهام (Admin)</label></div>
+                  </div>
+                </div>
+
+                <!-- بيانات الدخول (Credentials) -->
+                <div class="col-md-4">
+                  <div class="card bg-body-tertiary border-0 h-100 p-3 shadow-sm border-start border-warning border-3" style="border-radius: 12px;">
+                    <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
+                      <h6 class="fw-bold m-0" style="color: var(--text-main);"><i class="fas fa-key me-2 text-warning"></i>بيانات الدخول (حساس)</h6>
+                      <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size: 0.75rem;" onclick="UserController.toggleCardPerms(this)">تحديد الكل</button>
+                    </div>
+                    <div class="form-check mb-2"><input class="form-check-input eu-perm" type="checkbox" data-cat="credentials" data-act="view" id="eu_p_cr_vw"><label class="form-check-label" for="eu_p_cr_vw">رؤية الكلمات (View)</label></div>
+                    <div class="form-check mb-2"><input class="form-check-input eu-perm" type="checkbox" data-cat="credentials" data-act="add" id="eu_p_cr_add"><label class="form-check-label" for="eu_p_cr_add">إضافة</label></div>
+                    <div class="form-check mb-2"><input class="form-check-input eu-perm" type="checkbox" data-cat="credentials" data-act="edit" id="eu_p_cr_ed"><label class="form-check-label" for="eu_p_cr_ed">تعديل</label></div>
+                    <div class="form-check"><input class="form-check-input eu-perm text-danger" type="checkbox" data-cat="credentials" data-act="delete" id="eu_p_cr_del"><label class="form-check-label text-danger" for="eu_p_cr_del">حذف</label></div>
+                  </div>
+                </div>
+
+                <!-- إدارة السجلات -->
+                <div class="col-md-4">
+                  <div class="card bg-body-tertiary border-0 h-100 p-3 shadow-sm" style="border-radius: 12px;">
+                    <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
+                      <h6 class="fw-bold m-0" style="color: var(--text-main);"><i class="fas fa-folder-open me-2 text-primary"></i>إدارة السجلات</h6>
+                      <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size: 0.75rem;" onclick="UserController.toggleCardPerms(this)">تحديد الكل</button>
+                    </div>
+                    <div class="form-check mb-2"><input class="form-check-input eu-perm" type="checkbox" data-cat="records" data-act="add" id="eu_p_rc_add"><label class="form-check-label" for="eu_p_rc_add">إضافة</label></div>
+                    <div class="form-check mb-2"><input class="form-check-input eu-perm" type="checkbox" data-cat="records" data-act="edit" id="eu_p_rc_edit"><label class="form-check-label" for="eu_p_rc_edit">تعديل</label></div>
+                    <div class="form-check"><input class="form-check-input eu-perm text-danger" type="checkbox" data-cat="records" data-act="delete" id="eu_p_rc_del"><label class="form-check-label text-danger" for="eu_p_rc_del">حذف</label></div>
+                  </div>
+                </div>
+
+                <!-- إدارة المرفقات -->
+                <div class="col-md-4">
+                  <div class="card bg-body-tertiary border-0 h-100 p-3 shadow-sm" style="border-radius: 12px;">
+                    <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
+                      <h6 class="fw-bold m-0" style="color: var(--text-main);"><i class="fas fa-paperclip me-2 text-primary"></i>إدارة المرفقات</h6>
+                      <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size: 0.75rem;" onclick="UserController.toggleCardPerms(this)">تحديد الكل</button>
+                    </div>
+                    <div class="form-check mb-2"><input class="form-check-input eu-perm" type="checkbox" data-cat="attachments" data-act="upload" id="eu_p_at_up"><label class="form-check-label" for="eu_p_at_up">رفع</label></div>
+                    <div class="form-check mb-2"><input class="form-check-input eu-perm" type="checkbox" data-cat="attachments" data-act="download" id="eu_p_at_dl"><label class="form-check-label" for="eu_p_at_dl">تحميل</label></div>
+                    <div class="form-check mb-2"><input class="form-check-input eu-perm" type="checkbox" data-cat="attachments" data-act="print" id="eu_p_at_pr"><label class="form-check-label" for="eu_p_at_pr">طباعة</label></div>
+                    <div class="form-check"><input class="form-check-input eu-perm text-danger" type="checkbox" data-cat="attachments" data-act="delete" id="eu_p_at_del"><label class="form-check-label text-danger" for="eu_p_at_del">حذف</label></div>
+                  </div>
+                </div>
+
+                <!-- النظام المتقدم (Admin) -->
+                <div class="col-md-4">
+                  <div class="card bg-body-tertiary border-0 h-100 p-3 shadow-sm border-start border-danger border-3" style="border-radius: 12px;">
+                    <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
+                      <h6 class="fw-bold m-0" style="color: var(--text-main);"><i class="fas fa-cogs me-2 text-danger"></i>إدارة النظام (Admin)</h6>
+                      <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size: 0.75rem;" onclick="UserController.toggleCardPerms(this)">تحديد الكل</button>
+                    </div>
+                    <div class="form-check mb-2"><input class="form-check-input eu-perm text-danger" type="checkbox" data-cat="admin" data-act="manageUsers" id="eu_p_ad_mu"><label class="form-check-label text-danger fw-bold" for="eu_p_ad_mu">إدارة المستخدمين</label></div>
+                    <div class="form-check mb-2"><input class="form-check-input eu-perm text-danger" type="checkbox" data-cat="admin" data-act="manageTemplates" id="eu_p_ad_mt"><label class="form-check-label fw-bold" for="eu_p_ad_mt">إدارة قوالب المهام</label></div>
+                    <div class="form-check"><input class="form-check-input eu-perm text-danger" type="checkbox" data-cat="admin" data-act="viewLogs" id="eu_p_ad_vl"><label class="form-check-label fw-bold" for="eu_p_ad_vl">سجل التغييرات (Logs)</label></div>
+                  </div>
+                </div>
+
+                <!-- سلة المهملات -->
+                <div class="col-md-4">
+                  <div class="card bg-body-tertiary border-0 h-100 p-3 shadow-sm" style="border-radius: 12px;">
+                    <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
+                      <h6 class="fw-bold m-0" style="color: var(--text-main);"><i class="fas fa-trash me-2 text-primary"></i>سلة المهملات</h6>
+                      <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size: 0.75rem;" onclick="UserController.toggleCardPerms(this)">تحديد الكل</button>
+                    </div>
+                    <div class="form-check mb-2"><input class="form-check-input eu-perm" type="checkbox" data-cat="recycleBin" data-act="view" id="eu_p_rb_vw"><label class="form-check-label" for="eu_p_rb_vw">عرض السلة</label></div>
+                    <div class="form-check mb-2"><input class="form-check-input eu-perm" type="checkbox" data-cat="recycleBin" data-act="restoreOwn" id="eu_p_rb_ro"><label class="form-check-label" for="eu_p_rb_ro">استرجاع ملفاتي</label></div>
+                    <div class="form-check mb-2"><input class="form-check-input eu-perm" type="checkbox" data-cat="recycleBin" data-act="restoreAll" id="eu_p_rb_ra"><label class="form-check-label" for="eu_p_rb_ra">استرجاع الكل</label></div>
+                    <div class="form-check"><input class="form-check-input eu-perm text-danger" type="checkbox" data-cat="recycleBin" data-act="empty" id="eu_p_rb_em"><label class="form-check-label text-danger fw-bold" for="eu_p_rb_em">تفريغ السلة نهائياً</label></div>
+                  </div>
+                </div>
+
+                <!-- الوسوم والكيانات -->
+                <div class="col-md-4">
+                  <div class="card bg-body-tertiary border-0 h-100 p-3 shadow-sm" style="border-radius: 12px;">
+                    <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
+                      <h6 class="fw-bold m-0" style="color: var(--text-main);"><i class="fas fa-sliders-h me-2 text-primary"></i>الوسوم والكيانات</h6>
+                      <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size: 0.75rem;" onclick="UserController.toggleCardPerms(this)">تحديد الكل</button>
+                    </div>
+                    <div class="form-check mb-2"><input class="form-check-input eu-perm" type="checkbox" data-cat="tags" data-act="add" id="eu_p_tg_add"><label class="form-check-label" for="eu_p_tg_add">إضافة وسوم (Tags)</label></div>
+                    <div class="form-check mb-2"><input class="form-check-input eu-perm text-danger" type="checkbox" data-cat="tags" data-act="delete" id="eu_p_tg_del"><label class="form-check-label text-danger" for="eu_p_tg_del">حذف وسوم (Tags)</label></div>
+                    <div class="form-check mb-2"><input class="form-check-input eu-perm" type="checkbox" data-cat="legalEntities" data-act="add" id="eu_p_le_add"><label class="form-check-label" for="eu_p_le_add">إضافة كيانات قانونية</label></div>
+                    <div class="form-check"><input class="form-check-input eu-perm text-danger" type="checkbox" data-cat="legalEntities" data-act="delete" id="eu_p_le_del"><label class="form-check-label text-danger" for="eu_p_le_del">حذف كيانات قانونية</label></div>
+                  </div>
+                </div>
+
               </div>
             </div>
 
@@ -236,38 +376,32 @@
 
 <script>
 class UserController {
-  static defaultPermissions = {
-    Admin: {
-      clients: { add: true, edit: true, delete: true },
-      records: { add: true, edit: true, delete: true },
-      attachments: { upload: true, download: true, print: true, delete: true },
-      recycleBin: { view: true, restoreOwn: true, restoreAll: true, empty: true },
-      admin: { manageUsers: true, viewLogs: true },
-      tags: { add: true, edit: true, delete: true },
-      legalEntities: { add: true, edit: true, delete: true },
-      tasks: { manageTasks: true, myTasks: true }
-    },
-    User: {
-      clients: { add: true, edit: true, delete: false },
-      records: { add: true, edit: true, delete: false },
-      attachments: { upload: true, download: true, print: true, delete: false },
-      recycleBin: { view: false, restoreOwn: true, restoreAll: false, empty: false },
-      admin: { manageUsers: false, viewLogs: false },
-      tags: { add: true, edit: true, delete: false },
-      legalEntities: { add: true, edit: false, delete: false },
-      tasks: { manageTasks: false, myTasks: true }
-    },
-    Viewer: {
-      clients: { add: false, edit: false, delete: false },
-      records: { add: false, edit: false, delete: false },
-      attachments: { upload: false, download: true, print: true, delete: false },
-      recycleBin: { view: false, restoreOwn: false, restoreAll: false, empty: false },
-      admin: { manageUsers: false, viewLogs: false },
-      tags: { add: false, edit: false, delete: false },
-      legalEntities: { add: false, edit: false, delete: false },
-      tasks: { manageTasks: false, myTasks: false }
+  static toggleCardPerms(btn) {
+    const card = btn.closest('.card');
+    const checkboxes = card.querySelectorAll('input[type="checkbox"]');
+    const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+    checkboxes.forEach(cb => cb.checked = !allChecked);
+  }
+
+  static async toggleActive(userId, currentStatus) {
+    const newStatus = !(String(currentStatus).toUpperCase() === 'TRUE');
+    UIManager.showLoader(newStatus ? "جاري تفعيل الحساب..." : "جاري إيقاف الحساب...");
+    try {
+      const adminEmail = GlobalStore.getState().currentUser.username;
+      const success = await ApiClient.call('api_updateUser', userId, { Is_Active: newStatus }, adminEmail);
+      if (success) {
+        const updatedUsers = GlobalStore.getState().users.map(u => {
+           if (u.User_ID == userId) return { ...u, Is_Active: newStatus };
+           return u;
+        });
+        GlobalStore.setState({ users: updatedUsers });
+        this.renderTable();
+        UIManager.showSuccess(newStatus ? "تم تفعيل الحساب بنجاح" : "تم إيقاف الحساب بنجاح");
+      }
+    } catch (e) {
+      UIManager.showError(e.message);
     }
-  };
+  }
 
   static renderTable() {
     const tbody = document.getElementById('usersTableBody');
@@ -284,8 +418,9 @@ class UserController {
         <td>${String(u.Is_Active).toUpperCase() === 'TRUE' ? '<span class="text-success"><i class="fas fa-check-circle"></i> نشط</span>' : '<span class="text-danger"><i class="fas fa-times-circle"></i> موقوف</span>'}</td>
         <td class="text-muted small">${(u.Created_At || '').split(',')[0]}</td>
         <td>
-          <button class="btn btn-sm btn-outline-warning mx-1" onclick="UserController.showEditModal('${u.User_ID}')" title="تعديل"><i class="fas fa-edit"></i></button>
-          <button class="btn btn-sm btn-outline-danger mx-1" onclick="UserController.confirmDelete('${u.User_ID}')" title="إيقاف / حذف"><i class="fas fa-trash-alt"></i></button>
+          <button class="btn btn-sm btn-outline-primary mx-1" onclick="UserController.showEditModal('${u.User_ID}')" title="تعديل"><i class="fas fa-edit"></i></button>
+          <button class="btn btn-sm btn-outline-${String(u.Is_Active).toUpperCase() === 'TRUE' ? 'warning' : 'success'} mx-1" onclick="UserController.toggleActive('${u.User_ID}', '${u.Is_Active}')" title="${String(u.Is_Active).toUpperCase() === 'TRUE' ? 'إيقاف الحساب' : 'تفعيل الحساب'}"><i class="fas ${String(u.Is_Active).toUpperCase() === 'TRUE' ? 'fa-ban' : 'fa-check'}"></i></button>
+          <button class="btn btn-sm btn-outline-danger mx-1" onclick="UserController.confirmDelete('${u.User_ID}')" title="حذف للمهملات"><i class="fas fa-trash-alt"></i></button>
         </td>
       </tr>
     `).join('');
@@ -312,20 +447,24 @@ class UserController {
 
   static getCheckboxesState(prefix) {
     const perms = {
+      dashboard: { view: false, viewKPIs: false },
       clients: { add: false, edit: false, delete: false },
       records: { add: false, edit: false, delete: false },
       attachments: { upload: false, download: false, print: false, delete: false },
       recycleBin: { view: false, restoreOwn: false, restoreAll: false, empty: false },
-      admin: { manageUsers: false, viewLogs: false },
+      admin: { manageUsers: false, manageTemplates: false, viewLogs: false },
       tags: { add: false, edit: false, delete: false },
       legalEntities: { add: false, edit: false, delete: false },
-      tasks: { manageTasks: false, myTasks: false }
+      tasks: { manageTasks: false, myTasks: false },
+      credentials: { view: false, add: false, edit: false, delete: false }
     };
     const checkboxes = document.querySelectorAll(`.${prefix}-perm`);
     checkboxes.forEach(cb => {
       const cat = cb.getAttribute('data-cat');
       const act = cb.getAttribute('data-act');
-      perms[cat][act] = cb.checked;
+      if (perms[cat]) {
+        perms[cat][act] = cb.checked;
+      }
     });
     return perms;
   }
@@ -458,11 +597,10 @@ class UserController {
     UIManager.showLoader("جاري حفظ التعديلات...");
     try {
       const adminEmail = GlobalStore.getState().currentUser.username;
-      // We assume an api_updateUser exists
       const success = await ApiClient.call('api_updateUser', userId, userData, adminEmail);
       
       if (success) {
-        let updatedUsers = GlobalStore.getState().users.map(u => {
+        const updatedUsers = GlobalStore.getState().users.map(u => {
            if (u.User_ID == userId) return { ...u, ...userData };
            return u;
         });
@@ -492,14 +630,15 @@ class UserController {
   }
 
   static async confirmDelete(userId) {
-    if (confirm("هل أنت متأكد أنك تريد إيقاف/حذف هذا الحساب؟")) {
+    const isConfirmed = await UIManager.confirmAction("هل أنت متأكد أنك تريد إيقاف/حذف هذا الحساب؟", "تأكيد الحذف");
+    if (isConfirmed) {
       UIManager.showLoader("جاري الإيقاف...");
       try {
         const adminEmail = GlobalStore.getState().currentUser.username;
         // Soft delete sets Is_Deleted = true in the backend
         await ApiClient.call('api_deleteUser', userId, adminEmail);
         
-        let updatedUsers = GlobalStore.getState().users.map(u => {
+        const updatedUsers = GlobalStore.getState().users.map(u => {
            if (u.User_ID == userId) return { ...u, Is_Deleted: true, Is_Active: false };
            return u;
         });
@@ -512,4 +651,43 @@ class UserController {
     }
   }
 }
+
+UserController.defaultPermissions = {
+  Admin: {
+    dashboard: { view: true, viewKPIs: true },
+    clients: { add: true, edit: true, delete: true },
+    records: { add: true, edit: true, delete: true },
+    attachments: { upload: true, download: true, print: true, delete: true },
+    recycleBin: { view: true, restoreOwn: true, restoreAll: true, empty: true },
+    admin: { manageUsers: true, manageTemplates: true, viewLogs: true },
+    tags: { add: true, edit: true, delete: true },
+    legalEntities: { add: true, edit: true, delete: true },
+    tasks: { manageTasks: true, myTasks: true },
+    credentials: { view: true, add: true, edit: true, delete: true }
+  },
+  User: {
+    dashboard: { view: false, viewKPIs: false },
+    clients: { add: true, edit: true, delete: false },
+    records: { add: true, edit: true, delete: false },
+    attachments: { upload: true, download: true, print: true, delete: false },
+    recycleBin: { view: false, restoreOwn: true, restoreAll: false, empty: false },
+    admin: { manageUsers: false, manageTemplates: false, viewLogs: false },
+    tags: { add: true, edit: true, delete: false },
+    legalEntities: { add: true, edit: false, delete: false },
+    tasks: { manageTasks: false, myTasks: true },
+    credentials: { view: false, add: false, edit: false, delete: false }
+  },
+  Viewer: {
+    dashboard: { view: false, viewKPIs: false },
+    clients: { add: false, edit: false, delete: false },
+    records: { add: false, edit: false, delete: false },
+    attachments: { upload: false, download: true, print: true, delete: false },
+    recycleBin: { view: false, restoreOwn: false, restoreAll: false, empty: false },
+    admin: { manageUsers: false, manageTemplates: false, viewLogs: false },
+    tags: { add: false, edit: false, delete: false },
+    legalEntities: { add: false, edit: false, delete: false },
+    tasks: { manageTasks: false, myTasks: false },
+    credentials: { view: false, add: false, edit: false, delete: false }
+  }
+};
 </script>

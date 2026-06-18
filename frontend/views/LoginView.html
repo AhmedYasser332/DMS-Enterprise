@@ -1,29 +1,230 @@
-<div id="login-screen" style="display: none; position: fixed; top:0; left:0; width:100%; height:100%; z-index: 1000; align-items: center; justify-content: center; background: linear-gradient(135deg, #2c3e50, #3498db);">
-  <div class="card shadow-lg border-0 fade-in" style="width: 400px; max-width: 90%; border-radius: 15px; overflow: hidden; background-color: var(--bs-body-bg);">
-    <div class="card-header text-white text-center py-4" style="background: rgba(0,0,0,0.2); border:none;">
-      <i class="fas fa-shield-alt fa-3x mb-3"></i>
-      <h4 class="m-0 fw-bold">نظام الأرشيف الرقمي</h4>
-      <small class="opacity-75">يرجى تسجيل الدخول للمتابعة</small>
+<style>
+  /* ========================================= */
+  /* 🌟 Login Specific Impeccable Design */
+  /* ========================================= */
+  .login-wrapper {
+    display: flex;
+    min-height: 100vh;
+    width: 100%;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1000;
+    background-color: var(--app-bg);
+  }
+  
+  /* Left Panel: Deep Brand Identity */
+  .login-brand-panel {
+    flex: 1.2;
+    background-color: var(--primary-color);
+    color: white;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 4rem 6rem;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  /* Abstract subtle glow effect */
+  .login-brand-panel::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle at center, rgba(255,255,255,0.08) 0%, transparent 50%);
+    animation: pulseRotate 30s ease-in-out infinite alternate;
+  }
+  
+  @keyframes pulseRotate {
+    0% { transform: scale(1) rotate(0deg); }
+    100% { transform: scale(1.1) rotate(15deg); }
+  }
+
+  /* Right Panel: Clean Form Surface */
+  .login-form-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background-color: var(--card-bg);
+    padding: 2rem;
+    box-shadow: -10px 0 30px rgba(0,0,0,0.03);
+    z-index: 2;
+  }
+  
+  .login-form-container {
+    width: 100%;
+    max-width: 420px;
+    /* Impeccable motion: ease-out-expo curve */
+    animation: fadeUpIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  
+  .login-brand-content {
+    position: relative;
+    z-index: 1;
+    animation: fadeInRight 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  @keyframes fadeUpIn {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  
+  @keyframes fadeInRight {
+    from { opacity: 0; transform: translateX(30px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  /* Typography Amplification */
+  .login-title {
+    font-size: clamp(2.5rem, 6vw, 4.5rem);
+    font-weight: 800;
+    letter-spacing: -0.04em; /* Tight display tracking */
+    margin-bottom: 1.5rem;
+    line-height: 1.1;
+  }
+  
+  .login-subtitle {
+    font-size: 1.25rem;
+    opacity: 0.85;
+    max-width: 480px;
+    line-height: 1.6;
+    font-weight: 500;
+  }
+  
+  /* Form Elements Restyling */
+  .login-input {
+    background-color: rgba(0,0,0,0.02);
+    border: 1px solid rgba(0,0,0,0.06);
+    border-radius: 12px;
+    padding: 1.1rem 1.25rem;
+    font-size: 1.1rem;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  
+  [data-bs-theme="dark"] .login-input {
+    background-color: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.05);
+  }
+  
+  .login-input:focus {
+    background-color: transparent;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 4px rgba(var(--bs-primary-rgb), 0.12);
+  }
+  
+  .login-btn {
+    border-radius: 12px;
+    padding: 1.1rem;
+    font-size: 1.15rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+  }
+  
+  .login-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(var(--bs-primary-rgb), 0.25);
+  }
+  
+  .login-icon-box {
+    width: 72px;
+    height: 72px;
+    background: rgba(255,255,255,0.1);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5rem;
+    margin-bottom: 2.5rem;
+    border: 1px solid rgba(255,255,255,0.15);
+  }
+
+  .login-label {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    display: block;
+  }
+
+  @media (max-width: 991.98px) {
+    .login-brand-panel {
+      display: none; /* Strip back on mobile for pure utility */
+    }
+    .login-form-panel {
+      padding: 1.5rem;
+      background-color: var(--app-bg);
+      box-shadow: none;
+    }
+  }
+</style>
+
+<div id="login-screen" style="display: none;">
+  <div class="login-wrapper">
+    <!-- Brand Panel (Right in RTL / Desktop Only) -->
+    <div class="login-brand-panel d-none d-lg-flex">
+      <div class="login-brand-content">
+        <div class="login-icon-box">
+          <i class="fas fa-layer-group"></i>
+        </div>
+        <h1 class="login-title">المساحة<br>الرقمية الموحدة</h1>
+        <p class="login-subtitle">نظام DMS Supreme لإدارة الوثائق المؤسسية. تحكم كامل، سرعة فائقة، وأمان تام لبيانات عملائك.</p>
+      </div>
     </div>
-    <div class="card-body p-4">
-      <form id="loginForm" onsubmit="event.preventDefault(); LoginController.processLogin();">
-        <div class="mb-3">
-          <label class="form-label fw-bold"><i class="fas fa-user me-1 text-primary"></i> اسم المستخدم</label>
-          <input type="text" id="loginUsername" class="form-control form-control-lg bg-light border-0" placeholder="Username" required>
-        </div>
-        <div class="mb-4">
-          <label class="form-label fw-bold"><i class="fas fa-lock me-1 text-primary"></i> كلمة المرور</label>
-          <input type="password" id="loginPassword" class="form-control form-control-lg bg-light border-0" placeholder="••••••••" required>
-        </div>
+    
+    <!-- Form Panel (Left in RTL) -->
+    <div class="login-form-panel">
+      <div class="login-form-container">
         
-        <button type="submit" id="loginBtn" class="btn btn-primary btn-lg w-100 shadow-sm position-relative">
-          <span id="loginBtnText"><i class="fas fa-sign-in-alt me-2"></i> دخول للنظام</span>
-          <span id="loginBtnSpinner" class="spinner-border spinner-border-sm position-absolute d-none" style="right: 20px; top: 35%;" role="status" aria-hidden="true"></span>
-        </button>
-      </form>
-    </div>
-    <div class="card-footer text-center bg-transparent border-0 pb-4 pt-0">
-      <small class="text-muted fw-bold">جميع الحقوق محفوظة &copy; 2026</small>
+        <!-- Mobile Header (Visible only on mobile) -->
+        <div class="d-lg-none mb-5 text-center">
+          <div class="d-inline-flex align-items-center justify-content-center bg-primary text-white rounded-4 mb-3" style="width: 64px; height: 64px; font-size: 1.75rem;">
+            <i class="fas fa-layer-group"></i>
+          </div>
+          <h2 class="fw-bold mb-1" style="font-size: 2rem; letter-spacing: -0.03em;">DMS Supreme</h2>
+          <p class="text-muted">نظام الأرشيف الرقمي</p>
+        </div>
+
+        <!-- Desktop Header -->
+        <div class="mb-5 d-none d-lg-block">
+          <h2 class="fw-bold mb-2" style="font-size: 2.25rem; letter-spacing: -0.03em;">تسجيل الدخول</h2>
+          <p class="text-muted fs-5">أهلاً بك مجدداً، يرجى إدخال بياناتك للمتابعة.</p>
+        </div>
+
+        <form id="loginForm" onsubmit="event.preventDefault(); LoginController.processLogin();">
+          <!-- Staggered Entrance Animations -->
+          <div class="mb-4" style="animation: fadeUpIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.1s forwards; opacity: 0;">
+            <label class="login-label">اسم المستخدم</label>
+            <input type="text" id="loginUsername" class="form-control login-input" placeholder="أدخل اسم المستخدم" required>
+          </div>
+          
+          <div class="mb-5" style="animation: fadeUpIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.2s forwards; opacity: 0;">
+            <label class="login-label">كلمة المرور</label>
+            <input type="password" id="loginPassword" class="form-control login-input" placeholder="••••••••" required>
+          </div>
+          
+          <div style="animation: fadeUpIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.3s forwards; opacity: 0;">
+            <button type="submit" id="loginBtn" class="btn btn-primary login-btn w-100 position-relative d-flex justify-content-center align-items-center">
+              <span id="loginBtnText">الدخول إلى مساحة العمل</span>
+              <span id="loginBtnSpinner" class="spinner-border spinner-border-sm position-absolute d-none" style="left: 1.5rem;" role="status" aria-hidden="true"></span>
+            </button>
+          </div>
+        </form>
+        
+        <div class="text-center mt-5 pt-4" style="animation: fadeUpIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.4s forwards; opacity: 0;">
+          <small class="text-muted fw-bold">جميع الحقوق محفوظة &copy; 2026 DMS Supreme</small>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -45,21 +246,25 @@ class LoginController {
     
     // تفعيل حالة التحميل
     btn.disabled = true;
-    btnText.textContent = 'جاري التحقق...';
+    btnText.style.opacity = '0.5';
     btnSpinner.classList.remove('d-none');
     
     try {
       const userData = await ApiClient.call('api_login', user, pass);
       localStorage.setItem('dms_session', JSON.stringify(userData));
-      UIManager.showSuccess(`أهلاً بك يا ${userData.name}`);
-      App.initUserSession(userData);
+      
+      // Animate out before switching session (optional delight)
+      document.querySelector('.login-form-container').style.animation = 'fadeUpIn 0.4s reverse forwards';
+      
+      setTimeout(() => {
+        UIManager.showSuccess(`أهلاً بك يا ${userData.name}`);
+        App.initUserSession(userData);
+      }, 300);
       
     } catch (error) {
       UIManager.showError(error.message, "فشل الدخول");
-    } finally {
-      // إرجاع الزرار لحالته
       btn.disabled = false;
-      btnText.innerHTML = '<i class="fas fa-sign-in-alt me-2"></i> دخول للنظام';
+      btnText.style.opacity = '1';
       btnSpinner.classList.add('d-none');
     }
   }

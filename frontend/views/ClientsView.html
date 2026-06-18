@@ -95,7 +95,11 @@ class ClientController {
     const role = state.currentUser?.role;
     let perms = {};
     if (state.currentUser?.permissions) {
-      try { perms = typeof state.currentUser.permissions === 'string' ? JSON.parse(state.currentUser.permissions) : state.currentUser.permissions; } catch(e) {}
+      try { 
+        perms = typeof state.currentUser.permissions === 'string' ? JSON.parse(state.currentUser.permissions) : state.currentUser.permissions; 
+      } catch(e) {
+        console.error("فشل في تحليل الصلاحيات:", e.message);
+      }
     }
     
     const canManage = role === 'Admin' || (perms.legalEntities && (perms.legalEntities.add || perms.legalEntities.edit || perms.legalEntities.delete));
@@ -131,7 +135,11 @@ class ClientController {
     const role = state.currentUser?.role;
     let perms = {};
     if (state.currentUser?.permissions) {
-      try { perms = typeof state.currentUser.permissions === 'string' ? JSON.parse(state.currentUser.permissions) : state.currentUser.permissions; } catch(e) {}
+      try { 
+        perms = typeof state.currentUser.permissions === 'string' ? JSON.parse(state.currentUser.permissions) : state.currentUser.permissions; 
+      } catch(e) {
+        console.error("فشل في تحليل الصلاحيات:", e.message);
+      }
     }
     
     const canAdd = role === 'Admin' || (perms.legalEntities && perms.legalEntities.add);

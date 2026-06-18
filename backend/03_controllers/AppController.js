@@ -103,21 +103,40 @@ function api_getFileBase64(driveFileId) {
 // ==========================================
 // 6. System Boot Controller (تحميل أولي)
 // ==========================================
-function api_getInitialAppData(userEmail) {
+function api_getInitialAppData(userEmail, forceRefresh = false) {
   return ResponseFactory.execute(() => {
-    // نقوم بجلب كل البيانات المطلوبة للذاكرة المركزية عبر طبقة الخدمات (Services) للحفاظ على المعمارية النظيفة
-    return {
-      clients: clientService.getAllClients(),
-      groups: groupService.getAllGroups(),
-      records: recordService.getAllRecords(),
-      attachments: attachmentService.getAllAttachments(),
-      users: userService.getAllUsers(),
-      tags: tagService.getAllTags(),
-      legalEntities: legalEntityService.getAllEntities(),
-      tasks: taskService.getAllTasks(userEmail),
-      taskTemplates: taskTemplateService.getAllTemplates()
-    };
+    // لو المحاسب ضغط على زرار الـ Refresh اليدوي (بمعنى إنه ممكن يكون عدل شيت جوجل بنفسه)
+    // بنمسح الكاش فوراً عشان نجبر السيستم يسحب أحدث داتا.
+    if (forceRefresh) {
+      CacheManager.bustCache();
+    }
+
+    // نستخدم CacheManager لجلب البيانات أو تخزينها.
+    // المفتاح لازم يكون مرتبط بالايميل لأن الـ tasks بتختلف من يوزر للتاني.
+    const baseKey = `INITIAL_DATA_${userEmail}`;
+    
+    // الصلاحية: 5 دقائق (300 ثانية). الكاش هيتمسح تلقائيا لو حصل اي تحديث بفضل CacheManager.bustCache()
+    return CacheManager.getOrFetch(baseKey, () => {
+      // نقوم بجلب كل البيانات المطلوبة للذاكرة المركزية عبر طبقة الخدمات (Services)
+      return {
+        clients: clientService.getAllClients(),
+        groups: groupService.getAllGroups(),
+        records: recordService.getAllRecords(),
+        attachments: attachmentService.getAllAttachments(),
+        users: userService.getAllUsers(),
+        tags: tagService.getAllTags(),
+        legalEntities: legalEntityService.getAllEntities(),
+        tasks: taskService.getAllTasks(userEmail),
+        taskTemplates: taskTemplateService.getAllTemplates(),
+        taxConfig: taxConfigService.getAllConfig(),
+        credentials: credentialService.getAllCredentialsMeta(userEmail)
+      };
+    }, 300);
   }, "تم تحميل النظام");
+}
+
+function api_revealCredential(credId, userEmail) {
+  return ResponseFactory.execute(() => credentialService.revealCredential(credId, userEmail), "تم جلب بيانات الدخول");
 }
 
 // ==========================================
@@ -220,11 +239,10 @@ function api_getAllTasks(userEmail) {
   return ResponseFactory.execute(() => taskService.getAllTasks(userEmail), "تم جلب المهام");
 }
 
-function api_addTask(title, description, assignedTo, clientId, deadline, warningDays, criticalDays, templateId, userEmail) {
-  return ResponseFactory.execute(
-    () => taskService.addTask(title, description, assignedTo, clientId, deadline, warningDays, criticalDays, templateId, userEmail),
-    "تم إنشاء المهمة بنجاح"
-  );
+function api_addTask(taskPayload, userEmail) {
+  return ResponseFactory.execute(() => {
+    return taskService.addTask(taskPayload, userEmail);
+  }, "تم إنشاء المهمة بنجاح");
 }
 
 function api_completeTask(taskId, completionNote, userEmail) {
@@ -245,4 +263,57 @@ function api_updateTask(taskId, updateData, userEmail) {
 
 function api_deleteTask(taskId, userEmail) {
   return ResponseFactory.execute(() => taskService.deleteTask(taskId, userEmail), "تم حذف المهمة");
+}
+
+// ==========================================
+// Notifications Controllers
+// ==========================================
+function api_getUserNotifications(userEmail) {
+  return ResponseFactory.execute(() => notificationService.getUserNotifications(userEmail), "تم جلب الإشعارات");
+}
+
+function api_markNotificationsAsRead(notificationIds, userEmail) {
+  return ResponseFactory.execute(() => notificationService.markAsRead(notificationIds, userEmail), "تم قراءة الإشعارات");
+}
+
+function api_getUnreadHeartbeat(userEmail) {
+  // Ultra-lightweight endpoint for fallback polling
+  return ResponseFactory.execute(() => {
+    return { count: notificationService.getUnreadCount(userEmail) };
+  }, "Heartbeat OK");
+}
+
+// ==========================================
+// Feedback Controller
+// ==========================================
+function api_sendFeedback(payload) {
+  return ResponseFactory.execute(() => {
+    const BOT_TOKEN = "8994027936:AAGKZiN3NCK2kho-TuUg-ORkaqHbLX8MB9M";
+    const CHAT_ID = "1327768530";
+
+    const now = new Date();
+    const dateStr = Utilities.formatDate(now, "Africa/Cairo", "dd/MM/yyyy - hh:mm a");
+
+    const messageText = `📅 ${dateStr}\n👤 ${payload.user}\n\n📝 ${payload.message}`;
+
+    const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
+    const options = {
+      method: "post",
+      contentType: "application/json",
+      payload: JSON.stringify({
+        chat_id: CHAT_ID,
+        text: messageText
+      }),
+      muteHttpExceptions: true
+    };
+
+    const response = UrlFetchApp.fetch(url, options);
+    const result = JSON.parse(response.getContentText());
+
+    if (!result.ok) {
+      throw new Error("فشل الإرسال لتليجرام: " + result.description);
+    }
+
+    return true;
+  }, "تم إرسال الرسالة بنجاح");
 }

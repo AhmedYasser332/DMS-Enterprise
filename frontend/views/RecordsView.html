@@ -9,7 +9,7 @@
           <i class="fas fa-file-alt me-2"></i> السجلات <span id="currentGroupName" class="text-muted fs-5"></span>
         </h3>
       </div>
-      <button class="btn btn-success shadow-sm" onclick="RecordController.showAddModal()">
+      <button class="btn btn-primary" onclick="RecordController.showAddModal()">
         <i class="fas fa-plus"></i> إضافة سجل
       </button>
     </div>
@@ -118,17 +118,17 @@
 
 <script>
 class RecordController {
-  static currentGroupId = null;
-  static parentClientId = null;
-
-  static selectedTags = [];
 
   static applyPermissionsLocal() {
     const state = GlobalStore.getState();
     const role = state.currentUser?.role;
     let perms = {};
     if (state.currentUser?.permissions) {
-      try { perms = typeof state.currentUser.permissions === 'string' ? JSON.parse(state.currentUser.permissions) : state.currentUser.permissions; } catch(e) {}
+      try { 
+        perms = typeof state.currentUser.permissions === 'string' ? JSON.parse(state.currentUser.permissions) : state.currentUser.permissions; 
+      } catch(e) {
+        console.error("فشل في تحليل الصلاحيات:", e.message);
+      }
     }
     
     const canManageTags = role === 'Admin' || (perms.tags && (perms.tags.add || perms.tags.edit || perms.tags.delete));
@@ -200,7 +200,11 @@ class RecordController {
     const role = state.currentUser?.role;
     let perms = {};
     if (state.currentUser?.permissions) {
-      try { perms = typeof state.currentUser.permissions === 'string' ? JSON.parse(state.currentUser.permissions) : state.currentUser.permissions; } catch(e) {}
+      try { 
+        perms = typeof state.currentUser.permissions === 'string' ? JSON.parse(state.currentUser.permissions) : state.currentUser.permissions; 
+      } catch(e) {
+        console.error("فشل في تحليل الصلاحيات:", e.message);
+      }
     }
     
     const canAdd = role === 'Admin' || (perms.tags && perms.tags.add);
@@ -326,8 +330,8 @@ class RecordController {
         <td style="max-width:200px; white-space:normal;">${renderTagsBadge(record.Tags)}</td>
         <td class="text-muted small">${record.Created_At.split(',')[0]}</td>
         <td>
-          <button class="btn btn-sm btn-info text-white me-1 shadow-sm" onclick="App.navigate('attachments', '${record.Record_ID}')"><i class="fas fa-paperclip"></i> المرفقات</button>
-          <button class="btn btn-sm btn-outline-danger shadow-sm" onclick="RecordController.deleteRecord('${record.Record_ID}', '${record.Title}')"><i class="fas fa-trash-alt"></i></button>
+          <button class="btn btn-sm btn-primary me-1" onclick="App.navigate('attachments', '${record.Record_ID}')"><i class="fas fa-paperclip"></i> المرفقات</button>
+          <button class="btn btn-sm btn-outline-danger" onclick="RecordController.deleteRecord('${record.Record_ID}', '${record.Title}')"><i class="fas fa-trash-alt"></i></button>
         </td>
       </tr>
     `).join('');
@@ -384,4 +388,7 @@ class RecordController {
     }
   }
 }
+RecordController.currentGroupId = null;
+RecordController.parentClientId = null;
+RecordController.selectedTags = [];
 </script>

@@ -1,15 +1,15 @@
 <template id="trash-view-template">
   <div class="row fade-in">
     <div class="col-12 mb-3 border-bottom pb-2">
-      <h3 class="text-danger m-0"><i class="fas fa-trash-alt me-2"></i> سلة المهملات</h3>
+      <h3 class="text-primary m-0 fw-bold"><i class="fas fa-trash-alt me-2"></i> سلة المهملات</h3>
       <small class="text-muted">هنا يمكنك استعادة العناصر المحذوفة أو حذفها نهائياً من قاعدة البيانات.</small>
     </div>
     
     <div class="col-12">
-      <div class="card shadow-sm border-0">
+      <div class="card border-0">
         <div class="card-body p-0">
           <table class="table table-hover text-center align-middle m-0">
-            <thead class="table-light text-danger">
+            <thead class="table-light">
               <tr>
                 <th>النوع</th>
                 <th>الاسم / العنوان</th>
@@ -63,6 +63,9 @@ class TrashController {
     (state.attachments || []).filter(a => String(a.Is_Deleted).toUpperCase() === "TRUE" && canSeeItem(a.Uploaded_By))
       .forEach(a => items.push({ type: 'مرفق', display: a.File_Name, id: a.Attachment_ID, Created_At: a.Uploaded_At }));
 
+    (state.users || []).filter(u => String(u.Is_Deleted).toUpperCase() === "TRUE" && currentUser.role === 'Admin')
+      .forEach(u => items.push({ type: 'مستخدم', display: u.Name, id: u.User_ID, Created_At: u.Created_At }));
+
     if (items.length === 0) {
       tbody.innerHTML = '<tr><td colspan="4" class="py-5 text-muted"><i class="fas fa-trash-restore fa-3x mb-3 d-block text-black-50"></i> سلة المهملات فارغة (أو لا توجد عناصر تخصك).</td></tr>';
       return;
@@ -76,10 +79,10 @@ class TrashController {
         <td class="fw-bold">${item.display}</td>
         <td class="small text-muted">${item.Created_At ? item.Created_At.split(',')[0] : '-'}</td>
         <td>
-          <button class="btn btn-sm btn-success shadow-sm me-1" onclick="TrashController.restore('${item.type}', '${item.id}', '${item.display}')">
+          <button class="btn btn-sm btn-outline-primary me-1" onclick="TrashController.restore('${item.type}', '${item.id}', '${item.display}')">
             <i class="fas fa-undo"></i> استعادة
           </button>
-          ${canEmpty ? `<button class="btn btn-sm btn-outline-danger shadow-sm" onclick="TrashController.hardDelete('${item.type}', '${item.id}', '${item.display}')"><i class="fas fa-times"></i> حذف نهائي</button>` : ''}
+          ${canEmpty ? `<button class="btn btn-sm btn-outline-danger" onclick="TrashController.hardDelete('${item.type}', '${item.id}', '${item.display}')"><i class="fas fa-times"></i> حذف نهائي</button>` : ''}
         </td>
       </tr>
     `).join('');
@@ -98,6 +101,7 @@ class TrashController {
       else if (type === 'مجموعة') GlobalStore.setState({ groups: state.groups.map(g => g.Group_ID === id ? { ...g, Is_Deleted: false } : g) });
       else if (type === 'سجل') GlobalStore.setState({ records: state.records.map(r => r.Record_ID === id ? { ...r, Is_Deleted: false } : r) });
       else if (type === 'مرفق') GlobalStore.setState({ attachments: state.attachments.map(a => a.Attachment_ID === id ? { ...a, Is_Deleted: false } : a) });
+      else if (type === 'مستخدم') GlobalStore.setState({ users: state.users.map(u => u.User_ID === id ? { ...u, Is_Deleted: false, Is_Active: true } : u) });
 
       UIManager.showSuccess("تمت استعادة العنصر بنجاح");
       this.renderTable();
@@ -122,6 +126,7 @@ class TrashController {
       else if (type === 'مجموعة') GlobalStore.setState({ groups: state.groups.filter(g => g.Group_ID !== id) });
       else if (type === 'سجل') GlobalStore.setState({ records: state.records.filter(r => r.Record_ID !== id) });
       else if (type === 'مرفق') GlobalStore.setState({ attachments: state.attachments.filter(a => a.Attachment_ID !== id) });
+      else if (type === 'مستخدم') GlobalStore.setState({ users: state.users.filter(u => u.User_ID !== id) });
 
       UIManager.showSuccess("تم الحذف النهائي");
       this.renderTable();

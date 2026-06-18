@@ -56,8 +56,10 @@ class TaskService {
    * @param {string} userEmail - Admin username
    * @returns {Object} The created task
    */
-  addTask(title, description, assignedTo, clientId, deadline, warningDays, criticalDays, templateId, userEmail) {
+  addTask(taskPayload, userEmail) {
     this._checkAdmin(userEmail, "إنشاء مهمة");
+
+    const { title, description, assignedTo, clientId, deadline, warningDays, criticalDays, templateId } = taskPayload || {};
 
     // Validation: Required fields
     if (!title || title.trim() === "") {
@@ -112,6 +114,19 @@ class TaskService {
       `تم إنشاء مهمة "${title}" وتعيينها للمستخدم ${assignedTo}`,
       userEmail
     );
+
+    // Side-effect: Notification
+    try {
+      notificationService.notify({
+        Sender_Email: userEmail,
+        Recipient_Email: assignee.Username,
+        Type: "TASK_ASSIGNED",
+        Title: "مهمة جديدة",
+        Message: `تم تعيين مهمة جديدة لك: ${title}`,
+        Link: `my-tasks` // Navigation to tasks page
+      });
+    } catch(e) {}
+
     return created;
   }
 
@@ -161,6 +176,20 @@ class TaskService {
       `تم تقديم المهمة "${task.Title}" للمراجعة | ملاحظة: ${completionNote.trim()}`,
       userEmail
     );
+
+    // Notify the Admin/Creator
+    try {
+      notificationService.notify({
+        Sender_Email: userEmail,
+        Recipient_Email: task.Created_By,
+        Type: "TASK_SUBMITTED",
+        Title: "مهمة في انتظار المراجعة",
+        Message: `قام ${user.Name} بتقديم المهمة "${task.Title}" للمراجعة.`,
+        Link: `tasks-admin`,
+        Is_Read: true
+      });
+    } catch(e) {}
+
     return true;
   }
 
@@ -188,6 +217,22 @@ class TaskService {
       `تم اعتماد المهمة "${task.Title}" (${taskId})`,
       userEmail
     );
+
+    // Notify assignee
+    try {
+      const assignee = this.userRepo.findById(task.Assigned_To);
+      if(assignee) {
+        notificationService.notify({
+          Sender_Email: userEmail,
+          Recipient_Email: assignee.Username,
+          Type: "TASK_APPROVED",
+          Title: "تم اعتماد مهمتك",
+          Message: `تمت الموافقة على المهمة: "${task.Title}".`,
+          Link: `my-tasks`
+        });
+      }
+    } catch(e) {}
+
     return true;
   }
 
@@ -223,6 +268,22 @@ class TaskService {
       `تم رفض المهمة "${task.Title}" | السبب: ${reason.trim()}`,
       userEmail
     );
+
+    // Notify assignee
+    try {
+      const assignee = this.userRepo.findById(task.Assigned_To);
+      if(assignee) {
+        notificationService.notify({
+          Sender_Email: userEmail,
+          Recipient_Email: assignee.Username,
+          Type: "TASK_REJECTED",
+          Title: "تم رفض مهمتك",
+          Message: `تم رفض المهمة "${task.Title}" بسبب: ${reason.trim()}`,
+          Link: `my-tasks`
+        });
+      }
+    } catch(e) {}
+
     return true;
   }
 

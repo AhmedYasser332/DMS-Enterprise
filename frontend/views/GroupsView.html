@@ -9,7 +9,7 @@
           <i class="fas fa-folder-open me-2"></i> مجموعات البيانات <span id="currentClientName" class="text-muted fs-5"></span>
         </h3>
       </div>
-      <button class="btn btn-success shadow-sm" onclick="GroupController.showAddModal()">
+      <button class="btn btn-primary" onclick="GroupController.showAddModal()">
         <i class="fas fa-plus"></i> إضافة مجموعة
       </button>
     </div>
@@ -59,7 +59,6 @@
 
 <script>
 class GroupController {
-  static currentClientId = null;
 
   // 1. التهيئة ورسم الواجهة الأولية
   static renderView(clientId) {
@@ -102,10 +101,10 @@ class GroupController {
         <td class="text-muted small">${group.Created_At.split(',')[0]}</td>
         <td><span class="badge bg-light text-dark border">${group.Created_By}</span></td>
         <td>
-          <button class="btn btn-sm btn-info text-white me-1 shadow-sm" onclick="App.navigate('records', '${group.Group_ID}')" title="فتح السجلات">
+          <button class="btn btn-sm btn-primary me-1" onclick="App.navigate('records', '${group.Group_ID}')" title="فتح السجلات">
             <i class="fas fa-file-alt"></i> السجلات
           </button>
-          <button class="btn btn-sm btn-outline-danger shadow-sm" onclick="GroupController.deleteGroup('${group.Group_ID}', '${group.Name}')" title="حذف">
+          <button class="btn btn-sm btn-outline-danger" onclick="GroupController.deleteGroup('${group.Group_ID}', '${group.Name}')" title="حذف">
             <i class="fas fa-trash-alt"></i>
           </button>
         </td>
@@ -168,4 +167,5 @@ class GroupController {
     }
   }
 }
+GroupController.currentClientId = null;
 </script>

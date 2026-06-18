@@ -16,12 +16,15 @@ class ApiClient {
       google.script.run
         .withSuccessHandler((responseString) => {
           try {
-            const response = JSON.parse(responseString);
-            if (response.status === "success") {
-              resolve(response.data); // إرجاع الداتا النظيفة فقط
+            const serverResponse = JSON.parse(responseString);
+            if (serverResponse.status === "success") {
+              if (serverResponse.meta && serverResponse.meta.unreadCount !== undefined) {
+                GlobalStore.setState({ unreadCount: serverResponse.meta.unreadCount });
+              }
+              resolve(serverResponse.data); // إرجاع الداتا النظيفة فقط
             } else {
               // إذا كان الرد من الباك-إند عبارة عن خطأ (Business Rule Error)
-              reject(new Error(response.message || "حدث خطأ غير معروف"));
+              reject(new Error(serverResponse.message || "حدث خطأ غير معروف"));
             }
           } catch (e) {
             reject(new Error("فشل في معالجة بيانات الخادم."));

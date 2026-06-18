@@ -28,14 +28,16 @@ class UserRepository extends BaseRepository {
     
     // Default empty permissions if none exist
     let defaultPermissions = {
+      dashboard: { view: false, viewKPIs: false },
       clients: { add: false, edit: false, delete: false },
       records: { add: false, edit: false, delete: false },
       attachments: { upload: false, download: false, print: false, delete: false },
       recycleBin: { view: false, restoreOwn: false, restoreAll: false, empty: false },
-      admin: { manageUsers: false, viewLogs: false },
+      admin: { manageUsers: false, manageTemplates: false, viewLogs: false },
       tags: { add: false, edit: false, delete: false },
       legalEntities: { add: false, edit: false, delete: false },
-      tasks: { manageTasks: false, myTasks: false }
+      tasks: { manageTasks: false, myTasks: false },
+      credentials: { view: false, add: false, edit: false, delete: false }
     };
 
     if (obj.Permissions) {

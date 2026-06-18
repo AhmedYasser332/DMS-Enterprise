@@ -15,7 +15,11 @@ class UserService {
     if (requester.Role !== 'Admin') {
       let perms = {};
       if (requester.Permissions) {
-        try { perms = typeof requester.Permissions === 'string' ? JSON.parse(requester.Permissions) : requester.Permissions; } catch(e) {}
+        try { 
+          perms = typeof requester.Permissions === 'string' ? JSON.parse(requester.Permissions) : requester.Permissions; 
+        } catch(e) {
+          Logger.log("فشل في تحليل صلاحيات المستخدم: " + e.message);
+        }
       }
       if (!perms.admin?.manageUsers) throw new Error("غير مصرح لك بإضافة مستخدمين!");
     }
@@ -98,7 +102,11 @@ class UserService {
     if (requester.Role !== 'Admin') {
       let perms = {};
       if (requester.Permissions) {
-        try { perms = typeof requester.Permissions === 'string' ? JSON.parse(requester.Permissions) : requester.Permissions; } catch(e) {}
+        try { 
+          perms = typeof requester.Permissions === 'string' ? JSON.parse(requester.Permissions) : requester.Permissions; 
+        } catch(e) {
+          Logger.log("فشل في تحليل صلاحيات المستخدم: " + e.message);
+        }
       }
       if (!perms.admin?.manageUsers) throw new Error("غير مصرح لك بحذف أو إيقاف مستخدمين!");
     }

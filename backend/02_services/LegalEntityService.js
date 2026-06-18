@@ -13,7 +13,11 @@ class LegalEntityService {
     
     let perms = {};
     if(user.Permissions) {
-      try { perms = typeof user.Permissions === 'string' ? JSON.parse(user.Permissions) : user.Permissions; } catch(e) {}
+      try { 
+        perms = typeof user.Permissions === 'string' ? JSON.parse(user.Permissions) : user.Permissions; 
+      } catch(e) {
+        Logger.log("فشل في تحليل صلاحيات المستخدم: " + e.message);
+      }
     }
     
     if(!perms.legalEntities || !perms.legalEntities[actionType]) {

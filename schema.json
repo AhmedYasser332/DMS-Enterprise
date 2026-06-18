@@ -106,5 +106,35 @@
     "Created_By",
     "Created_At",
     "Is_Deleted"
+  ],
+  "TaxConfig": [
+    "Task_Type",
+    "Warning_Days",
+    "Critical_Days",
+    "Penalty_Flat",
+    "Penalty_Daily_Rate",
+    "Penalty_Cap"
+  ],
+  "Credentials": [
+    "Cred_ID",
+    "Client_ID",
+    "Portal_Type",
+    "Username",
+    "Password",
+    "Expiry_Date",
+    "Last_Rotated",
+    "Updated_By",
+    "Is_Deleted"
+  ],
+  "Notifications": [
+    "Notification_ID",
+    "Recipient_Email",
+    "Type",
+    "Title",
+    "Message",
+    "Link",
+    "Is_Read",
+    "Created_At",
+    "Read_At"
   ]
 }

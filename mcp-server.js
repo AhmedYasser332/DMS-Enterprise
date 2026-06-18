@@ -72,6 +72,45 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
                     },
                     required: ["sheetName"]
                 }
+            },
+            {
+                name: "write_sheet_data",
+                description: "Writes or updates a range of cells in a sheet.",
+                inputSchema: {
+                    type: "object",
+                    properties: {
+                        sheetName: { type: "string", description: "The name of the target sheet" },
+                        range: { type: "string", description: "A1 range to write to (e.g. A2:D100)" },
+                        values: {
+                            type: "array",
+                            items: {
+                                type: "array",
+                                items: { type: "string" }
+                            },
+                            description: "2D array of values to write (rows of cells)"
+                        }
+                    },
+                    required: ["sheetName", "range", "values"]
+                }
+            },
+            {
+                name: "append_sheet_data",
+                description: "Appends rows of data to the end of a sheet.",
+                inputSchema: {
+                    type: "object",
+                    properties: {
+                        sheetName: { type: "string", description: "The name of the target sheet" },
+                        values: {
+                            type: "array",
+                            items: {
+                                type: "array",
+                                items: { type: "string" }
+                            },
+                            description: "2D array of values to append (rows of cells)"
+                        }
+                    },
+                    required: ["sheetName", "values"]
+                }
             }
         ]
     };
@@ -153,6 +192,27 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                     text: JSON.stringify(headers, null, 2)
                 }]
             };
+        }
+
+        if (name === "write_sheet_data") {
+            await sheets.spreadsheets.values.update({
+                spreadsheetId: TARGET_SPREADSHEET_ID,
+                range: `${args.sheetName}!${args.range}`,
+                valueInputOption: "USER_ENTERED",
+                requestBody: { values: args.values }
+            });
+            return { content: [{ type: "text", text: `[SUCCESS] Wrote data to '${args.sheetName}!${args.range}'.` }] };
+        }
+
+        if (name === "append_sheet_data") {
+            await sheets.spreadsheets.values.append({
+                spreadsheetId: TARGET_SPREADSHEET_ID,
+                range: args.sheetName,
+                valueInputOption: "USER_ENTERED",
+                insertDataOption: "INSERT_ROWS",
+                requestBody: { values: args.values }
+            });
+            return { content: [{ type: "text", text: `[SUCCESS] Appended ${args.values.length} rows to '${args.sheetName}'.` }] };
         }
 
         throw new Error("Tool not recognized.");

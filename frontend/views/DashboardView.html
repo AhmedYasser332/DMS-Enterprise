@@ -12,33 +12,41 @@
       <div class="card border-0 h-100 shadow-sm border-start border-danger border-4">
         <div class="card-body p-3">
           <div class="d-flex justify-content-between align-items-start">
-            <h6 class="text-uppercase text-muted fw-bold small m-0">متأخرة (غرامات محتملة)</h6>
+            <h6 class="text-uppercase text-muted fw-bold small m-0">مهام متأخرة</h6>
             <i class="fas fa-exclamation-circle text-danger fs-4"></i>
           </div>
           <h2 class="mt-2 mb-1 fw-bold text-danger" id="stat-overdue-count">0</h2>
-          <p class="text-muted small m-0">تعرض للغرامة: <span id="stat-overdue-penalty" class="fw-bold text-dark">EGP 0</span></p>
         </div>
       </div>
     </div>
 
-    <!-- KPI 2: Due Soon -->
+    <!-- KPI 2: Critical -->
+    <div class="col-md-3 col-sm-6 mb-4">
+      <div class="card border-0 h-100 shadow-sm border-start border-4" style="border-color: #fd7e14 !important;">
+        <div class="card-body p-3">
+          <div class="d-flex justify-content-between align-items-start">
+            <h6 class="text-uppercase text-muted fw-bold small m-0">مهام حرجة</h6>
+            <i class="fas fa-fire fs-4" style="color: #fd7e14;"></i>
+          </div>
+          <h2 class="mt-2 mb-1 fw-bold" id="stat-critical-count" style="color: #fd7e14;">0</h2>
+        </div>
+      </div>
+    </div>
+
+    <!-- KPI 3: Due Soon -->
     <div class="col-md-3 col-sm-6 mb-4">
       <div class="card border-0 h-100 shadow-sm border-start border-warning border-4">
         <div class="card-body p-3">
           <div class="d-flex justify-content-between align-items-start">
-            <h6 class="text-uppercase text-muted fw-bold small m-0">مهام حرجة / قريبة</h6>
-            <i class="fas fa-fire text-warning fs-4"></i>
+            <h6 class="text-uppercase text-muted fw-bold small m-0">مهام قريبة</h6>
+            <i class="fas fa-hourglass-half text-warning fs-4"></i>
           </div>
-          <h2 class="mt-2 mb-1 fw-bold" id="stat-duesoon-count">0</h2>
-          <p class="text-muted small m-0">
-            <span id="stat-duesoon-crit" class="text-danger fw-bold">0</span> حرجة · 
-            <span id="stat-duesoon-warn" class="text-warning fw-bold" style="color: #d39e00 !important;">0</span> تحذير
-          </p>
+          <h2 class="mt-2 mb-1 fw-bold text-warning" id="stat-warning-count" style="color: #d39e00 !important;">0</h2>
         </div>
       </div>
     </div>
 
-    <!-- KPI 3: Needs Review -->
+    <!-- KPI 4: Needs Review -->
     <div class="col-md-3 col-sm-6 mb-4">
       <div class="card border-0 h-100 shadow-sm border-start border-info border-4">
         <div class="card-body p-3">
@@ -48,20 +56,6 @@
           </div>
           <h2 class="mt-2 mb-1 fw-bold text-info" id="stat-review-count">0</h2>
           <p class="text-muted small m-0">مهام تحتاج اعتماد</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- KPI 4: Credential Health -->
-    <div class="col-md-3 col-sm-6 mb-4">
-      <div class="card border-0 h-100 shadow-sm border-start border-success border-4" id="cred-health-card">
-        <div class="card-body p-3">
-          <div class="d-flex justify-content-between align-items-start">
-            <h6 class="text-uppercase text-muted fw-bold small m-0">صحة بيانات الدخول</h6>
-            <i class="fas fa-shield-alt text-success fs-4"></i>
-          </div>
-          <h2 class="mt-2 mb-1 fw-bold text-success" id="stat-cred-pct">0%</h2>
-          <p class="text-muted small m-0"><span id="stat-cred-valid">0</span> / <span id="stat-cred-total">0</span> عميل جاهز</p>
         </div>
       </div>
     </div>
@@ -116,26 +110,17 @@ class DashboardController {
     // 1. Overdue
     const openTasks = tasks.filter(t => t.Status !== 'Completed' && String(t.Is_Deleted).toUpperCase() !== 'TRUE');
     let overdueCount = 0;
-    let exposure = 0;
     
     openTasks.forEach(t => {
       const d = this.daysUntil(t.Deadline);
       if (d < 0) {
         overdueCount++;
-        // Calculate penalty
-        const cfg = taxConfig.find(c => c.Task_Type === (t.Template_ID || t.Title)) || {}; // simplified lookup
-        const flat = parseInt(cfg.Penalty_Flat) || 0;
-        const daily = parseInt(cfg.Penalty_Daily_Rate) || 0;
-        let p = flat + (daily * Math.abs(d));
-        if (cfg.Penalty_Cap && p > parseInt(cfg.Penalty_Cap)) p = parseInt(cfg.Penalty_Cap);
-        exposure += p;
       }
     });
 
     document.getElementById('stat-overdue-count').textContent = overdueCount;
-    document.getElementById('stat-overdue-penalty').textContent = new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP' }).format(exposure);
 
-    // 2. Due Soon
+    // 2. Due Soon & Critical
     let warn = 0, crit = 0;
     openTasks.forEach(t => {
       const d = this.daysUntil(t.Deadline);
@@ -146,9 +131,8 @@ class DashboardController {
         else if (d <= wDays) warn++;
       }
     });
-    document.getElementById('stat-duesoon-count').textContent = warn + crit;
-    document.getElementById('stat-duesoon-crit').textContent = crit;
-    document.getElementById('stat-duesoon-warn').textContent = warn;
+    document.getElementById('stat-critical-count').textContent = crit;
+    document.getElementById('stat-warning-count').textContent = warn;
 
     // 3. Needs Review
     let reviewCount = 0;
@@ -163,31 +147,6 @@ class DashboardController {
     document.getElementById('stat-review-label').textContent = reviewLabel;
     document.getElementById('stat-review-count').textContent = reviewCount;
 
-    // 4. Credential Health
-    const clients = state.clients.filter(c => String(c.Is_Deleted).toUpperCase() !== 'TRUE');
-    const creds = state.credentials || [];
-    let validClients = 0;
-    clients.forEach(c => {
-      const hasTax = creds.find(cr => cr.Client_ID === c.Client_ID && cr.Portal_Type === 'TAX_PORTAL' && String(cr.Is_Deleted).toUpperCase() !== 'TRUE');
-      const hasInv = creds.find(cr => cr.Client_ID === c.Client_ID && cr.Portal_Type === 'EINVOICE' && String(cr.Is_Deleted).toUpperCase() !== 'TRUE');
-      if (hasTax || hasInv) validClients++; // Simplify: at least one portal credential is present
-    });
-    const credPct = clients.length ? Math.round((validClients / clients.length) * 100) : 0;
-    document.getElementById('stat-cred-pct').textContent = credPct + '%';
-    document.getElementById('stat-cred-valid').textContent = validClients;
-    document.getElementById('stat-cred-total').textContent = clients.length;
-
-    const healthCard = document.getElementById('cred-health-card');
-    if (credPct < 75) {
-      healthCard.className = 'card border-0 h-100 shadow-sm border-start border-danger border-4';
-      document.getElementById('stat-cred-pct').className = 'mt-2 mb-1 fw-bold text-danger';
-    } else if (credPct < 90) {
-      healthCard.className = 'card border-0 h-100 shadow-sm border-start border-warning border-4';
-      document.getElementById('stat-cred-pct').className = 'mt-2 mb-1 fw-bold text-warning';
-    } else {
-      healthCard.className = 'card border-0 h-100 shadow-sm border-start border-success border-4';
-      document.getElementById('stat-cred-pct').className = 'mt-2 mb-1 fw-bold text-success';
-    }
 
     this.renderTables(tasks, role, userId);
   }

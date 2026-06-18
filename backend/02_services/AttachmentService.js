@@ -109,7 +109,8 @@ class AttachmentService {
   }
 
   _getOrCreateTrashFolder() {
-    return this._getOrCreateSubFolder(DriveApp, Config.TRASH_FOLDER_NAME);
+    const rootFolder = this._getOrCreateFolder();
+    return this._getOrCreateSubFolder(rootFolder, Config.TRASH_FOLDER_NAME);
   }
 
   moveToTrash(attachmentId, userEmail) {
@@ -136,18 +137,24 @@ class AttachmentService {
       }
       
       // 3. Move the file in Google Drive
+      let destinationUrl = "";
       if (attachment.Drive_File_ID) {
         try {
           const driveFile = DriveApp.getFileById(attachment.Drive_File_ID);
           driveFile.moveTo(targetFolder);
+          destinationUrl = targetFolder.getUrl();
         } catch (driveError) {
-          Logger.log(`Warning: Failed to move file ${attachment.Drive_File_ID} to trash on Drive: ${driveError.message}`);
+          throw new Error(`فشل نقل الملف في جوجل درايف: ${driveError.message}`);
         }
       }
       
       // 4. Hard delete from DB
       this.attachmentRepo.hardDelete(attachmentId);
-      this.logRepo.logAction("حذف نهائي (مرفق)", `تم نقل الملف "${attachment.File_Name}" إلى أرشيف المهملات وحذفه نهائياً من النظام.`, userEmail);
+      const logDetails = destinationUrl 
+        ? `تم نقل الملف "${attachment.File_Name}" إلى أرشيف المهملات. الرابط: ${destinationUrl}`
+        : `تم الحذف النهائي للملف "${attachment.File_Name}" من النظام.`;
+      
+      this.logRepo.logAction("حذف نهائي (مرفق)", logDetails, userEmail);
       
       return true;
     } catch (error) {

@@ -108,6 +108,54 @@ class AttachmentService {
     return true;
   }
 
+  _getOrCreateTrashFolder() {
+    return this._getOrCreateSubFolder(DriveApp, Config.TRASH_FOLDER_NAME);
+  }
+
+  moveToTrash(attachmentId, userEmail) {
+    try {
+      // 1. Get the attachment details
+      const attachment = this.attachmentRepo.findById(attachmentId);
+      if (!attachment) throw new Error("الملف غير موجود في النظام.");
+      
+      const record = this.recordRepo.findById(attachment.Record_ID);
+      const group = record ? this.groupRepo.findById(record.Group_ID) : null;
+      const client = group ? this.clientRepo.findById(group.Client_ID) : null;
+      
+      // 2. Build the Trash Folder hierarchy if Client and Group exist
+      let targetFolder = this._getOrCreateTrashFolder();
+      
+      if (client) {
+        const clientFolderName = `${client.Name} - ${client.Client_ID}`;
+        targetFolder = this._getOrCreateSubFolder(targetFolder, clientFolderName);
+        
+        if (group) {
+          const groupFolderName = `${group.Name} - ${group.Group_ID}`;
+          targetFolder = this._getOrCreateSubFolder(targetFolder, groupFolderName);
+        }
+      }
+      
+      // 3. Move the file in Google Drive
+      if (attachment.Drive_File_ID) {
+        try {
+          const driveFile = DriveApp.getFileById(attachment.Drive_File_ID);
+          driveFile.moveTo(targetFolder);
+        } catch (driveError) {
+          Logger.log(`Warning: Failed to move file ${attachment.Drive_File_ID} to trash on Drive: ${driveError.message}`);
+        }
+      }
+      
+      // 4. Hard delete from DB
+      this.attachmentRepo.hardDelete(attachmentId);
+      this.logRepo.logAction("حذف نهائي (مرفق)", `تم نقل الملف "${attachment.File_Name}" إلى أرشيف المهملات وحذفه نهائياً من النظام.`, userEmail);
+      
+      return true;
+    } catch (error) {
+      throw new Error("فشل أثناء الحذف النهائي ونقل المرفق: " + error.message);
+    }
+  }
+
+
   getFileBase64(driveFileId) {
     try {
       const file = DriveApp.getFileById(driveFileId);

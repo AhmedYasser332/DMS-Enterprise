@@ -1,8 +1,9 @@
 class TrashService {
-  constructor(clientRepo, groupRepo, recordRepo, logRepo, userRepository) {
+  constructor(clientRepo, groupRepo, recordRepo, logRepo, userRepository, attachmentRepo) {
     this.repos = [clientRepo, groupRepo, recordRepo]; // بنراقب الجداول دي
     this.logRepo = logRepo;
     this.userRepo = userRepository;
+    this.attachmentRepo = attachmentRepo;
   }
 
   _checkPermission(userEmail, action) {
@@ -45,6 +46,12 @@ class TrashService {
     this.userRepo.findAll(false).filter(u => String(u.Is_Deleted).toUpperCase() === "TRUE")
       .forEach(u => allDeleted.push({...u, type: 'مستخدم', display: u.Name, id: u.User_ID}));
 
+    // جلب المرفقات المحذوفة
+    if (this.attachmentRepo) {
+      this.attachmentRepo.findAll(false).filter(a => String(a.Is_Deleted).toUpperCase() === "TRUE")
+        .forEach(a => allDeleted.push({...a, type: 'مرفق', display: a.File_Name, id: a.Attachment_ID}));
+    }
+
     return allDeleted;
   }
 
@@ -55,6 +62,7 @@ class TrashService {
     else if (type === 'مجموعة') repo = this.repos[1];
     else if (type === 'سجل') repo = this.repos[2];
     else if (type === 'مستخدم') repo = this.userRepo;
+    else if (type === 'مرفق') repo = this.attachmentRepo;
     
     if (repo) repo.restore(id);
     this.logRepo.logAction("استعادة", `تم استعادة ${type}: ${name}`, userEmail);
@@ -64,7 +72,15 @@ class TrashService {
   permanentDelete(type, id, name, userEmail) {
     this._checkPermission(userEmail, 'حذف نهائي');
     let repo;
-    if (type === 'عميل') repo = this.repos[0];
+    if (type === 'مرفق') {
+      // For attachments, we use the AttachmentService to move the file to the Trash folder and hard delete the DB record
+      if (typeof attachmentService !== 'undefined') {
+        attachmentService.moveToTrash(id, userEmail);
+      } else {
+        throw new Error("خدمة المرفقات غير متاحة لإتمام عملية الحذف النهائي.");
+      }
+      return true;
+    } else if (type === 'عميل') repo = this.repos[0];
     else if (type === 'مجموعة') repo = this.repos[1];
     else if (type === 'سجل') repo = this.repos[2];
     else if (type === 'مستخدم') repo = this.userRepo;
@@ -75,4 +91,4 @@ class TrashService {
   }
 }
 
-const trashService = new TrashService(clientRepo, groupRepo, recordRepo, logRepo, userRepo);
+const trashService = new TrashService(clientRepo, groupRepo, recordRepo, logRepo, userRepo, attachmentRepo);

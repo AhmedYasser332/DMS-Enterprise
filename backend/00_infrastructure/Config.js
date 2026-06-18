@@ -5,6 +5,7 @@
 const Config = {
   // معرف قاعدة البيانات (الشيت الحالي)
   DATABASE_ID: SpreadsheetApp.getActiveSpreadsheet().getId(),
+  TRASH_FOLDER_NAME: "DMS_Trash_Archive",
   
   // أسماء الجداول (الشيتات)
   TABLES: {
